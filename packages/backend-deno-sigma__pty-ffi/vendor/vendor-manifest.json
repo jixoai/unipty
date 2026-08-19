@@ -1,0 +1,707 @@
+{
+  "schema": 1,
+  "generatedBy": "scripts/vendor.sh.ts",
+  "substrate": {
+    "package": "@sigma/pty-ffi",
+    "version": "0.42.0",
+    "entry": "jsr:@sigma/pty-ffi@0.42.0/noinit",
+    "releaseBase": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0"
+  },
+  "pins": {
+    "lockFile": "../../deno.lock",
+    "lockSha256": "4cbf38c66b258ed1fa5ece21443834329ed73104c63d34f4f6bc8f5301e41a89",
+    "jsr": {
+      "@denosaurs/plug": "1.1.0",
+      "@sigma/pty-ffi": "0.42.0",
+      "@std/assert": "1.0.19",
+      "@std/encoding": "1.0.11",
+      "@std/fmt": "1.0.10",
+      "@std/fs": "1.0.24",
+      "@std/internal": "1.0.14",
+      "@std/path": "1.1.6"
+    }
+  },
+  "js": {
+    "count": 106,
+    "files": [
+      {
+        "path": "vendor/js/jsr.io/@denosaurs/plug/1.1.0/download.ts",
+        "sha256": "8904156557b1fa085c0a551f5df72eb258016865e0a981d28c3a9a526a403580",
+        "bytes": 8059,
+        "sourceUrl": "https://jsr.io/@denosaurs/plug/1.1.0/download.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@denosaurs/plug/1.1.0/mod.ts",
+        "sha256": "15c683abe87ed5df6cdccd5ff45ff46438ef68b825729f8463a6c8b605a9d19b",
+        "bytes": 4760,
+        "sourceUrl": "https://jsr.io/@denosaurs/plug/1.1.0/mod.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@denosaurs/plug/1.1.0/types.ts",
+        "sha256": "944a7abaded38515f0b06a4499d462c99d1c018ced7b33c2ee32607224e4e039",
+        "bytes": 5585,
+        "sourceUrl": "https://jsr.io/@denosaurs/plug/1.1.0/types.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@denosaurs/plug/1.1.0/util.ts",
+        "sha256": "8159f9a8639276753ad500b592edc81f5f3298ad5c391850c8fc896535b28e0b",
+        "bytes": 3593,
+        "sourceUrl": "https://jsr.io/@denosaurs/plug/1.1.0/util.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/deno.json",
+        "sha256": "d7602b0d4138b55f09c2a5de704c863d9d574ba0e04aff3484497bb8323b4377",
+        "bytes": 905,
+        "sourceUrl": "https://jsr.io/@sigma/pty-ffi/0.42.0/deno.json"
+      },
+      {
+        "path": "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/mod_noinit.ts",
+        "sha256": "f09aa8aae7af86a69b18361d0ecc4a1cf4bedee1a69591779ab726d52c8f8780",
+        "bytes": 754,
+        "sourceUrl": "https://jsr.io/@sigma/pty-ffi/0.42.0/mod_noinit.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/src/ffi.ts",
+        "sha256": "81f781007b8b9b0addeba3834dc4378cf54c88eb2d629505fc3f5bf2c7bfe941",
+        "bytes": 5415,
+        "sourceUrl": "https://jsr.io/@sigma/pty-ffi/0.42.0/src/ffi.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/src/mod.ts",
+        "sha256": "31af84ebca660ce26041d8708df32d697557b793b7994ddfe189d806386bf826",
+        "bytes": 21335,
+        "sourceUrl": "https://jsr.io/@sigma/pty-ffi/0.42.0/src/mod.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/src/utils.ts",
+        "sha256": "ecddbc78ec91179fa508a70b45907233bcb5064bd0fb62ffa4400ca300b7ee98",
+        "bytes": 5070,
+        "sourceUrl": "https://jsr.io/@sigma/pty-ffi/0.42.0/src/utils.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/assert/1.0.19/assert.ts",
+        "sha256": "577cd3382908011da36639d019d9be54340e7e388b6db599425de0e977894318",
+        "bytes": 712,
+        "sourceUrl": "https://jsr.io/@std/assert/1.0.19/assert.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/assert/1.0.19/assertion_error.ts",
+        "sha256": "7082ae41b34eb0bc9054d8f2867996d0593af80904f98bfc0ad4f27b98f00d91",
+        "bytes": 821,
+        "sourceUrl": "https://jsr.io/@std/assert/1.0.19/assertion_error.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/encoding/1.0.11/_common16.ts",
+        "sha256": "98ea9ed8a6cdee88c703632a2fd630370f295e57a710aa5ac455d7b8bf2c0f2b",
+        "bytes": 1929,
+        "sourceUrl": "https://jsr.io/@std/encoding/1.0.11/_common16.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/encoding/1.0.11/_common_detach.ts",
+        "sha256": "71ce6c7842e8d8151a8aa153352a66ffd512863bd1d309e4b32a3d45c67d5ee3",
+        "bytes": 625,
+        "sourceUrl": "https://jsr.io/@std/encoding/1.0.11/_common_detach.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/encoding/1.0.11/_types.ts",
+        "sha256": "22f51b1c73ca56d8243536959559c070ff6e99e76d9846a55a51ecf8787465fc",
+        "bytes": 334,
+        "sourceUrl": "https://jsr.io/@std/encoding/1.0.11/_types.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/encoding/1.0.11/hex.ts",
+        "sha256": "6a19a5fbda7e9ad543607cab41e320546136a8bc8366e0d4be8832207e496a30",
+        "bytes": 2508,
+        "sourceUrl": "https://jsr.io/@std/encoding/1.0.11/hex.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fmt/1.0.10/colors.ts",
+        "sha256": "8194a70a6bfbf228621d82b306430ae4bbe67c1387887862463e0de5f50dd03c",
+        "bytes": 21716,
+        "sourceUrl": "https://jsr.io/@std/fmt/1.0.10/colors.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/_create_walk_entry.ts",
+        "sha256": "6a6c0f0f15f6692d7e6460534188688e1d6819e368567d337a1e0c9eb50468f8",
+        "bytes": 1289,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/_create_walk_entry.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/_get_file_info_type.ts",
+        "sha256": "ba107009571e92aae0f564dc781a85401f730b40f5c772c9d84384b7cfe020a5",
+        "bytes": 617,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/_get_file_info_type.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/_is_same_path.ts",
+        "sha256": "f17ca73d20e34f2a21a7489b362183da69bffc2b2fbd427eeecc8ba5a036c19d",
+        "bytes": 622,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/_is_same_path.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/_is_subdir.ts",
+        "sha256": "bee672fd3ccee88599c9351c4265ff31105d7962d8d4d83b30a56a7b6bf20b38",
+        "bytes": 980,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/_is_subdir.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/_to_path_string.ts",
+        "sha256": "8d1a34953d097fc61310a6834943c231ebae93987227029608a2ba99617b080b",
+        "bytes": 443,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/_to_path_string.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/copy.ts",
+        "sha256": "8438e9d4ad842f96c636b11400da59910227daa0c775926aedec2682559a229f",
+        "bytes": 11378,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/copy.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/empty_dir.ts",
+        "sha256": "7793ec9e89bc1feeb0d5a710d49f25f55da61899e6e3b6ecc10df32e7c64cc63",
+        "bytes": 2562,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/empty_dir.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/ensure_dir.ts",
+        "sha256": "eb5b5c5cc3d8b397a377b220ad9ebbddbfe0fdd9ed025aeaab305acc4438a84f",
+        "bytes": 3068,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/ensure_dir.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/ensure_file.ts",
+        "sha256": "0a391addbac593aade8b07a1aec5938e6223726d5e9bd604dfea1735114ce233",
+        "bytes": 2872,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/ensure_file.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/ensure_link.ts",
+        "sha256": "257f3a47dabe9f8a7da46e43fd5f52d3af5d485fd9378c9c32c7550b4ebebe4b",
+        "bytes": 2114,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/ensure_link.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/ensure_symlink.ts",
+        "sha256": "f776ca97b3255d4264f01d924a02727e72005bd4c7e2f3cb9a751072301859ac",
+        "bytes": 6350,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/ensure_symlink.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/eol.ts",
+        "sha256": "2aa40a86861c985bfee0d46c69e6e34a18547630a157221f1d0c9d8f68819fe1",
+        "bytes": 2012,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/eol.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/exists.ts",
+        "sha256": "9d329c630a7335754c4016baa0419a16ff160894d73eca2c5cf3e85473e65664",
+        "bytes": 9493,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/exists.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/expand_glob.ts",
+        "sha256": "a57e7e9ace25365cdae6eaf8b681820ef56a6727580753e0e5087291f5b2bdfb",
+        "bytes": 15119,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/expand_glob.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/mod.ts",
+        "sha256": "c8777066a1364b7bdd3109346d2d2adc7057ea62febdcefa274037526aa251ee",
+        "bytes": 742,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/mod.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/move.ts",
+        "sha256": "aff1b59cb5f1d42fb16802c880ea7900e3c4ffddaa5223f0781589539b88303e",
+        "bytes": 4611,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/move.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/fs/1.0.24/walk.ts",
+        "sha256": "59c087689c0f6353463a780c47a414beb128af2b8b769e0f18e06a92c4359610",
+        "bytes": 21619,
+        "sourceUrl": "https://jsr.io/@std/fs/1.0.24/walk.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/internal/1.0.14/_os.ts",
+        "sha256": "c1c731bb7453e21e6041b36b01519b945a561df245f2f3db336efe1ba6177e26",
+        "bytes": 535,
+        "sourceUrl": "https://jsr.io/@std/internal/1.0.14/_os.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/internal/1.0.14/os.ts",
+        "sha256": "69e3dd08eab87582e741f8acc8adc95dbcd1f12c6b23102e020ce3c7857c3abc",
+        "bytes": 232,
+        "sourceUrl": "https://jsr.io/@std/internal/1.0.14/os.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/assert_path.ts",
+        "sha256": "e458f158f3ced05d4fe7462dd79edf0d8aa0385a71a4bbb14f1d366641c423f8",
+        "bytes": 288,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/assert_path.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/basename.ts",
+        "sha256": "bbc410d0dace7364fc3d2a47951d5220d41f90ddec121ea98d3eb6cd0ea9ee19",
+        "bytes": 1243,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/basename.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/common.ts",
+        "sha256": "5b9c79a4309be206c86c3b5a631628d22e60c3cae1a81692906acb5a0dec98c3",
+        "bytes": 697,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/common.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/constants.ts",
+        "sha256": "4ced1dbc05194db908329efec67f5f6b1f801b4165c26a07ec9768fc482aac4f",
+        "bytes": 1999,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/constants.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/dirname.ts",
+        "sha256": "a777e589cbaca3e29317070375cb5ae0aa4a4ca93436eab31fe4f54f9894dc72",
+        "bytes": 242,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/dirname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/env.ts",
+        "sha256": "30a02cf5a37528225dc492071f31ab3cf2fdcc0cfffee7407f7661354d2b8328",
+        "bytes": 341,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/env.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/format.ts",
+        "sha256": "51c36c568b6221f779c6c5cb3b53585b97e8772aea843ff84169b47119c03bb8",
+        "bytes": 788,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/format.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/from_file_url.ts",
+        "sha256": "bd111e2b25cd65067f2ac4b649697dc7eed80e28dd1ebee394e9019aa5f1f2cd",
+        "bytes": 335,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/from_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/glob_to_reg_exp.ts",
+        "sha256": "09e3680262f2b6fedb1374301994b9c9d881058cd6a711fca3a79b5a2b65ca35",
+        "bytes": 7626,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/glob_to_reg_exp.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/normalize.ts",
+        "sha256": "a777e589cbaca3e29317070375cb5ae0aa4a4ca93436eab31fe4f54f9894dc72",
+        "bytes": 242,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/normalize.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/normalize_string.ts",
+        "sha256": "3d7215861fa355bb09714ff3d8a358b18af5200f59b3c72181b6fb7919c47ad6",
+        "bytes": 2280,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/normalize_string.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/relative.ts",
+        "sha256": "200e4c2d3dc80fcb239811b19cdd6fb024598a99c144569101a53b487f6333f0",
+        "bytes": 266,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/relative.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/strip_trailing_separators.ts",
+        "sha256": "e75579fccd8430db70087212b14b9c86be05701fad7541afdcc170d97f78354e",
+        "bytes": 571,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/strip_trailing_separators.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/_common/to_file_url.ts",
+        "sha256": "b2875198966c5d1a51ec74de69b45edadabd6404e9a31d3666cb7ce7bdd22d21",
+        "bytes": 419,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/_common/to_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/basename.ts",
+        "sha256": "dfe83ebedbcf2e52d758853ae1ed32f68987e76541cf5d1e2a6c509d8bfbfe99",
+        "bytes": 1482,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/basename.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/common.ts",
+        "sha256": "a1d4d4c52aa5f02dbad1a4547f8eae388fe34176fbaf4ed7dc02f5c6d913a491",
+        "bytes": 920,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/common.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/constants.ts",
+        "sha256": "46c46dc3db5254bff8c5c37e365bac86889ebd2c36d967e5c3e3743574f8da2f",
+        "bytes": 703,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/constants.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/dirname.ts",
+        "sha256": "a4146dfaf7d488151c7ad39831f4a3ea0e67942b6670d40ca6fb0c88f3f30c96",
+        "bytes": 1350,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/dirname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/extname.ts",
+        "sha256": "2daefea5a1d86db8aff2e791378fdd8aadf6688d99527a17ef6977eb510adc99",
+        "bytes": 1317,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/extname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/format.ts",
+        "sha256": "ffccd83e74cbe8cbda6a433d65a394b0755d91512d17bcf32f9054f4587e51b5",
+        "bytes": 1081,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/format.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/from_file_url.ts",
+        "sha256": "5a7220b557db03d8a09b539611340021ed61ab40f28448f2ab081a1dde309e34",
+        "bytes": 1048,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/from_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/glob_to_regexp.ts",
+        "sha256": "112976dd2d6261840fc72c7ccc133048e1d26a6289a4a893c2abc046050842a1",
+        "bytes": 3928,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/glob_to_regexp.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/is_absolute.ts",
+        "sha256": "1c4c418b53d0433f68174cfdbdee5515f5b22d1073039f068fad065080bc1594",
+        "bytes": 956,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/is_absolute.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/is_glob.ts",
+        "sha256": "1a4e1d158e82f919156fbd4c455a575cb9afe69ca8c8e1e076405d3233306b76",
+        "bytes": 1240,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/is_glob.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/join.ts",
+        "sha256": "2635418bec6c74b422779702bd9894c134a5079afc5387c437380ed04ee57ce8",
+        "bytes": 1236,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/join.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/join_globs.ts",
+        "sha256": "991b8218c3bd7900f853a2815379e8bd325f006dfb0671212f16244d7a94654d",
+        "bytes": 1456,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/join_globs.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/mod.ts",
+        "sha256": "3e687da35f3b299fc83ad97b2a36448451b9b12f03ebb3413afd6fdec6ea9255",
+        "bytes": 7621,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/mod.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/normalize.ts",
+        "sha256": "4150609d2a3b44249b9392b674cc7dbae3c4ff9fdeda05fbec2652ce32df1e88",
+        "bytes": 1270,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/normalize.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/normalize_glob.ts",
+        "sha256": "9d77d640eb88160d04c2268c8600b3b7e4fe807e36ae025f09276ea886f924cb",
+        "bytes": 1441,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/normalize_glob.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/parse.ts",
+        "sha256": "16d5a894a96751676e662477458accc478642835161c62d8a8669b815842e570",
+        "bytes": 1470,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/parse.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/_util.ts",
+        "sha256": "f143f08b760e06181a1ae4e32b7dcc706c70bfd7601b3d6f6a36bef380a4cb0e",
+        "bytes": 370,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/_util.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/basename.ts",
+        "sha256": "5d5875b17382f5798124eb4f0d0c940ffabee68bf4a4600decdbb35b72050e0c",
+        "bytes": 2698,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/basename.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/constants.ts",
+        "sha256": "1f7a1f2d726ce3c0326b3872c6abff27cd56b4f49d64565dbbb89c9f6257f60a",
+        "bytes": 493,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/constants.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/dirname.ts",
+        "sha256": "7825347bbda8eb8509ed29ce74eee8b9c3c1a9d8db3fdced098a9f18aa547fb7",
+        "bytes": 2500,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/dirname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/extname.ts",
+        "sha256": "bba833c3f4c032e9b32fd9d9c36b723961a5796412c6ba385f5cdf22323055e3",
+        "bytes": 3704,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/extname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/format.ts",
+        "sha256": "4208834e5090d2c37aa751f507118afcdd40fe0c95922e401f87530595ab8587",
+        "bytes": 778,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/format.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/from_file_url.ts",
+        "sha256": "e86443242a56bdcf67cfd05d9928b0cc869e9660386b34eac00be2ba9e70349e",
+        "bytes": 668,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/from_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/glob_to_regexp.ts",
+        "sha256": "2fe874dcbcbc393027c2d7b3f011559f9da853b0ce9f23996dd2a5a7fa42b52c",
+        "bytes": 3737,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/glob_to_regexp.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/is_absolute.ts",
+        "sha256": "7bd7f594c952c1c054081c62f83d1068ddc3c9e12d0e607c3eff030750ed34e6",
+        "bytes": 735,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/is_absolute.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/join.ts",
+        "sha256": "274d92b81765cf2a8f70e183c18d2e1890bddfcf20d6989f06c918ae1dcf663c",
+        "bytes": 1587,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/join.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/join_globs.ts",
+        "sha256": "ebb42a04ebb2fccea867db00dff1864cc5a1a5adb5c9d840d1dead419bee2b05",
+        "bytes": 1251,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/join_globs.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/normalize.ts",
+        "sha256": "3b4aa4e01dce37c67c619c2483d5ab32dfb32cbb5b1063f26e08132bdf8d9494",
+        "bytes": 2146,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/normalize.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/normalize_glob.ts",
+        "sha256": "bf4beb6d73d4754ab49ae4c076493e11e6540963fb04d37d806bc5266b8fd93c",
+        "bytes": 1263,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/normalize_glob.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/parse.ts",
+        "sha256": "11d426b1565a5a17ce74e5829f46365d0bd2931e797788a55c2b55e5dff9e56f",
+        "bytes": 3449,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/parse.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/relative.ts",
+        "sha256": "953c2d73be277ecca964b6398e91116bed100bb014cb5c40863bf9a01f880817",
+        "bytes": 3310,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/relative.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/resolve.ts",
+        "sha256": "ff56eee2fc463cabeebf972b8c70bad7ea48c1fe3be9fe8ddafe8ab50af6e4f1",
+        "bytes": 1769,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/resolve.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/to_file_url.ts",
+        "sha256": "2013f91d5c5c786281fabab70caa5a7c0b34fc9dffe93767cec79830128c6744",
+        "bytes": 997,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/to_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/posix/to_namespaced_path.ts",
+        "sha256": "c69eaf125c09517d8fda7d1b0890ab5e678eb2bfb9fc8c6531afaeb7f31e1108",
+        "bytes": 575,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/posix/to_namespaced_path.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/relative.ts",
+        "sha256": "6433e4258081742ed976119db1dbbf565386b273dc02862f0d62ff76ada15bbc",
+        "bytes": 1106,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/relative.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/resolve.ts",
+        "sha256": "9b7d5e7a1fbc4622207c926d91f8bcf062ca5b65163e2ddb1ace1b9f7796b9f5",
+        "bytes": 1040,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/resolve.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/to_file_url.ts",
+        "sha256": "39083fbf00692b4dac795d1780934ef569bd2a2069f68de9345fbe6d572253b1",
+        "bytes": 1076,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/to_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/to_namespaced_path.ts",
+        "sha256": "f75eb17e244c5b6c090378af775eed6ecba528421ad9a8bee8dc937b5916a1c2",
+        "bytes": 1012,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/to_namespaced_path.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/types.ts",
+        "sha256": "8deab60cec9fdffcf6dc142663504214bbf46f9f8c5f8431131443d042492c5c",
+        "bytes": 976,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/types.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/_util.ts",
+        "sha256": "2f08e09d7f056b39a7d25b006172c418f6b713f13dccab72644597105d03544f",
+        "bytes": 807,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/_util.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/basename.ts",
+        "sha256": "3cae4a439e60d6e6683cacdaa688c586cc99e6fa3849f065ce7aa396b9ed1533",
+        "bytes": 2072,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/basename.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/constants.ts",
+        "sha256": "c85dbcaa9fa02360455783a189f9095ab93927428c7eb7827f2ad2d14cdb4d8c",
+        "bytes": 497,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/constants.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/dirname.ts",
+        "sha256": "71285ac91f04ee235af1748b8f6e2bf0f6367894bd093eb780a89dbc6223bd48",
+        "bytes": 3385,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/dirname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/extname.ts",
+        "sha256": "bc42a2003d9851c8204f18e95293f0e8d038ddbe627fe725a7e4dbecac7fafb1",
+        "bytes": 2793,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/extname.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/format.ts",
+        "sha256": "15ddd7a590ff53a46542e700f4950678872bbd6bb8f938b87657646cd9d484c2",
+        "bytes": 793,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/format.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/from_file_url.ts",
+        "sha256": "d233154b7ddf26a8310bfa078c311fd901b8daa1033181b51196a3ae95faf5ce",
+        "bytes": 1168,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/from_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/glob_to_regexp.ts",
+        "sha256": "14ef8ee07fb12160f350425f28276c6c6dba1f3a0612dfb137ed9f63c2b23b96",
+        "bytes": 3754,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/glob_to_regexp.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/is_absolute.ts",
+        "sha256": "97528340499c2f4353e7f8c4a7fc783c98678193ddb2917a15ccb33760e32ed9",
+        "bytes": 1092,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/is_absolute.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/join.ts",
+        "sha256": "612ca3e30576536ce78b0beb9a2cfb36d1260f1ac9498bed1d477b3aee12e956",
+        "bytes": 2748,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/join.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/join_globs.ts",
+        "sha256": "581794c26dedad721c703df7bf210c36e72a0dbf0721891321fcc69a4d7faa44",
+        "bytes": 1280,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/join_globs.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/normalize.ts",
+        "sha256": "2713ffd1098ab564815985f374077b7b045525a4e01885c0aecb90eae173de90",
+        "bytes": 4073,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/normalize.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/normalize_glob.ts",
+        "sha256": "4fb4d9fbd9ef9e4201568b07a91df3684ff3e0da7b5155538fbc03fca712ccb9",
+        "bytes": 1309,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/normalize_glob.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/parse.ts",
+        "sha256": "2842f96b4e08a3af33b073122049eb33b1c7ad920d6e6bbc5fc1bc00e6a70031",
+        "bytes": 5320,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/parse.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/relative.ts",
+        "sha256": "696bb4e5f00ea6dab9762ac52e020e5a929dc1c089b1c65cc880c552954379a0",
+        "bytes": 4321,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/relative.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/resolve.ts",
+        "sha256": "fcf2a48dfbb8b1f6b9c9ca1e471a0f6a6486dd6adca2ef03de6511da5177f57c",
+        "bytes": 4926,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/resolve.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/to_file_url.ts",
+        "sha256": "823328ba7840d8fb7e21c68de6131088a562f42ce829f51f3914fe56c3160aa2",
+        "bytes": 1271,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/to_file_url.ts"
+      },
+      {
+        "path": "vendor/js/jsr.io/@std/path/1.1.6/windows/to_namespaced_path.ts",
+        "sha256": "d0c113e0c72abd98081f1c7ebbb16b3ef12c6a6d38ba5502f5f80b4e1a0f9fbd",
+        "bytes": 1766,
+        "sourceUrl": "https://jsr.io/@std/path/1.1.6/windows/to_namespaced_path.ts"
+      }
+    ]
+  },
+  "libs": [
+    {
+      "path": "vendor/lib/darwin-arm64/libpty_arm64.dylib",
+      "sha256": "9ef80c02777bd7bd64ba5a1a0a52203ce1b7c216badf588059eb9e4a86b6d51c",
+      "bytes": 654480,
+      "sourceUrl": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0/libpty_arm64.dylib",
+      "os": "darwin",
+      "arch": "arm64"
+    },
+    {
+      "path": "vendor/lib/darwin-x64/libpty_x86_64.dylib",
+      "sha256": "a293569b09dd50d2a69b8bb1cf637d3d95855e9882b2560994166307154ac22c",
+      "bytes": 653972,
+      "sourceUrl": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0/libpty_x86_64.dylib",
+      "os": "darwin",
+      "arch": "x64"
+    },
+    {
+      "path": "vendor/lib/linux-arm64/libpty_aarch64.so",
+      "sha256": "d1ba3d53e3e18962faa76f903809420a7a8038bbd79524865479218caf7191e9",
+      "bytes": 725528,
+      "sourceUrl": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0/libpty_aarch64.so",
+      "os": "linux",
+      "arch": "arm64"
+    },
+    {
+      "path": "vendor/lib/linux-x64/libpty_x86_64.so",
+      "sha256": "b69e40b779edd4978a83ff4a1fa52b570c713a5e826a721dc637246b4000c66a",
+      "bytes": 761232,
+      "sourceUrl": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0/libpty_x86_64.so",
+      "os": "linux",
+      "arch": "x64"
+    },
+    {
+      "path": "vendor/lib/windows-x64/pty.dll",
+      "sha256": "7f5e1247e1345563f189692c54892e9716de14f1205908bd480de618ae9b4d4a",
+      "bytes": 524288,
+      "sourceUrl": "https://github.com/sigmaSd/deno-pty-ffi/releases/download/0.42.0/pty.dll",
+      "os": "windows",
+      "arch": "x64"
+    }
+  ]
+}

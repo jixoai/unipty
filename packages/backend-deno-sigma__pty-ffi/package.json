@@ -23,9 +23,10 @@
     "vendor"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build:vendor": "deno run -A scripts/vendor.sh.ts",
+    "build": "deno run -A scripts/vendor.sh.ts --ensure && tsdown && deno run -A scripts/vendor.sh.ts --check",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "deno test -A test/"
+    "test": "deno test -A --no-check test/"
   },
   "dependencies": {
     "unipty": "workspace:*"
