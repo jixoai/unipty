@@ -21,9 +21,9 @@
  *   physical `pty_close` runs only after the child exits (or on a read
  *   failure), when it can no longer kill a live child. `terminate()`
  *   signals the child by its discovered pid (`Deno.kill`) and never touches
- *   the transport; when pid discovery is impossible it fails explicitly
- *   with `unsupported` instead of collapsing into the kill-and-close
- *   primitive.
+ *   the transport; when pid discovery is impossible, or the signal cannot be
+ *   delivered, it fails explicitly with `unsupported` instead of collapsing
+ *   into the kill-and-close primitive or masquerading as acceptance.
  * - The child exit code is observable only through reads that return `done`.
  * - The substrate reports exit code `1` for signal-terminated children
  *   (SIGKILL and SIGTERM alike), so `signal` is always `null` here: this
@@ -436,7 +436,18 @@ function listDirectChildPids(): Set<number> | undefined {
  * unavailable listing yields `undefined` and terminate() falls back to the
  * substrate teardown primitive.
  */
+/** Test-only discovery override (see endpoint tests); production is null. */
+let discoveryOverride: ((before: Set<number> | undefined) => number | undefined) | null = null;
+
+/** @internal Test seam: replace pid discovery to exercise degraded hosts. */
+export function __setPidDiscoveryForTests(
+  override: ((before: Set<number> | undefined) => number | undefined) | null,
+): void {
+  discoveryOverride = override;
+}
+
 function discoverSpawnedChildPid(before: Set<number> | undefined): number | undefined {
+  if (discoveryOverride !== null) return discoveryOverride(before);
   if (before === undefined) return undefined;
   const after = listDirectChildPids();
   if (after === undefined) return undefined;
@@ -701,7 +712,6 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
         "terminate() could not locate the child process on this host (pgrep-based discovery unavailable); this substrate offers no kill-without-close primitive",
       );
     }
-    this.#terminated = true;
     const kill = (globalThis as { Deno?: { kill?: (pid: number, signal: string) => void } }).Deno
       ?.kill;
     if (typeof kill !== "function") {
@@ -709,9 +719,21 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
     }
     try {
       kill(pid, "SIGTERM");
-    } catch {
-      // The child already exited (ESRCH): the pump's own observation
-      // settles exited; there is nothing left to signal.
+    } catch (cause) {
+      // Only "process not found" means the child already exited (ESRCH):
+      // the pump's own observation settles exited and there is nothing left
+      // to signal. Any other failure (permissions revoked at runtime, invalid
+      // pid) must surface — a swallowed error would masquerade as acceptance.
+      const name = (cause as { name?: string }).name;
+      const code = (cause as { code?: string }).code;
+      if (name !== "NotFound" && code !== "NotFound") {
+        throw new UniPtyError("unsupported", "terminate() failed to signal the child process", {
+          cause,
+        });
+      }
     }
+    // The request was delivered (or the child was already gone): mark only
+    // now so an earlier failure leaves terminate() retryable.
+    this.#terminated = true;
   }
 }

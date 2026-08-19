@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  actions: read
 
 jobs:
   verify-route-coverage:
@@ -36,16 +37,21 @@ jobs:
       - id: identity
         run: echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
       - name: Aggregate the deterministic release catalog (validates schema, identity, tuple, uniqueness, route coverage)
-        run: >-
-          node packages/conformance/runners/aggregate.ts
-          --evidence /tmp/release-evidence/node-pty-evidence.json
-          --evidence /tmp/release-evidence/bun-evidence.json
-          --evidence /tmp/release-evidence/deno-sigma__pty-ffi-evidence.json
-          --metadata /tmp/release-metadata/node.json
-          --metadata /tmp/release-metadata/bun.json
-          --metadata /tmp/release-metadata/deno.json
-          --commit "${GITHUB_SHA}" --release-tag "${GITHUB_REF_NAME}"
-          --out dist-release/catalog.json
+        run: |
+          set -euo pipefail
+          evidence_args=""
+          for file in /tmp/release-evidence/*.json; do
+            evidence_args="$evidence_args --evidence $file"
+          done
+          metadata_args=""
+          for file in /tmp/release-metadata/*.json; do
+            metadata_args="$metadata_args --metadata $file"
+          done
+          # shellcheck disable=SC2086
+          node packages/conformance/runners/aggregate.ts \
+            $evidence_args $metadata_args \
+            --commit "${GITHUB_SHA}" --release-tag "${GITHUB_REF_NAME}" \
+            --out dist-release/catalog.json
       - name: Upload the catalog artifact
         uses: actions/upload-artifact@v4
         with:
@@ -59,6 +65,7 @@ jobs:
     permissions:
       contents: write
       id-token: write
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:

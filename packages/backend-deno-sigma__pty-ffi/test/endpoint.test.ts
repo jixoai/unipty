@@ -302,7 +302,7 @@ Deno.test("resize validates character-cell arguments", async () => {
   await settlePump();
 });
 
-Deno.test("terminate fails explicitly when pid discovery is unavailable", async () => {
+Deno.test("terminate observes the real exit through the live transport (sanity)", async () => {
   // Simulate a host without pgrep: PATH without any pgrep binary. Discovery
   // also tries absolute paths, so point HOME-less env with a PATH that lacks
   // /usr/bin and /bin is unrealistic on macOS; instead the test exercises
@@ -326,3 +326,32 @@ Deno.test("terminate fails explicitly when pid discovery is unavailable", async 
 // UniPtyError("unsupported") BEFORE any teardown (src/index.ts terminate()).
 // The absolute-path candidates make that state unreachable on this macOS
 // test host, so a subprocess simulation would only re-test the normal path.
+
+Deno.test("terminate throws unsupported when pid discovery fails (injected)", async () => {
+  const { __setPidDiscoveryForTests } = await import("../src/index.ts");
+  __setPidDiscoveryForTests(() => undefined);
+  try {
+    const backend = await makeBackend();
+    const endpoint = backend.spawn({ argv: ["/bin/sleep", "30"], cols: 80, rows: 24 });
+    await sleep(250);
+    let threw: string | undefined;
+    try {
+      endpoint.terminate();
+    } catch (error) {
+      threw = (error as { code?: string }).code;
+    }
+    assertEqual(threw, "unsupported");
+    // No cascade: the transport stays usable and the exit observation
+    // remains pending rather than being settled by teardown.
+    assertEqual(endpoint.write({ kind: "text", text: "x" }), true);
+    const pending = await Promise.race([
+      endpoint.exited.then(() => false),
+      sleep(300).then(() => true),
+    ]);
+    assertEqual(pending, true);
+    endpoint.close();
+    await settlePump();
+  } finally {
+    __setPidDiscoveryForTests(null);
+  }
+});

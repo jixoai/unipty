@@ -32,8 +32,12 @@ const conformanceDir = join(repoRoot, "packages/conformance");
 mkdirSync(join(conformanceDir, "reports"), { recursive: true });
 mkdirSync(join(conformanceDir, "evidence"), { recursive: true });
 
-const reportOut = join(conformanceDir, "reports", `${route}-report.json`);
-const evidenceOut = join(conformanceDir, "evidence", `${route}-evidence.json`);
+// Tuple-unique output names: the CI matrix runs one route per OS, and the
+// release collector keeps every distinct tuple — a fixed route name would
+// silently overwrite a sibling platform's record.
+const tupleSuffix = `${process.platform}-${process.arch}`;
+const reportOut = join(conformanceDir, "reports", `${route}-${tupleSuffix}-report.json`);
+const evidenceOut = join(conformanceDir, "evidence", `${route}-${tupleSuffix}-evidence.json`);
 const commands = {
   node: [
     "node",

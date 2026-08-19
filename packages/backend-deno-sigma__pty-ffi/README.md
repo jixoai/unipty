@@ -100,15 +100,15 @@ This adapter maps the substrate honestly rather than papering over it:
   settleable. Endpoint `terminate()` never calls `pty_close` on a live child:
   the child pid (discovered by diffing this process's direct children around
   the synchronous spawn, since the substrate does not expose it) is signalled
-  with `SIGTERM` through `Deno.kill`, and the live transport observes the real
-  exit. Only when pid discovery was impossible does terminate fall back to
-  `pty_close`, where an unobserved exit settles as `{ exitCode: null, signal:
-null }`.
+  with `SIGTERM`, and the live transport observes the real exit. When pid
+  discovery was impossible — or the signal could not be delivered for any
+  reason other than the child already being gone — `terminate()` fails
+  explicitly with `unsupported`; it never collapses into `pty_close`.
 - **Exit observation is read-based.** The exit code is only observable through
   reads that report completion. A terminate-by-pid exit is observed normally;
-  only the rare fallback path (or a read failure) leaves the result
-  unobserved as `{ exitCode: null, signal: null }`. An already-established
-  observation survives close and is returned repeatably.
+  a read failure leaves the result unobserved as `{ exitCode: null, signal:
+null }`. An already-established observation survives close and is returned
+  repeatably.
 - **Signals are not distinguishable.** The substrate reports exit code `1` for
   signal-terminated children (SIGKILL and SIGTERM alike), so `signal` is
   always `null` on this route; this Backend never fabricates a signal name.
