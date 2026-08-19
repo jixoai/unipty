@@ -62,6 +62,11 @@ export class OutputPump {
     void this.run();
   }
 
+  /** Whether a public view is currently established and not yet detached. */
+  get hasActiveView(): boolean {
+    return this.activeView !== null;
+  }
+
   private async run(): Promise<void> {
     try {
       for (;;) {
@@ -76,6 +81,7 @@ export class OutputPump {
         if (done) {
           this.transportEof = true;
           this.activeView?.complete();
+          this.activeView = null;
           return;
         }
         if (value !== undefined) this.deliver(value);
@@ -86,6 +92,7 @@ export class OutputPump {
       if (this.stopped) return;
       this.transportError = error;
       this.activeView?.fail(error);
+      this.activeView = null;
     }
   }
 
@@ -137,8 +144,10 @@ export class OutputPump {
     }
     if (this.transportEof) {
       view.complete();
+      this.activeView = null;
     } else if (this.transportError !== null) {
       view.fail(this.transportError);
+      this.activeView = null;
     }
   }
 

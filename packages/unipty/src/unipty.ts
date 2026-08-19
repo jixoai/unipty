@@ -78,6 +78,14 @@ class PtyImpl implements Pty {
         'stream({ encoding: "bytes" }) requires a Backend that exposes native Terminal Bytes; re-encoded text is never claimed as native bytes',
       );
     }
+    if (this.pump.hasActiveView) {
+      // One Terminal Stream per PTY: the established view must detach
+      // (cancel or complete) before a new one may be created.
+      throw new UniPtyError(
+        "active-stream",
+        "a Terminal Stream is already established for this PTY; cancel it before creating another",
+      );
+    }
     const stream = new ReadableStream<string | Uint8Array>({
       start: (controller) => {
         this.pump.attachView(createOutputView(options.encoding, controller));
@@ -231,6 +239,11 @@ export class UniPty<TBackend extends ReadyPtyBackend = ReadyPtyBackend> {
   }
 
   private async runDisposal(): Promise<void> {
+    // Yield once so `this.disposal` is assigned before any code observed
+    // through the Backend can re-enter: a Backend that synchronously calls
+    // spawn() or dispose() from inside its own dispose() must already see
+    // the blocked-spawn / repeated-disposal state.
+    await Promise.resolve();
     // Wait for every existing PTY to close through its own lifecycle;
     // disposal neither closes nor terminates them.
     while (this.ptys.size > 0) {

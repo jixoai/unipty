@@ -25,15 +25,45 @@ const entries = readdirSync(packagesDir).filter((entry) => {
   return statSync(p).isDirectory() && !entry.startsWith(".");
 });
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function parsePackageJson(pkgPath: string, entry: string): Pkg {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(readFileSync(pkgPath, "utf8")) as unknown;
+  } catch (cause) {
+    throw new Error(`invalid package.json in ${entry}: ${(cause as Error).message}`);
+  }
+  if (!isRecord(raw) || typeof raw.name !== "string") {
+    throw new Error(`invalid package.json in ${entry}: missing string "name"`);
+  }
+  for (const key of ["dependencies", "devDependencies", "peerDependencies"] as const) {
+    const value: unknown = raw[key];
+    if (value !== undefined && !isRecord(value)) {
+      throw new Error(`invalid package.json in ${entry}: "${key}" must be an object`);
+    }
+  }
+  return raw as unknown as Pkg;
+}
+
 const packages = new Map<string, { dir: string; pkg: Pkg }>();
+const malformed: string[] = [];
 for (const entry of entries) {
   const pkgPath = join(packagesDir, entry, "package.json");
   try {
-    const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as Pkg;
+    const pkg = parsePackageJson(pkgPath, entry);
     packages.set(pkg.name, { dir: entry, pkg });
-  } catch {
-    console.error(`[check:arch] skip ${entry}: no readable package.json`);
+  } catch (cause) {
+    malformed.push((cause as Error).message);
   }
+}
+// A malformed workspace manifest is itself an architecture failure: it must
+// not be silently skipped or checked with a wrong structure.
+if (malformed.length > 0) {
+  console.error(`[check:arch] FAILED\n${malformed.map((f) => `- ${f}`).join("\n")}`);
+  process.exit(1);
 }
 
 const failures: string[] = [];

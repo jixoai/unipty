@@ -62,6 +62,9 @@ export interface BackendEndpoint {
   /**
    * Backend-owned capabilities exposed to the public Pty, matched by token
    * object identity. Absent or a token not present here yields `undefined`.
+   * Type agreement between a token and its registered payload is a Backend
+   * responsibility; Core treats payloads as opaque and cannot verify it at
+   * runtime.
    */
   readonly capabilities?: ReadonlyMap<CapabilityToken<unknown>, unknown>;
 
