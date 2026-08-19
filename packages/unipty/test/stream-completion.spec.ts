@@ -23,9 +23,7 @@ describe("transport EOF", () => {
     endpoint.endOutput();
     await flushMicrotasks();
     // The retained pre-first-view chunk is delivered in order, then EOF.
-    expect(await collectStream(pty.stream({ encoding: "utf8" }))).toEqual([
-      "bootstrap-before-eof",
-    ]);
+    expect(await collectStream(pty.stream({ encoding: "utf8" }))).toEqual(["bootstrap-before-eof"]);
     // The first view is complete; a second view gets no replay.
     expect(await collectStream(pty.stream({ encoding: "utf8" }))).toEqual([]);
   });
@@ -98,6 +96,6 @@ describe("stream and exit independence", () => {
       result,
       result,
       result,
-  ]);
+    ]);
   });
 });

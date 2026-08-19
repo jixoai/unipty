@@ -70,8 +70,5 @@ export function dirname(path: string | URL): string {
     return isPosixPathSeparator(path.charCodeAt(0)) ? "/" : ".";
   }
 
-  return stripTrailingSeparators(
-    path.slice(0, end),
-    isPosixPathSeparator,
-  );
+  return stripTrailingSeparators(path.slice(0, end), isPosixPathSeparator);
 }

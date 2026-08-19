@@ -21,13 +21,7 @@ import type {
   NestedCrossRecord,
   OsRecord,
 } from "./types.ts";
-import {
-  cacheDir,
-  denoCacheDir,
-  isFile,
-  stringToURL,
-  urlToFilename,
-} from "./util.ts";
+import { cacheDir, denoCacheDir, isFile, stringToURL, urlToFilename } from "./util.ts";
 
 /**
  * A list of all possible system architectures.
@@ -93,11 +87,7 @@ function getCrossOption<T>(record?: NestedCrossRecord<T>): T | undefined {
   if (ALL_OSS.some((os) => os in record)) {
     const subrecord = (record as OsRecord<T>)[Deno.build.os];
 
-    if (
-      subrecord &&
-      typeof subrecord === "object" &&
-      ALL_ARCHS.some((arch) => arch in subrecord)
-    ) {
+    if (subrecord && typeof subrecord === "object" && ALL_ARCHS.some((arch) => arch in subrecord)) {
       return (subrecord as ArchRecord<T>)[Deno.build.arch];
     } else {
       return subrecord as T;
@@ -107,11 +97,7 @@ function getCrossOption<T>(record?: NestedCrossRecord<T>): T | undefined {
   if (ALL_ARCHS.some((arch) => arch in record)) {
     const subrecord = (record as ArchRecord<T>)[Deno.build.arch];
 
-    if (
-      subrecord &&
-      typeof subrecord === "object" &&
-      ALL_OSS.some((os) => os in subrecord)
-    ) {
+    if (subrecord && typeof subrecord === "object" && ALL_OSS.some((os) => os in subrecord)) {
       return (subrecord as OsRecord<T>)[Deno.build.os];
     } else {
       return subrecord as T;
@@ -164,10 +150,7 @@ export function createDownloadURL(options: FetchOptions): URL {
   }
 
   // Assemble automatic cross-platform named urls here
-  if (
-    "name" in options &&
-    !Object.values(options.extensions).includes(extname(url.pathname))
-  ) {
+  if ("name" in options && !Object.values(options.extensions).includes(extname(url.pathname))) {
     if (!url.pathname.endsWith("/")) {
       url.pathname = `${url.pathname}/`;
     }
@@ -177,9 +160,7 @@ export function createDownloadURL(options: FetchOptions): URL {
     const extension = options.extensions[Deno.build.os];
 
     if (options.name === undefined) {
-      throw new TypeError(
-        `Expected the "name" property for an automatically assembled URL.`,
-      );
+      throw new TypeError(`Expected the "name" property for an automatically assembled URL.`);
     }
 
     const filename = `${prefix}${options.name}${suffix}.${extension}`;
@@ -196,9 +177,7 @@ export function createDownloadURL(options: FetchOptions): URL {
  * @param location See the {@link CacheLocation} type
  * @returns The cache location path
  */
-export async function ensureCacheLocation(
-  location: CacheLocation = "deno",
-): Promise<string> {
+export async function ensureCacheLocation(location: CacheLocation = "deno"): Promise<string> {
   if (location === "deno") {
     const dir = denoCacheDir();
 
@@ -227,9 +206,7 @@ export async function ensureCacheLocation(
     location = fromFileUrl(location);
   } else if (location instanceof URL) {
     if (location?.protocol !== "file:") {
-      throw new TypeError(
-        "Cannot use any other protocol than file:// for an URL cache location.",
-      );
+      throw new TypeError("Cannot use any other protocol than file:// for an URL cache location.");
     }
 
     location = fromFileUrl(location);
@@ -250,21 +227,16 @@ export async function ensureCacheLocation(
  */
 export async function download(options: FetchOptions): Promise<string> {
   const location =
-    (typeof options === "object" && "location" in options
-      ? options.location
-      : undefined) ?? "deno";
+    (typeof options === "object" && "location" in options ? options.location : undefined) ?? "deno";
   const setting =
-    (typeof options === "object" && "cache" in options
-      ? options.cache
-      : undefined) ?? "use";
+    (typeof options === "object" && "cache" in options ? options.cache : undefined) ?? "use";
   const url = createDownloadURL(options);
   const directory = await ensureCacheLocation(location);
   const cacheBasePath = join(directory, await urlToFilename(url));
   const cacheFilePath = `${cacheBasePath}${extname(url.pathname)}`;
   const cacheMetaPath = `${cacheBasePath}.metadata.json`;
-  const cached = setting === "use"
-    ? await isFile(cacheFilePath)
-    : setting === "only" || setting !== "reloadAll";
+  const cached =
+    setting === "use" ? await isFile(cacheFilePath) : setting === "only" || setting !== "reloadAll";
 
   await ensureDir(dirname(cacheBasePath));
 
@@ -280,16 +252,11 @@ export async function download(options: FetchOptions): Promise<string> {
           if (response.status === 404) {
             throw new Error(`Could not find ${url}`);
           } else {
-            throw new Deno.errors.Http(
-              `${response.status} ${response.statusText}`,
-            );
+            throw new Deno.errors.Http(`${response.status} ${response.statusText}`);
           }
         }
 
-        await Deno.writeFile(
-          cacheFilePath,
-          new Uint8Array(await response.arrayBuffer()),
-        );
+        await Deno.writeFile(cacheFilePath, new Uint8Array(await response.arrayBuffer()));
         break;
       }
 
@@ -303,9 +270,7 @@ export async function download(options: FetchOptions): Promise<string> {
       }
 
       default: {
-        throw new TypeError(
-          `Cannot fetch to cache using the "${url.protocol}" protocol`,
-        );
+        throw new TypeError(`Cannot fetch to cache using the "${url.protocol}" protocol`);
       }
     }
     await Deno.writeTextFile(cacheMetaPath, JSON.stringify(meta));

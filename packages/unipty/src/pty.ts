@@ -140,8 +140,9 @@ export interface UniPtyOptions<TBackend extends ReadyPtyBackend> {
  * native `Uint8Array` chunks (native `Buffer` values may pass through, but
  * Buffer is not the public type).
  */
-export type TerminalStreamChunk<TEncoding extends PtyStreamEncoding> =
-  TEncoding extends "utf8" ? string : Uint8Array;
+export type TerminalStreamChunk<TEncoding extends PtyStreamEncoding> = TEncoding extends "utf8"
+  ? string
+  : Uint8Array;
 
 /** Re-exported for Backend authors implementing the output source. */
 export type { NativeChunk };

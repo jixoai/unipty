@@ -1,0 +1,59 @@
+name: Deploy site
+
+# Task 8.4: GitHub Pages deployment consumes ONE explicitly selected release
+# catalog artifact, validates it, copies it unchanged into static output,
+# and remains independently retryable — a retry re-consumes the immutable
+# artifact and never republishes packages. CNAME/DNS for unipty.jixoai.com
+# is Owner-managed external configuration.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag whose catalog artifact to deploy"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the release catalog artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >-
+          gh release download "${{ inputs.release_tag }}"
+          --repo "${{ github.repository }}"
+          --pattern "catalog.json" --output catalog-download/catalog.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - name: Build the static site from the exact artifact (production CNAME)
+        run: >-
+          WWW_CNAME=1 WWW_CATALOG=catalog-download/catalog.json
+          node packages/www/scripts/build.mjs
+      - name: Run the automated static checks
+        run: node packages/www/scripts/check-site.mjs catalog-download/catalog.json
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: packages/www/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

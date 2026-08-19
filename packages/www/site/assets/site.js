@@ -11,10 +11,7 @@
 
   function reflect() {
     if (toggle) {
-      toggle.setAttribute(
-        "aria-pressed",
-        root.classList.contains("dark") ? "true" : "false",
-      );
+      toggle.setAttribute("aria-pressed", root.classList.contains("dark") ? "true" : "false");
     }
   }
 
@@ -40,22 +37,20 @@
     button.textContent = "copy";
     button.setAttribute("aria-label", "Copy code to clipboard");
     button.addEventListener("click", function () {
-      navigator.clipboard
-        .writeText(pre.querySelector("code").textContent)
-        .then(
-          function () {
-            button.textContent = "copied";
-            setTimeout(function () {
-              button.textContent = "copy";
-            }, 1200);
-          },
-          function () {
-            button.textContent = "failed";
-            setTimeout(function () {
-              button.textContent = "copy";
-            }, 1200);
-          },
-        );
+      navigator.clipboard.writeText(pre.querySelector("code").textContent).then(
+        function () {
+          button.textContent = "copied";
+          setTimeout(function () {
+            button.textContent = "copy";
+          }, 1200);
+        },
+        function () {
+          button.textContent = "failed";
+          setTimeout(function () {
+            button.textContent = "copy";
+          }, 1200);
+        },
+      );
     });
     pre.appendChild(button);
   });

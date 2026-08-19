@@ -57,35 +57,31 @@ console.log(JSON.stringify(summary));
 }
 
 describe("generated manifest module", () => {
-  it(
-    "evaluates to one default manifest export and defers Backend imports to loaders",
-    async () => {
-      const source = await generateUniPtyBackendManifestModule({
-        candidates: ["@fixture/good-a", "@fixture/good-b"],
-        from: CONSUMER_ROOT,
-      });
-      writeFileSync(GENERATED_PATH, source, "utf8");
-      try {
-        const { summary, stderr } = evaluateGeneratedModule();
-        expect(stderr).toBe("");
-        expect(summary).not.toBeNull();
-        if (summary === null) {
-          return;
-        }
-        // One default export carrying both validated entries.
-        expect(summary.entryCount).toBe(2);
-        expect(summary.packageNames).toEqual(["@fixture/good-a", "@fixture/good-b"]);
-        // Evaluation imports metadata only: no Backend entry was touched.
-        expect(summary.importedDuringEvaluation).toEqual([]);
-        // The deferred loader imports the Backend entry and exposes the
-        // declared factory export.
-        expect(summary.importedAfterLoad).toEqual(["@fixture/good-a"]);
-        expect(summary.factoryType).toBe("function");
-        expect(summary.loadedModuleKeys).toContain("createBackend");
-      } finally {
-        rmSync(GENERATED_PATH, { force: true });
+  it("evaluates to one default manifest export and defers Backend imports to loaders", async () => {
+    const source = await generateUniPtyBackendManifestModule({
+      candidates: ["@fixture/good-a", "@fixture/good-b"],
+      from: CONSUMER_ROOT,
+    });
+    writeFileSync(GENERATED_PATH, source, "utf8");
+    try {
+      const { summary, stderr } = evaluateGeneratedModule();
+      expect(stderr).toBe("");
+      expect(summary).not.toBeNull();
+      if (summary === null) {
+        return;
       }
-    },
-    30000,
-  );
+      // One default export carrying both validated entries.
+      expect(summary.entryCount).toBe(2);
+      expect(summary.packageNames).toEqual(["@fixture/good-a", "@fixture/good-b"]);
+      // Evaluation imports metadata only: no Backend entry was touched.
+      expect(summary.importedDuringEvaluation).toEqual([]);
+      // The deferred loader imports the Backend entry and exposes the
+      // declared factory export.
+      expect(summary.importedAfterLoad).toEqual(["@fixture/good-a"]);
+      expect(summary.factoryType).toBe("function");
+      expect(summary.loadedModuleKeys).toContain("createBackend");
+    } finally {
+      rmSync(GENERATED_PATH, { force: true });
+    }
+  }, 30000);
 });

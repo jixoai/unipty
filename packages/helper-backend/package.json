@@ -3,20 +3,20 @@
   "version": "0.1.0",
   "description": "Build/development helper that generates explicit UniPty Backend manifest modules from ordered candidate inputs; not a runtime dependency.",
   "license": "MIT",
-  "type": "module",
-  "sideEffects": false,
   "bin": {
     "unipty-helper-backend": "./dist/cli.js"
   },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit -p tsconfig.json",

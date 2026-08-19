@@ -2,7 +2,7 @@ USER:
 
 我现在要实现一个叫做 unipty 的项目，我想把 deno/node/bun 对于 PTY 的接口统一，node 这方面社区已经相对固定了，bun 则是有官方的方案，我想问 deno 这边怎么处理？目前我只找到@sigma/pty-ffi，deno 是不是也支持 node 的 @lydell/node-pty 这个包？
 
------
+---
 
 ChatGPT:
 
@@ -14,11 +14,11 @@ ChatGPT:
 
 先说结论：
 
-| 运行时  | 官方 PTY | 社区事实标准                  | 建议     |
-| ---- | ------ | ----------------------- | ------ |
-| Node | ❌      | `node-pty`              | ✅ 直接适配 |
-| Bun  | ✅      | `Bun.spawn({pty:true})` | ✅ 直接适配 |
-| Deno | ❌      | `@sigma/pty-ffi`        | ⚠️ 不建议 |
+| 运行时 | 官方 PTY | 社区事实标准            | 建议        |
+| ------ | -------- | ----------------------- | ----------- |
+| Node   | ❌       | `node-pty`              | ✅ 直接适配 |
+| Bun    | ✅       | `Bun.spawn({pty:true})` | ✅ 直接适配 |
+| Deno   | ❌       | `@sigma/pty-ffi`        | ⚠️ 不建议   |
 
 ---
 
@@ -30,10 +30,10 @@ ChatGPT:
 
 它依赖：
 
-* Node-API（N-API）
-* 原生二进制扩展
-* `node_modules`
-* 预编译的 `.node` 文件
+- Node-API（N-API）
+- 原生二进制扩展
+- `node_modules`
+- 预编译的 `.node` 文件
 
 而 Deno 2 已经支持 Node-API。官方明确说明：
 
@@ -55,8 +55,8 @@ ChatGPT:
 
 官方文档：
 
-* `nodeModulesDir: "auto"`
-* `nodeModulesDir: "manual"`
+- `nodeModulesDir: "auto"`
+- `nodeModulesDir: "manual"`
 
 都是支持原生扩展的推荐方案。([Deno][2])
 
@@ -114,12 +114,12 @@ PTY 又属于最复杂的原生模块之一。
 
 涉及：
 
-* `forkpty()`
-* `openpty()`
-* `ioctl()`
-* `SIGWINCH`
-* `termios`
-* ConPTY（Windows）
+- `forkpty()`
+- `openpty()`
+- `ioctl()`
+- `SIGWINCH`
+- `termios`
+- ConPTY（Windows）
 
 所以：
 
@@ -209,9 +209,9 @@ Rust（portable-pty）
 
 这样：
 
-* Linux → `forkpty`
-* macOS → `forkpty`
-* Windows → ConPTY
+- Linux → `forkpty`
+- macOS → `forkpty`
+- Windows → ConPTY
 
 全部交给 Rust。
 
@@ -225,22 +225,22 @@ Deno、Node、Bun 只负责调用。
 
 例如：
 
-* 生命周期
-* resize
-* pause/resume
-* UTF-8 编码
-* backpressure
-* detach/attach
+- 生命周期
+- resize
+- pause/resume
+- UTF-8 编码
+- backpressure
+- detach/attach
 
 如果 `unipty` 的目标是像 `fetch()` 一样统一三个运行时，那么我建议直接以 **`node-pty` 的 API 作为规范**。
 
 因为：
 
-* VS Code
-* xterm.js
-* OpenCode
-* Claude Code
-* Aider
+- VS Code
+- xterm.js
+- OpenCode
+- Claude Code
+- Aider
 
 这一整条生态链，几乎都是建立在 `node-pty` 之上的。
 
@@ -306,12 +306,12 @@ ConPTY
 
 它已经成了整个 AI Agent 生态的基础设施：
 
-* VS Code
-* xterm.js
-* Hyper
-* Theia
-* OpenSumi
-* Upterm
+- VS Code
+- xterm.js
+- Hyper
+- Theia
+- OpenSumi
+- Upterm
 
 几乎都建立在 `node-pty` 之上。([GitHub][1])
 
@@ -337,12 +337,12 @@ proc.terminal.write("ls\n");
 
 特点：
 
-* 官方支持
-* 不依赖第三方库
-* 可以复用 `Terminal` 对象
-* 支持 `isTTY=true`
-* 支持 ANSI
-* 支持交互式程序
+- 官方支持
+- 不依赖第三方库
+- 可以复用 `Terminal` 对象
+- 支持 `isTTY=true`
+- 支持 ANSI
+- 支持交互式程序
 
 但目前**仅支持 POSIX（Linux/macOS）**，Windows 还不支持。([Bun][2])
 
@@ -402,14 +402,14 @@ forkpty
 
 特点：
 
-* 最成熟
-* API 最稳定
-* Windows 支持最好
+- 最成熟
+- API 最稳定
+- Windows 支持最好
 
 缺点：
 
-* 需要编译
-* 依赖 Node-API
+- 需要编译
+- 依赖 Node-API
 
 ([GitHub][1])
 
@@ -431,13 +431,13 @@ forkpty/ConPTY
 
 特点：
 
-* Linux/macOS/Windows 统一
-* 纯 Rust
-* 非常适合做守护进程
+- Linux/macOS/Windows 统一
+- 纯 Rust
+- 非常适合做守护进程
 
 缺点：
 
-* JS 生态整合较弱
+- JS 生态整合较弱
 
 ---
 
@@ -457,13 +457,13 @@ Node、Rust 基本都依赖它。`winpty` 已经逐渐退出历史舞台。([Git
 
 这个比运行时差异更重要。
 
-| 功能       | Linux | macOS | Windows |
+| 功能     | Linux | macOS | Windows |
 | -------- | ----- | ----- | ------- |
-| forkpty  | ✅     | ✅     | ❌       |
-| openpty  | ✅     | ✅     | ❌       |
-| ConPTY   | ❌     | ❌     | ✅       |
-| SIGWINCH | ✅     | ✅     | ❌       |
-| termios  | ✅     | ✅     | ❌       |
+| forkpty  | ✅    | ✅    | ❌      |
+| openpty  | ✅    | ✅    | ❌      |
+| ConPTY   | ❌    | ❌    | ✅      |
+| SIGWINCH | ✅    | ✅    | ❌      |
+| termios  | ✅    | ✅    | ❌      |
 
 很多 API 根本没法统一。
 
@@ -497,19 +497,19 @@ ResizePseudoConsole(...);
 
 而是先列出能力矩阵。
 
-| 能力                  | Node | Bun | Deno |
+| 能力                | Node | Bun | Deno |
 | ------------------- | ---- | --- | ---- |
-| spawn               | ✅    | ✅   | ✅    |
-| write               | ✅    | ✅   | ✅    |
-| read                | ✅    | ✅   | ✅    |
-| resize              | ✅    | ✅   | ⚠️   |
-| kill                | ✅    | ✅   | ✅    |
-| exit event          | ✅    | ✅   | ✅    |
-| pause               | ✅    | ❓   | ❓    |
-| resume              | ✅    | ❓   | ❓    |
-| flow control        | ✅    | ❓   | ❓    |
-| terminal reuse      | ❌    | ✅   | ❌    |
-| attach existing PTY | ❌    | ❌   | ❌    |
+| spawn               | ✅   | ✅  | ✅   |
+| write               | ✅   | ✅  | ✅   |
+| read                | ✅   | ✅  | ✅   |
+| resize              | ✅   | ✅  | ⚠️   |
+| kill                | ✅   | ✅  | ✅   |
+| exit event          | ✅   | ✅  | ✅   |
+| pause               | ✅   | ❓  | ❓   |
+| resume              | ✅   | ❓  | ❓   |
+| flow control        | ✅   | ❓  | ❓   |
+| terminal reuse      | ❌   | ✅  | ❌   |
+| attach existing PTY | ❌   | ❌  | ❌   |
 
 ---
 

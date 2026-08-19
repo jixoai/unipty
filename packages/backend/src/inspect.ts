@@ -30,9 +30,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function isBackendResolvedReport(
-  value: unknown,
-): value is BackendResolvedReport {
+export function isBackendResolvedReport(value: unknown): value is BackendResolvedReport {
   return (
     isPlainObject(value) &&
     value.status === "resolved" &&
@@ -115,10 +113,9 @@ export async function inspectUniPtyBackend(
   options?: InspectUniPtyBackendOptions,
 ): Promise<BackendInspectReport> {
   if (!isBackendResolvedReport(resolution)) {
-    throwInvalidArgument(
-      "inspectUniPtyBackend accepts only a resolved BackendResolveReport",
-      { resolution },
-    );
+    throwInvalidArgument("inspectUniPtyBackend accepts only a resolved BackendResolveReport", {
+      resolution,
+    });
   }
 
   if (resolution.metadataUrl === undefined) {
@@ -163,8 +160,7 @@ export async function inspectUniPtyBackend(
     const diagnostics: BackendDiagnostic[] = [
       {
         code: "metadata-invalid",
-        message:
-          "Metadata module does not default-export a valid UniPtyBackendMetadata value",
+        message: "Metadata module does not default-export a valid UniPtyBackendMetadata value",
       },
     ];
     if (error instanceof Error && "issues" in error) {
@@ -185,11 +181,7 @@ export async function inspectUniPtyBackend(
 
   const environment = analyzeRuntime();
   const coreProtocol = options?.protocol ?? UNIPTY_CORE_PROTOCOL_MAJOR;
-  const evaluation = evaluateBackendCompatibility(
-    metadata,
-    environment,
-    coreProtocol,
-  );
+  const evaluation = evaluateBackendCompatibility(metadata, environment, coreProtocol);
 
   if (!evaluation.compatible) {
     return {

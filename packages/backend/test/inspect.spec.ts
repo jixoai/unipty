@@ -6,15 +6,8 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UNIPTY_CORE_PROTOCOL_MAJOR } from "unipty";
-import {
-  inspectUniPtyBackend,
-  resolveUniPtyBackend,
-} from "../src/index.ts";
-import {
-  consumerFixtureDir,
-  fixtureImports,
-  resetFixtureImports,
-} from "./setup.ts";
+import { inspectUniPtyBackend, resolveUniPtyBackend } from "../src/index.ts";
+import { consumerFixtureDir, fixtureImports, resetFixtureImports } from "./setup.ts";
 
 const from = consumerFixtureDir("consumer-single");
 
@@ -74,9 +67,7 @@ describe("inspectUniPtyBackend", () => {
   });
 
   it("reports incompatible when the protocol major is absent", async () => {
-    const report = await inspectUniPtyBackend(
-      await resolved("@fixture/incompatible-protocol"),
-    );
+    const report = await inspectUniPtyBackend(await resolved("@fixture/incompatible-protocol"));
     expect(report.status).toBe("incompatible");
     if (report.status !== "incompatible") {
       return;
@@ -110,33 +101,30 @@ describe("inspectUniPtyBackend", () => {
 
   it("prefilters targets by os, arch, and libc arrays", async () => {
     // Broad arrays include every current value.
-    expect(
-      (await inspectUniPtyBackend(await resolved("@fixture/os-broad"))).status,
-    ).toBe("compatible");
-    expect(
-      (await inspectUniPtyBackend(await resolved("@fixture/arch-broad"))).status,
-    ).toBe("compatible");
+    expect((await inspectUniPtyBackend(await resolved("@fixture/os-broad"))).status).toBe(
+      "compatible",
+    );
+    expect((await inspectUniPtyBackend(await resolved("@fixture/arch-broad"))).status).toBe(
+      "compatible",
+    );
 
     // Never-matching arrays exclude every current value.
-    expect(
-      (await inspectUniPtyBackend(await resolved("@fixture/os-never"))).status,
-    ).toBe("incompatible");
-    expect(
-      (await inspectUniPtyBackend(await resolved("@fixture/arch-never"))).status,
-    ).toBe("incompatible");
-    expect(
-      (await inspectUniPtyBackend(await resolved("@fixture/libc-never"))).status,
-    ).toBe("incompatible");
+    expect((await inspectUniPtyBackend(await resolved("@fixture/os-never"))).status).toBe(
+      "incompatible",
+    );
+    expect((await inspectUniPtyBackend(await resolved("@fixture/arch-never"))).status).toBe(
+      "incompatible",
+    );
+    expect((await inspectUniPtyBackend(await resolved("@fixture/libc-never"))).status).toBe(
+      "incompatible",
+    );
 
     // A libc-restricted Linux target matches only Linux+glibc hosts; the
     // expectation is derived from the actual host, never assumed.
-    const libcReport = await inspectUniPtyBackend(
-      await resolved("@fixture/libc-linux-glibc"),
-    );
+    const libcReport = await inspectUniPtyBackend(await resolved("@fixture/libc-linux-glibc"));
     let hostIsGlibcLinux = false;
     if (process.platform === "linux" && process.report !== undefined) {
-      const header = (process.report.getReport() as { header?: Record<string, unknown> })
-        .header;
+      const header = (process.report.getReport() as { header?: Record<string, unknown> }).header;
       hostIsGlibcLinux = header !== undefined && "glibcVersionRuntime" in header;
     }
     expect(libcReport.status).toBe(hostIsGlibcLinux ? "compatible" : "incompatible");
@@ -144,9 +132,9 @@ describe("inspectUniPtyBackend", () => {
 
   it("throws invalid-argument for a non-resolved report", async () => {
     const unresolved = await resolveUniPtyBackend("@fixture/does-not-exist", { from });
-    await expect(
-      inspectUniPtyBackend(unresolved as never),
-    ).rejects.toMatchObject({ code: "invalid-argument" });
+    await expect(inspectUniPtyBackend(unresolved as never)).rejects.toMatchObject({
+      code: "invalid-argument",
+    });
     await expect(inspectUniPtyBackend(null as never)).rejects.toMatchObject({
       code: "invalid-argument",
     });

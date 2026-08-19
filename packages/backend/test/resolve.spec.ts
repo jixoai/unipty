@@ -81,9 +81,9 @@ describe("resolveUniPtyBackend", () => {
     await expect(resolveUniPtyBackend("", { from })).rejects.toMatchObject({
       code: "invalid-argument",
     });
-    await expect(
-      resolveUniPtyBackend("   " as string, { from }),
-    ).rejects.toMatchObject({ code: "invalid-argument" });
+    await expect(resolveUniPtyBackend("   " as string, { from })).rejects.toMatchObject({
+      code: "invalid-argument",
+    });
   });
 
   it("accepts file URL strings and URL objects as from", async () => {

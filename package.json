@@ -4,15 +4,6 @@
   "private": true,
   "description": "UniPty monorepo: runtime-neutral PTY Core, acquisition layer, and official Backends for Node, Bun, and Deno.",
   "license": "MIT",
-  "packageManager": "pnpm@10.22.0",
-  "engines": {
-    "node": ">=22"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "node-pty"
-    ]
-  },
   "scripts": {
     "build": "pnpm -r --filter './packages/*' --filter '!@unipty/www' build",
     "typecheck": "pnpm -r --filter './packages/*' --filter '!@unipty/www' typecheck",
@@ -31,5 +22,14 @@
     "tsdown": "^0.22.14",
     "typescript": "~5.9.3",
     "vitest": "^4.1.11"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "node-pty"
+    ]
   }
 }

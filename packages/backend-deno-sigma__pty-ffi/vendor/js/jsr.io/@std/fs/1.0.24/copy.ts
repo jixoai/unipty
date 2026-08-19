@@ -58,9 +58,7 @@ async function ensureValidCopy(
   }
 
   if (options.isFolder && !destStat.isDirectory) {
-    throw new Error(
-      `Cannot overwrite non-directory '${dest}' with directory '${src}'`,
-    );
+    throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'`);
   }
   if (!options.overwrite) {
     throw new Deno.errors.AlreadyExists(`'${dest}' already exists.`);
@@ -85,9 +83,7 @@ function ensureValidCopySync(
   }
 
   if (options.isFolder && !destStat.isDirectory) {
-    throw new Error(
-      `Cannot overwrite non-directory '${dest}' with directory '${src}'`,
-    );
+    throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'`);
   }
   if (!options.overwrite) {
     throw new Deno.errors.AlreadyExists(`'${dest}' already exists`);
@@ -97,11 +93,7 @@ function ensureValidCopySync(
 }
 
 /* copy file to dest */
-async function copyFile(
-  src: string | URL,
-  dest: string | URL,
-  options: InternalCopyOptions,
-) {
+async function copyFile(src: string | URL, dest: string | URL, options: InternalCopyOptions) {
   await ensureValidCopy(src, dest, options);
   await Deno.copyFile(src, dest);
   if (options.preserveTimestamps) {
@@ -112,11 +104,7 @@ async function copyFile(
   }
 }
 /* copy file to dest synchronously */
-function copyFileSync(
-  src: string | URL,
-  dest: string | URL,
-  options: InternalCopyOptions,
-) {
+function copyFileSync(src: string | URL, dest: string | URL, options: InternalCopyOptions) {
   ensureValidCopySync(src, dest, options);
   Deno.copyFileSync(src, dest);
   if (options.preserveTimestamps) {
@@ -128,11 +116,7 @@ function copyFileSync(
 }
 
 /* copy symlink to dest */
-async function copySymLink(
-  src: string | URL,
-  dest: string | URL,
-  options: InternalCopyOptions,
-) {
+async function copySymLink(src: string | URL, dest: string | URL, options: InternalCopyOptions) {
   await ensureValidCopy(src, dest, options);
   const originSrcFilePath = await Deno.readLink(src);
   const type = getFileInfoType(await Deno.lstat(src));
@@ -152,11 +136,7 @@ async function copySymLink(
 }
 
 /* copy symlink to dest synchronously */
-function copySymlinkSync(
-  src: string | URL,
-  dest: string | URL,
-  options: InternalCopyOptions,
-) {
+function copySymlinkSync(src: string | URL, dest: string | URL, options: InternalCopyOptions) {
   ensureValidCopySync(src, dest, options);
   const originSrcFilePath = Deno.readLinkSync(src);
   const type = getFileInfoType(Deno.lstatSync(src));
@@ -177,11 +157,7 @@ function copySymlinkSync(
 }
 
 /* copy folder from src to dest. */
-async function copyDir(
-  src: string | URL,
-  dest: string | URL,
-  options: CopyOptions,
-) {
+async function copyDir(src: string | URL, dest: string | URL, options: CopyOptions) {
   const destStat = await ensureValidCopy(src, dest, {
     ...options,
     isFolder: true,
@@ -219,11 +195,7 @@ async function copyDir(
 }
 
 /* copy folder from src to dest synchronously */
-function copyDirSync(
-  src: string | URL,
-  dest: string | URL,
-  options: CopyOptions,
-) {
+function copyDirSync(src: string | URL, dest: string | URL, options: CopyOptions) {
   const destStat = ensureValidCopySync(src, dest, {
     ...options,
     isFolder: true,
@@ -303,11 +275,7 @@ function copyDirSync(
  * This will copy the file or directory at `./foo` to `./bar` and set the
  * last modification and access times to the ones of the original source files.
  */
-export async function copy(
-  src: string | URL,
-  dest: string | URL,
-  options: CopyOptions = {},
-) {
+export async function copy(src: string | URL, dest: string | URL, options: CopyOptions = {}) {
   src = resolve(toPathString(src));
   dest = resolve(toPathString(dest));
 
@@ -318,9 +286,7 @@ export async function copy(
   const srcStat = await Deno.lstat(src);
 
   if (srcStat.isDirectory && isSubdir(src, dest)) {
-    throw new Error(
-      `Cannot copy '${src}' to a subdirectory of itself: '${dest}'`,
-    );
+    throw new Error(`Cannot copy '${src}' to a subdirectory of itself: '${dest}'`);
   }
 
   if (srcStat.isSymlink) {
@@ -379,11 +345,7 @@ export async function copy(
  * This will copy the file or directory at `./foo` to `./bar` and set the
  * last modification and access times to the ones of the original source files.
  */
-export function copySync(
-  src: string | URL,
-  dest: string | URL,
-  options: CopyOptions = {},
-) {
+export function copySync(src: string | URL, dest: string | URL, options: CopyOptions = {}) {
   src = resolve(toPathString(src));
   dest = resolve(toPathString(dest));
 
@@ -394,9 +356,7 @@ export function copySync(
   const srcStat = Deno.lstatSync(src);
 
   if (srcStat.isDirectory && isSubdir(src, dest)) {
-    throw new Error(
-      `Cannot copy '${src}' to a subdirectory of itself: '${dest}'`,
-    );
+    throw new Error(`Cannot copy '${src}' to a subdirectory of itself: '${dest}'`);
   }
 
   if (srcStat.isSymlink) {

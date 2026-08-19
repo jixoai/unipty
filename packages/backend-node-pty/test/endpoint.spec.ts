@@ -268,3 +268,45 @@ describe("Endpoint lifecycle", () => {
     reader.releaseLock();
   }, 20_000);
 });
+
+describe("writeDecode decoder isolation and bounded write queue", () => {
+  it("keeps decoder state per PTY: split sequences never leak across endpoints", async () => {
+    const backend = await createNodePtyBackend({ encoding: "utf8", writeDecode: true });
+    const env = { PATH: "/usr/bin:/bin" };
+    const a = backend.spawn(launch(["/bin/sh", "-c", "sleep 5"], { env }));
+    const b = backend.spawn(launch(["/bin/sh", "-c", "sleep 5"], { env }));
+    // "€" = E2 82 AC: the prefix goes to A, the suffix to B.
+    a.write({ kind: "bytes", bytes: new Uint8Array([0xe2]) });
+    b.write({ kind: "bytes", bytes: new Uint8Array([0x82, 0xac]) });
+    const text = await readOutputText(b, (acc) => acc.includes("\u20ac") || acc.length > 0, 2_000);
+    expect(text.includes("\u20ac")).toBe(false);
+    cleanupEndpoint(a);
+    cleanupEndpoint(b);
+  });
+
+  it("rejects a whole value with backpressure at the hard bound and recovers via drain", async () => {
+    const backend = await createNodePtyBackend({ writeQueueBytes: 4096 });
+    const endpoint = backend.spawn(launch(["/bin/cat"], { env: { PATH: "/usr/bin:/bin" } }));
+    let sawFalseReadiness = false;
+    let saturated = false;
+    for (let i = 0; i < 32; i += 1) {
+      try {
+        const readiness = endpoint.write({ kind: "text", text: `${"x".repeat(1023)}\n` });
+        if (readiness === false) {
+          sawFalseReadiness = true;
+          break;
+        }
+      } catch (error) {
+        expect(errorCode(error)).toBe("backpressure");
+        saturated = true;
+        break;
+      }
+    }
+    expect(sawFalseReadiness || saturated).toBe(true);
+    await endpoint.drain();
+    const after = endpoint.write({ kind: "text", text: "after-drain\n" });
+    expect(typeof after).toBe("boolean");
+    await readOutputText(endpoint, (acc) => acc.includes("after-drain"), 10_000);
+    cleanupEndpoint(endpoint);
+  });
+});

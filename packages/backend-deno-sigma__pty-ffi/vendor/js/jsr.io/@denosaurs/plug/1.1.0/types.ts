@@ -20,8 +20,7 @@ export type ArchRecord<T> = { [os in typeof Deno.build.arch]: T };
  * this record.
  */
 export type NestedCrossRecord<T> = Partial<
-  | OsRecord<T | Partial<ArchRecord<T>>>
-  | ArchRecord<T | Partial<OsRecord<T>>>
+  OsRecord<T | Partial<ArchRecord<T>>> | ArchRecord<T | Partial<OsRecord<T>>>
 >;
 
 /**
@@ -149,4 +148,4 @@ export interface NamedOptions {
 export type FetchOptions =
   | string
   | URL
-  | ((((URLOptions | CrossOptions) & Partial<NamedOptions>)) & CacheOptions);
+  | (((URLOptions | CrossOptions) & Partial<NamedOptions>) & CacheOptions);

@@ -44,10 +44,10 @@ runtime — it releases nothing of its own and never touches live PTYs.
 Numeric queue policy is Backend-owned (it is not a UniPty core option). Each
 PTY gets a bounded pending-write queue:
 
-| Setting | Value |
-| --- | --- |
-| Hard bound (`writeQueueBytes` option) | 1 MiB (1048576 bytes) |
-| Soft resume mark | 3/4 of the hard bound (768 KiB) |
+| Setting                               | Value                           |
+| ------------------------------------- | ------------------------------- |
+| Hard bound (`writeQueueBytes` option) | 1 MiB (1048576 bytes)           |
+| Soft resume mark                      | 3/4 of the hard bound (768 KiB) |
 
 `write()` admits one complete value into the queue synchronously, then an
 asynchronous pump hands segments to `Bun.Terminal.write` in order:
@@ -112,3 +112,14 @@ byte-fidelity claim: ConPTY output is surfaced as native Terminal Bytes
 exactly as the substrate reports it — bytes in, bytes out, no re-encoding —
 and consumers that need byte-exact streams should not rely on ConPTY
 rewriting being absent.
+
+## Substrate truth: output buffering
+
+`Bun.Terminal` pushes output through a `data` callback with no transport-level
+flow control, and the substrate's internal reader thread already buffers the
+master side without a bound. Core's bootstrap backpressure therefore pauses
+_its_ pump, but this adapter cannot propagate that pause into the substrate:
+while no consumer drains (for example, a full bootstrap buffer before the
+first view), output accumulates inside Bun's internal buffer. The adapter's
+bounded write queue is the only backpressure boundary this route owns. This
+is a documented substrate limitation, not a UniPty contract change.

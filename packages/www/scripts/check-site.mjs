@@ -36,10 +36,7 @@ import { fileURLToPath } from "node:url";
 import { BuildError, runBuild } from "./build.mjs";
 import { derivePresentation, STATES } from "./lib/catalog.mjs";
 
-const packageRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(packageRoot, "dist");
 const fixtures = [
   path.join(packageRoot, "fixtures", "catalog.dev.json"),
@@ -80,15 +77,9 @@ function checkLinks(pages) {
   for (const page of pages) {
     const html = readFileSync(page, "utf8");
     const ids = new Set([...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]));
-    const refs = [
-      ...html.matchAll(/(?:href|src)="([^"]+)"/g),
-    ].map((m) => m[1]);
+    const refs = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map((m) => m[1]);
     for (const ref of refs) {
-      if (
-        /^(https?:|mailto:|data:|javascript:)/i.test(ref) ||
-        ref === "" ||
-        ref === "#"
-      ) {
+      if (/^(https?:|mailto:|data:|javascript:)/i.test(ref) || ref === "" || ref === "#") {
         continue;
       }
       const [rawPath, frag] = ref.split("#");
@@ -105,8 +96,7 @@ function checkLinks(pages) {
         continue;
       }
       if (frag) {
-        const targetText =
-          target === page ? html : readFileSync(target, "utf8");
+        const targetText = target === page ? html : readFileSync(target, "utf8");
         if (!new Set([...targetText.matchAll(/ id="([^"]+)"/g)].map((m) => m[1])).has(frag)) {
           fail(`${path.basename(page)}: missing anchor #${frag} for ${ref}`);
         }
@@ -126,9 +116,7 @@ function checkStates(pages, presentation, catalog) {
       fail(`compatibility page renders a fourth state: ${value}`);
     }
   }
-  const expectedRows = presentation.routes.flatMap((route) =>
-    route.rows.map((row) => row.state),
-  );
+  const expectedRows = presentation.routes.flatMap((route) => route.rows.map((row) => row.state));
   const tally = (values) => {
     const map = new Map();
     for (const value of values) {
@@ -159,12 +147,8 @@ function checkStates(pages, presentation, catalog) {
 
   // Per-row evidence fidelity: every evidence record from THIS catalog
   // appears exactly once; nothing from another catalog leaks in.
-  const expectedEvidence = catalog.evidence.map(
-    (ev) => `${ev.runtime.name} ${ev.runtime.version}`,
-  );
-  const actualEvidence = [
-    ...html.matchAll(/<strong>([^<]+)<\/strong>/g),
-  ].map((m) => m[1]);
+  const expectedEvidence = catalog.evidence.map((ev) => `${ev.runtime.name} ${ev.runtime.version}`);
+  const actualEvidence = [...html.matchAll(/<strong>([^<]+)<\/strong>/g)].map((m) => m[1]);
   const expectedTallyEv = tally(expectedEvidence);
   const actualTallyEv = tally(actualEvidence);
   for (const [key, count] of expectedTallyEv) {
@@ -194,9 +178,7 @@ const FORBIDDEN_JS_PATTERNS = [
 function checkNoBackendImports(pages) {
   for (const page of pages) {
     const html = readFileSync(page, "utf8");
-    for (const match of html.matchAll(
-      /<script\b([^>]*)>([\s\S]*?)<\/script>/g,
-    )) {
+    for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
       const attrs = match[1];
       const body = match[2];
       const src = /src\s*=\s*"([^"]+)"/.exec(attrs)?.[1];
@@ -316,8 +298,7 @@ function checkCnameGate(lastCatalog) {
 }
 
 const args = process.argv.slice(2);
-const catalogs =
-  args.length > 0 ? args.map((a) => path.resolve(a)) : fixtures;
+const catalogs = args.length > 0 ? args.map((a) => path.resolve(a)) : fixtures;
 
 console.log("unipty www static checks");
 checkMalformedRejection();

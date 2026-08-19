@@ -54,11 +54,7 @@ const FORBIDDEN_KEY_SUBSTRINGS: readonly string[] = [
 
 const TARGET_RUNTIME_TOKENS: readonly string[] = ["node", "bun", "deno"];
 
-const PROVENANCE_KINDS: readonly string[] = [
-  "runtime-native",
-  "third-party",
-  "external-system",
-];
+const PROVENANCE_KINDS: readonly string[] = ["runtime-native", "third-party", "external-system"];
 
 const TOP_LEVEL_KEYS: readonly string[] = [
   "schema",
@@ -110,11 +106,7 @@ function checkKeySet(
   }
 }
 
-function checkStringArray(
-  value: unknown,
-  path: string,
-  issues: MetadataValidationIssue[],
-): void {
+function checkStringArray(value: unknown, path: string, issues: MetadataValidationIssue[]): void {
   if (!Array.isArray(value)) {
     issues.push({ path, message: "must be an array of non-empty strings" });
     return;
@@ -141,9 +133,7 @@ function checkStringArray(
  * every located problem. The validator never imports modules, initializes
  * native resources, or mutates the input.
  */
-export function validateUniPtyBackendMetadata(
-  value: unknown,
-): UniPtyBackendMetadata {
+export function validateUniPtyBackendMetadata(value: unknown): UniPtyBackendMetadata {
   const issues: MetadataValidationIssue[] = [];
 
   if (!isPlainObject(value)) {
@@ -277,10 +267,7 @@ export function validateUniPtyBackendMetadata(
       issues.push({ path: "provenance", message: "must be an object when present" });
     } else {
       checkKeySet(provenance, ["kind", "substrate"], "provenance", issues);
-      if (
-        !isNonEmptyString(provenance.kind) ||
-        !PROVENANCE_KINDS.includes(provenance.kind)
-      ) {
+      if (!isNonEmptyString(provenance.kind) || !PROVENANCE_KINDS.includes(provenance.kind)) {
         issues.push({
           path: "provenance.kind",
           message: `must be one of ${PROVENANCE_KINDS.join(" | ")}`,

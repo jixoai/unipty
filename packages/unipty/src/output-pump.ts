@@ -22,8 +22,15 @@ export interface OutputView {
   enqueue(chunk: NativeChunk): void;
   complete(): void;
   fail(error: unknown): void;
+  /** Pump-managed identity hook releasing the active slot on settlement. */
+  settleHook?: () => void;
 }
 
+/**
+ * Build the representation-converting view used by `pty.stream()`.
+ * `onSettled` runs exactly once when the view completes, fails, or hits a
+ * conversion failure, releasing the pump's one-active-stream slot.
+ */
 function estimateChunkSize(chunk: NativeChunk): number {
   if (chunk.kind === "bytes") return chunk.bytes.byteLength;
   if (chunk.kind === "text") return chunk.text.length * 3;
@@ -127,6 +134,9 @@ export class OutputPump {
   attachView(view: OutputView): void {
     this.activeView = view;
     this.everHadView = true;
+    view.settleHook = () => {
+      if (this.activeView === view) this.activeView = null;
+    };
     if (this.bootstrap.length > 0) {
       const retained = this.bootstrap.splice(0, this.bootstrap.length);
       this.bootstrapBytes = 0;
@@ -168,15 +178,24 @@ export class OutputPump {
   }
 }
 
-/** Build the representation-converting view used by `pty.stream()`. */
+/**
+ * Build the representation-converting view used by `pty.stream()`.
+ *
+ * Settlement law: exactly once across completion, failure, or a conversion
+ * failure (native text on a bytes view), the view releases the pump's
+ * one-active-stream slot through its `settleHook` so the caller may
+ * establish a new view afterwards.
+ */
 export function createOutputView(
   encoding: "utf8" | "bytes",
   controller: ReadableStreamDefaultController<string | Uint8Array>,
 ): OutputView {
   const decoder = encoding === "utf8" ? new TextDecoder("utf-8") : null;
-  return {
+  let settled = false;
+  const view: OutputView = {
     encoding,
     enqueue(chunk: NativeChunk): void {
+      if (settled) return;
       if (encoding === "utf8") {
         if (chunk.kind === "bytes") {
           controller.enqueue(decoder?.decode(chunk.bytes, { stream: true }));
@@ -188,6 +207,7 @@ export function createOutputView(
       }
       if (chunk.kind === "text") {
         // Native text is never re-encoded and claimed as native bytes.
+        settle();
         controller.error(
           new UniPtyError("unsupported", "native Terminal Bytes are unavailable for this PTY", {
             details: { chunkKind: chunk.kind },
@@ -198,6 +218,7 @@ export function createOutputView(
       controller.enqueue(chunk.bytes);
     },
     complete(): void {
+      settle();
       try {
         if (decoder !== null) {
           const tail = decoder.decode();
@@ -209,6 +230,7 @@ export function createOutputView(
       }
     },
     fail(error: unknown): void {
+      settle();
       try {
         controller.error(error);
       } catch {
@@ -216,4 +238,10 @@ export function createOutputView(
       }
     },
   };
+  function settle(): void {
+    if (settled) return;
+    settled = true;
+    view.settleHook?.();
+  }
+  return view;
 }

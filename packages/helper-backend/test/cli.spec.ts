@@ -46,7 +46,7 @@ describe("unipty-helper-backend manifest (built dist)", () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
     expect(result.stdout).toContain('import metadata0 from "@fixture/good-a/unipty.metadata"');
-    expect(result.stdout).toContain('export default defineUniPtyBackendManifest({');
+    expect(result.stdout).toContain("export default defineUniPtyBackendManifest({");
     expect(result.stdout.endsWith("\n")).toBe(true);
   });
 
@@ -60,12 +60,12 @@ describe("unipty-helper-backend manifest (built dist)", () => {
       "--stdout",
     ]);
     expect(result.status).toBe(0);
-    expect(
-      result.stdout.indexOf('import metadata0 from "@fixture/good-b'),
-    ).toBeLessThan(result.stdout.indexOf('import metadata1 from "@fixture/good-a'));
-    expect(
-      result.stdout.indexOf('packageName: "@fixture/good-b"'),
-    ).toBeLessThan(result.stdout.indexOf('packageName: "@fixture/good-a"'));
+    expect(result.stdout.indexOf('import metadata0 from "@fixture/good-b')).toBeLessThan(
+      result.stdout.indexOf('import metadata1 from "@fixture/good-a'),
+    );
+    expect(result.stdout.indexOf('packageName: "@fixture/good-b"')).toBeLessThan(
+      result.stdout.indexOf('packageName: "@fixture/good-a"'),
+    );
   });
 
   it("defaults --from to the current working directory", () => {
@@ -77,14 +77,7 @@ describe("unipty-helper-backend manifest (built dist)", () => {
   it("honors an explicit --from from an unrelated working directory", () => {
     const elsewhere = scratchDir("elsewhere");
     const result = runCli(
-      [
-        "manifest",
-        "--candidate",
-        "@fixture/good-a",
-        "--stdout",
-        "--from",
-        CONSUMER_ROOT,
-      ],
+      ["manifest", "--candidate", "@fixture/good-a", "--stdout", "--from", CONSUMER_ROOT],
       elsewhere,
     );
     expect(result.status).toBe(0);
@@ -93,12 +86,7 @@ describe("unipty-helper-backend manifest (built dist)", () => {
   });
 
   it("rejects a candidate that cannot be resolved with a stderr diagnostic", () => {
-    const result = runCli([
-      "manifest",
-      "--candidate",
-      "@fixture/does-not-exist",
-      "--stdout",
-    ]);
+    const result = runCli(["manifest", "--candidate", "@fixture/does-not-exist", "--stdout"]);
     expect(result.status).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toContain("candidate-unresolved");
@@ -109,13 +97,7 @@ describe("unipty-helper-backend manifest (built dist)", () => {
     const dir = scratchDir("out-mode");
     const outFile = join(dir, "backend.manifest.mjs");
 
-    const first = runCli([
-      "manifest",
-      "--candidate",
-      "@fixture/good-a",
-      "--out",
-      outFile,
-    ]);
+    const first = runCli(["manifest", "--candidate", "@fixture/good-a", "--out", outFile]);
     expect(first.status).toBe(0);
     expect(first.stdout).toBe("");
     expect(existsSync(outFile)).toBe(true);
@@ -123,13 +105,7 @@ describe("unipty-helper-backend manifest (built dist)", () => {
     expect(written).toContain('packageName: "@fixture/good-a"');
 
     // Without --force an existing file is never replaced.
-    const second = runCli([
-      "manifest",
-      "--candidate",
-      "@fixture/good-b",
-      "--out",
-      outFile,
-    ]);
+    const second = runCli(["manifest", "--candidate", "@fixture/good-b", "--out", outFile]);
     expect(second.status).toBe(1);
     expect(second.stderr).toContain("--force");
     expect(readFileSync(outFile, "utf8")).toBe(written);
@@ -178,8 +154,7 @@ describe("unipty-helper-backend manifest (usage errors)", () => {
   it("fails for unknown subcommands and unknown flags", () => {
     expect(runCli(["generate", "--stdout"]).status).toBe(1);
     expect(
-      runCli(["manifest", "--candidate", "@fixture/good-a", "--stdout", "--bogus"])
-        .status,
+      runCli(["manifest", "--candidate", "@fixture/good-a", "--stdout", "--bogus"]).status,
     ).toBe(1);
   });
 });
@@ -221,10 +196,7 @@ describe("main() with injected io", () => {
 
   it("keeps stdout clean on candidate failures", async () => {
     const { io, state } = fakeIo();
-    const code = await main(
-      ["manifest", "--candidate", "@fixture/nope", "--stdout"],
-      io,
-    );
+    const code = await main(["manifest", "--candidate", "@fixture/nope", "--stdout"], io);
     expect(code).toBe(1);
     expect(state.stdoutChunks).toEqual([]);
     expect(state.stderrChunks.join("")).toContain("candidate-unresolved");
@@ -241,19 +213,10 @@ describe("main() with injected io", () => {
     expect(state.files.get("/out/manifest.mjs")).toBe("previous");
 
     const forced = await main(
-      [
-        "manifest",
-        "--candidate",
-        "@fixture/good-a",
-        "--out",
-        "/out/manifest.mjs",
-        "--force",
-      ],
+      ["manifest", "--candidate", "@fixture/good-a", "--out", "/out/manifest.mjs", "--force"],
       io,
     );
     expect(forced).toBe(0);
-    expect(state.files.get("/out/manifest.mjs")).toContain(
-      "defineUniPtyBackendManifest",
-    );
+    expect(state.files.get("/out/manifest.mjs")).toContain("defineUniPtyBackendManifest");
   });
 });

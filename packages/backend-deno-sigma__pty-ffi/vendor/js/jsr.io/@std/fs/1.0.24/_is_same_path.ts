@@ -12,10 +12,7 @@ import { toPathString } from "./_to_path_string.ts";
  *
  * @returns `true` if the paths are the same, `false` otherwise.
  */
-export function isSamePath(
-  src: string | URL,
-  dest: string | URL,
-): boolean {
+export function isSamePath(src: string | URL, dest: string | URL): boolean {
   src = toPathString(src);
   dest = toPathString(dest);
 

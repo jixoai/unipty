@@ -10,11 +10,7 @@ import {
   isBackendReady,
   UniPtyBackendSelectionError,
 } from "../src/index.ts";
-import {
-  consumerFixtureDir,
-  fixtureImports,
-  resetFixtureImports,
-} from "./setup.ts";
+import { consumerFixtureDir, fixtureImports, resetFixtureImports } from "./setup.ts";
 
 describe("autoResolveUniPtyBackend fallback derivation", () => {
   afterEach(() => {
@@ -42,10 +38,7 @@ describe("autoResolveUniPtyBackend fallback derivation", () => {
     expect(error).toBeInstanceOf(UniPtyBackendSelectionError);
     const selection = error as UniPtyBackendSelectionError;
     expect(selection.code).toBe("ambiguous");
-    expect([...selection.candidates].sort()).toEqual([
-      "@fixture/good-a",
-      "@fixture/good-b",
-    ]);
+    expect([...selection.candidates].sort()).toEqual(["@fixture/good-a", "@fixture/good-b"]);
     // Nothing was initialized during ambiguity.
     expect(fixtureImports()).toEqual([]);
   });
@@ -56,9 +49,7 @@ describe("autoResolveUniPtyBackend fallback derivation", () => {
     }).catch((caught: unknown) => caught);
     expect(error).toBeInstanceOf(UniPtyBackendSelectionError);
     expect((error as UniPtyBackendSelectionError).code).toBe("no-compatible-backend");
-    expect(
-      (error as UniPtyBackendSelectionError).diagnostics.length,
-    ).toBeGreaterThan(0);
+    expect((error as UniPtyBackendSelectionError).diagnostics.length).toBeGreaterThan(0);
   });
 
   it("aggregates per-candidate diagnostics when fallback candidates all fail", async () => {

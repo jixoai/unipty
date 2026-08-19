@@ -14,10 +14,7 @@ import { readFileSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { throwInvalidArgument, UNIPTY_CORE_PROTOCOL_MAJOR } from "unipty";
-import {
-  evaluateBackendCompatibility,
-  inspectUniPtyBackend,
-} from "./inspect.ts";
+import { evaluateBackendCompatibility, inspectUniPtyBackend } from "./inspect.ts";
 import { normalizeFromBase, resolveUniPtyBackend } from "./resolve.ts";
 import { analyzeRuntime } from "./runtime.ts";
 import type { RuntimeEnvironment } from "./runtime.ts";
@@ -84,10 +81,7 @@ export function isBackendReady(value: unknown): value is ReadyPtyBackend {
     return false;
   }
   const candidate = value as { spawn?: unknown; dispose?: unknown };
-  return (
-    typeof candidate.spawn === "function" &&
-    typeof candidate.dispose === "function"
-  );
+  return typeof candidate.spawn === "function" && typeof candidate.dispose === "function";
 }
 
 type SelectedCandidate =
@@ -108,16 +102,11 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isCompatibleInspection(
-  report: BackendInspectReport,
-): report is CompatibleInspection {
+function isCompatibleInspection(report: BackendInspectReport): report is CompatibleInspection {
   return report.status === "compatible";
 }
 
-function rebaseDiagnostic(
-  prefix: string,
-  diagnostic: BackendDiagnostic,
-): BackendDiagnostic {
+function rebaseDiagnostic(prefix: string, diagnostic: BackendDiagnostic): BackendDiagnostic {
   if (diagnostic.message === undefined) {
     return { code: `${prefix}.${diagnostic.code}` };
   }
@@ -301,9 +290,7 @@ export async function autoResolveUniPtyBackend<TBackend = ReadyPtyBackend>(
   if (
     opts.candidates !== undefined &&
     (!Array.isArray(opts.candidates) ||
-      opts.candidates.some(
-        (name) => typeof name !== "string" || name.trim().length === 0,
-      ))
+      opts.candidates.some((name) => typeof name !== "string" || name.trim().length === 0))
   ) {
     throwInvalidArgument(
       "autoResolveUniPtyBackend candidates must be an array of non-empty package name strings",
@@ -311,9 +298,7 @@ export async function autoResolveUniPtyBackend<TBackend = ReadyPtyBackend>(
     );
   }
   const explicitCandidates =
-    opts.candidates === undefined
-      ? undefined
-      : [...new Set(opts.candidates as readonly string[])];
+    opts.candidates === undefined ? undefined : [...new Set(opts.candidates as readonly string[])];
 
   if (opts.manifest !== undefined) {
     return resolveFromManifest(
@@ -342,9 +327,7 @@ export async function autoResolveUniPtyBackend<TBackend = ReadyPtyBackend>(
               code: resolution.reason,
               message: `Candidate "${packageName}" could not be resolved (${resolution.reason})`,
             },
-            ...resolution.diagnostics.map((diagnostic) =>
-              rebaseDiagnostic("resolve", diagnostic),
-            ),
+            ...resolution.diagnostics.map((diagnostic) => rebaseDiagnostic("resolve", diagnostic)),
           ],
         });
         continue;
@@ -360,9 +343,7 @@ export async function autoResolveUniPtyBackend<TBackend = ReadyPtyBackend>(
               code: inspection.status,
               message: `Candidate "${packageName}" inspection reported ${inspection.status}`,
             },
-            ...inspection.diagnostics.map((diagnostic) =>
-              rebaseDiagnostic("inspect", diagnostic),
-            ),
+            ...inspection.diagnostics.map((diagnostic) => rebaseDiagnostic("inspect", diagnostic)),
           ],
         });
         continue;
@@ -440,8 +421,7 @@ async function resolveFromManifest(
   const entriesByPackage = new Map<string, UniPtyBackendManifestEntry>(
     manifest.entries.map((entry) => [entry.packageName, entry]),
   );
-  const orderedNames =
-    explicitCandidates ?? manifest.entries.map((entry) => entry.packageName);
+  const orderedNames = explicitCandidates ?? manifest.entries.map((entry) => entry.packageName);
 
   const aggregate: BackendDiagnostic[] = [];
   for (const packageName of orderedNames) {
@@ -464,11 +444,7 @@ async function resolveFromManifest(
       });
       continue;
     }
-    const evaluation = evaluateBackendCompatibility(
-      entry.metadata,
-      environment,
-      coreProtocol,
-    );
+    const evaluation = evaluateBackendCompatibility(entry.metadata, environment, coreProtocol);
     if (!evaluation.compatible) {
       emitWarning({
         code: "candidate-unavailable",
@@ -507,17 +483,13 @@ async function initializeSelected(selected: SelectedCandidate): Promise<unknown>
   let moduleNamespace: unknown;
   try {
     moduleNamespace =
-      selected.kind === "manifest"
-        ? await selected.loader()
-        : await import(selected.importUrl);
+      selected.kind === "manifest" ? await selected.loader() : await import(selected.importUrl);
   } catch (error) {
     throwBackendInitialization("import", selected, error);
   }
 
   const factoryExport = selected.inspection.metadata.backend.factoryExport;
-  const factory = isPlainObject(moduleNamespace)
-    ? moduleNamespace[factoryExport]
-    : undefined;
+  const factory = isPlainObject(moduleNamespace) ? moduleNamespace[factoryExport] : undefined;
   if (typeof factory !== "function") {
     throwBackendInitialization("factory-export", selected, undefined);
   }

@@ -148,11 +148,7 @@ interface DenoBuildFacts {
 function denoBuild(): DenoBuildFacts | undefined {
   const holder = globalThis as { Deno?: { build?: DenoBuildFacts } };
   const build = holder.Deno?.build;
-  if (
-    build === undefined ||
-    typeof build.os !== "string" ||
-    typeof build.arch !== "string"
-  ) {
+  if (build === undefined || typeof build.os !== "string" || typeof build.arch !== "string") {
     return undefined;
   }
   return { os: build.os, arch: build.arch };
@@ -167,11 +163,14 @@ const VENDORED_LIBRARIES: Readonly<Record<string, { dir: string; file: string }>
   "windows+x86_64": { dir: "windows-x64", file: "pty.dll" },
 };
 
-/** Vendored `mod_noinit.ts` entry of the closure (relative to this module). */
-const VENDORED_NOINIT_URL = new URL(
-  "../vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/mod_noinit.ts",
-  import.meta.url,
-);
+/**
+ * Vendored closure entry (relative to this module). The build bundles the
+ * mirrored TypeScript closure into ONE plain-JavaScript ESM file: Deno
+ * refuses to type-strip TypeScript under `node_modules`
+ * (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`), so a packed npm artifact
+ * consumed by an isolated installer must ship precompiled JS.
+ */
+const VENDORED_NOINIT_URL = new URL("../vendor/js/noinit.bundle.js", import.meta.url);
 
 function fileUrlToPath(url: URL): string {
   let path = decodeURIComponent(url.pathname);
@@ -188,9 +187,7 @@ function libraryPathFor(build: DenoBuildFacts): string {
       { details: { os: build.os, arch: build.arch } },
     );
   }
-  return fileUrlToPath(
-    new URL(`../vendor/lib/${library.dir}/${library.file}`, import.meta.url),
-  );
+  return fileUrlToPath(new URL(`../vendor/lib/${library.dir}/${library.file}`, import.meta.url));
 }
 
 // ---------------------------------------------------------------------------
@@ -231,7 +228,10 @@ async function loadClosure(): Promise<SubstrateNoinitModule> {
     }
     const closure = module as Partial<SubstrateNoinitModule>;
     if (typeof closure.instantiate !== "function" || typeof closure.Pty !== "function") {
-      throw new UniPtyError("unsupported", "vendored @sigma/pty-ffi closure has an unexpected shape");
+      throw new UniPtyError(
+        "unsupported",
+        "vendored @sigma/pty-ffi closure has an unexpected shape",
+      );
     }
     return closure as SubstrateNoinitModule;
   })();
@@ -268,9 +268,8 @@ export async function createDenoSigmaPtyFfiBackend(
 
   let libraryPath: string;
   if (options.libraryPath !== undefined) {
-    libraryPath = options.libraryPath instanceof URL
-      ? fileUrlToPath(options.libraryPath)
-      : options.libraryPath;
+    libraryPath =
+      options.libraryPath instanceof URL ? fileUrlToPath(options.libraryPath) : options.libraryPath;
   } else {
     libraryPath = libraryPathFor(build);
   }
@@ -278,14 +277,24 @@ export async function createDenoSigmaPtyFfiBackend(
   const softBytes = options.queue?.softBytes ?? 256 * 1024;
   const hardBytes = options.queue?.hardBytes ?? 1024 * 1024;
   if (
-    !Number.isFinite(softBytes) || softBytes < 0 ||
-    !Number.isInteger(hardBytes) || hardBytes <= 0 || hardBytes < softBytes
+    !Number.isFinite(softBytes) ||
+    softBytes < 0 ||
+    !Number.isInteger(hardBytes) ||
+    hardBytes <= 0 ||
+    hardBytes < softBytes
   ) {
-    throw new UniPtyError("invalid-argument", "queue thresholds must satisfy 0 <= softBytes <= hardBytes with integer hardBytes");
+    throw new UniPtyError(
+      "invalid-argument",
+      "queue thresholds must satisfy 0 <= softBytes <= hardBytes with integer hardBytes",
+    );
   }
 
   const pollIntervalMs = options.pollIntervalMs ?? 25;
-  if (!Number.isFinite(pollIntervalMs) || !Number.isInteger(pollIntervalMs) || pollIntervalMs <= 0) {
+  if (
+    !Number.isFinite(pollIntervalMs) ||
+    !Number.isInteger(pollIntervalMs) ||
+    pollIntervalMs <= 0
+  ) {
     throw new UniPtyError("invalid-argument", "pollIntervalMs must be a positive integer");
   }
 
@@ -294,12 +303,20 @@ export async function createDenoSigmaPtyFfiBackend(
     await closure.instantiate(libraryPath);
   } catch (cause) {
     if (isPermissionError(cause)) {
-      throw permissionFailure("loading the vendored PTY library (Deno.dlopen)", "--allow-ffi", cause);
+      throw permissionFailure(
+        "loading the vendored PTY library (Deno.dlopen)",
+        "--allow-ffi",
+        cause,
+      );
     }
-    throw new UniPtyError("unsupported", "failed to initialize the vendored @sigma/pty-ffi library", {
-      details: { libraryPath },
-      cause,
-    });
+    throw new UniPtyError(
+      "unsupported",
+      "failed to initialize the vendored @sigma/pty-ffi library",
+      {
+        details: { libraryPath },
+        cause,
+      },
+    );
   }
 
   return new DenoSigmaPtyFfiBackendImpl(closure, {
@@ -348,10 +365,14 @@ class DenoSigmaPtyFfiBackendImpl implements DenoSigmaPtyFfiBackend {
     try {
       pty = new this.#closure.Pty(executable, substrateOptions);
     } catch (cause) {
-      throw new UniPtyError("invalid-argument", "PTY launch failed on the @sigma/pty-ffi substrate", {
-        details: { argv: [...launch.argv] },
-        cause,
-      });
+      throw new UniPtyError(
+        "invalid-argument",
+        "PTY launch failed on the @sigma/pty-ffi substrate",
+        {
+          details: { argv: [...launch.argv] },
+          cause,
+        },
+      );
     }
     return new DenoSigmaPtyEndpoint(pty, this.#settings);
   }
@@ -459,9 +480,7 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
         }
         this.#settleUnobserved();
         this.#closePhysically();
-        controller.error(
-          new UniPtyError("unsupported", "PTY transport read failure", { cause }),
-        );
+        controller.error(new UniPtyError("unsupported", "PTY transport read failure", { cause }));
         return;
       }
       if (result.done) {
@@ -515,9 +534,13 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
     if (cause instanceof Error && cause.message.includes("Pty is closed.")) {
       return new UniPtyError("closed", "PTY transport is closed", { cause });
     }
-    return new UniPtyError("unsupported", `PTY ${operation} failed on the @sigma/pty-ffi substrate`, {
-      cause,
-    });
+    return new UniPtyError(
+      "unsupported",
+      `PTY ${operation} failed on the @sigma/pty-ffi substrate`,
+      {
+        cause,
+      },
+    );
   }
 
   write(input: NativeInput): boolean {
@@ -549,9 +572,13 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
       );
     }
     if (this.#inflightBytes + bytes.length > this.#hardBytes) {
-      throw new UniPtyError("backpressure", "input queue saturated; await drain() before writing more", {
-        details: { inflightBytes: this.#inflightBytes, hardBytes: this.#hardBytes },
-      });
+      throw new UniPtyError(
+        "backpressure",
+        "input queue saturated; await drain() before writing more",
+        {
+          details: { inflightBytes: this.#inflightBytes, hardBytes: this.#hardBytes },
+        },
+      );
     }
     try {
       this.#pty.write(text);

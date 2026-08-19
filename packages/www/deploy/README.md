@@ -7,14 +7,14 @@
 
 ## Contract summary
 
-| Aspect | Contract |
-| --- | --- |
-| Trigger | `workflow_dispatch` with a required `release_tag` input (e.g. `v0.1.0`) |
-| Catalog input | The catalog JSON artifact attached to that release (exact asset name is owned by the release track, task 7.4) |
-| Build | `WWW_CNAME=1 WWW_CATALOG=<downloaded artifact path> node packages/www/scripts/build.mjs` |
-| Deploy | `packages/www/dist` uploaded with `actions/upload-pages-artifact`, deployed with `actions/deploy-pages` |
-| Custom domain | `unipty.jixoai.com`; DNS CNAME mapping is **Owner-managed external configuration** |
-| Retry | Re-run the workflow with the same tag; it re-consumes the same immutable release artifact and never republishes Core or Backend packages |
+| Aspect        | Contract                                                                                                                                 |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Trigger       | `workflow_dispatch` with a required `release_tag` input (e.g. `v0.1.0`)                                                                  |
+| Catalog input | The catalog JSON artifact attached to that release (exact asset name is owned by the release track, task 7.4)                            |
+| Build         | `WWW_CNAME=1 WWW_CATALOG=<downloaded artifact path> node packages/www/scripts/build.mjs`                                                 |
+| Deploy        | `packages/www/dist` uploaded with `actions/upload-pages-artifact`, deployed with `actions/deploy-pages`                                  |
+| Custom domain | `unipty.jixoai.com`; DNS CNAME mapping is **Owner-managed external configuration**                                                       |
+| Retry         | Re-run the workflow with the same tag; it re-consumes the same immutable release artifact and never republishes Core or Backend packages |
 
 ## Intended workflow shape
 
@@ -45,7 +45,7 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4            # site sources from the default branch
+      - uses: actions/checkout@v4 # site sources from the default branch
       - uses: actions/setup-node@v4
         with:
           node-version: 24

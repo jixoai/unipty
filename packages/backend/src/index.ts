@@ -13,32 +13,23 @@
 
 export { validateUniPtyBackendMetadata } from "./metadata.ts";
 export { MetadataValidationError } from "./metadata.ts";
-export type {
-  MetadataValidationIssue,
-} from "./metadata.ts";
+export type { MetadataValidationIssue } from "./metadata.ts";
 
 export { analyzeRuntime } from "./runtime.ts";
 export type { RuntimeEnvironment } from "./runtime.ts";
 
 export { resolveUniPtyBackend } from "./resolve.ts";
-export type {
-  ResolveUniPtyBackendOptions,
-} from "./resolve.ts";
+export type { ResolveUniPtyBackendOptions } from "./resolve.ts";
 
 export { inspectUniPtyBackend } from "./inspect.ts";
-export type {
-  InspectUniPtyBackendOptions,
-} from "./inspect.ts";
+export type { InspectUniPtyBackendOptions } from "./inspect.ts";
 
 export { autoResolveUniPtyBackend } from "./auto-resolve.ts";
 export { isBackendReady, UniPtyBackendSelectionError } from "./auto-resolve.ts";
 export type { AutoResolveOptions } from "./auto-resolve.ts";
 
 export { defineUniPtyBackendManifest } from "./manifest.ts";
-export type {
-  UniPtyBackendManifestInput,
-  UniPtyBackendManifestInputEntry,
-} from "./manifest.ts";
+export type { UniPtyBackendManifestInput, UniPtyBackendManifestInputEntry } from "./manifest.ts";
 
 export type {
   BackendDiagnostic,

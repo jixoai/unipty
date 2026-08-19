@@ -114,10 +114,7 @@ for (const dep of depsOf(core)) {
 
 // Acquisition depends only on Core; helper only on acquisition (+ Core types).
 for (const dep of depsOf(acquisition)) {
-  rule(
-    dep === core,
-    `${acquisition} may depend only on ${core}, found ${dep}`,
-  );
+  rule(dep === core, `${acquisition} may depend only on ${core}, found ${dep}`);
 }
 for (const dep of depsOf(helper)) {
   rule(
@@ -146,10 +143,7 @@ for (const [name, { pkg }] of packages) {
   if (name === conformance || name === www) continue;
   for (const kind of ["dependencies", "peerDependencies"] as const) {
     for (const dep of Object.keys(pkg[kind] ?? {})) {
-      rule(
-        dep !== conformance && dep !== www,
-        `${name} must not depend on private package ${dep}`,
-      );
+      rule(dep !== conformance && dep !== www, `${name} must not depend on private package ${dep}`);
     }
   }
 }

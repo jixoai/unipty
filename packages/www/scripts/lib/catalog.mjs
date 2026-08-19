@@ -32,8 +32,7 @@ export const RUNTIMES = ["node", "bun", "deno"];
 export const STATES = ["verified", "declared-unverified", "not-targeted"];
 
 const isNonEmptyString = (v) => typeof v === "string" && v.trim().length > 0;
-const isStringArray = (v) =>
-  Array.isArray(v) && v.length > 0 && v.every(isNonEmptyString);
+const isStringArray = (v) => Array.isArray(v) && v.length > 0 && v.every(isNonEmptyString);
 const isIso8601 = (v) =>
   isNonEmptyString(v) &&
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(v) &&
@@ -101,13 +100,9 @@ export function validateCatalog(raw) {
     } else if (
       !Array.isArray(pkg.protocol.core) ||
       pkg.protocol.core.length === 0 ||
-      !pkg.protocol.core.every(
-        (n) => Number.isInteger(n) && n > 0,
-      )
+      !pkg.protocol.core.every((n) => Number.isInteger(n) && n > 0)
     ) {
-      errors.push(
-        `${at}.protocol.core: expected a non-empty array of positive integers`,
-      );
+      errors.push(`${at}.protocol.core: expected a non-empty array of positive integers`);
     }
     if (!Array.isArray(pkg.targets) || pkg.targets.length === 0) {
       errors.push(`${at}.targets: expected a non-empty array`);
@@ -132,9 +127,7 @@ export function validateCatalog(raw) {
         if (!isNonEmptyString(pkg.provenance.kind))
           errors.push(`${at}.provenance.kind: expected a non-empty string`);
         if (!isNonEmptyString(pkg.provenance.substrate))
-          errors.push(
-            `${at}.provenance.substrate: expected a non-empty string`,
-          );
+          errors.push(`${at}.provenance.substrate: expected a non-empty string`);
       }
     }
     if (
@@ -142,13 +135,7 @@ export function validateCatalog(raw) {
       isNonEmptyString(pkg.package?.version) &&
       isNonEmptyString(pkg.backend?.id)
     ) {
-      packageIdentities.add(
-        identityKey(
-          pkg.package.name,
-          pkg.package.version,
-          pkg.backend.id,
-        ),
-      );
+      packageIdentities.add(identityKey(pkg.package.name, pkg.package.version, pkg.backend.id));
     }
   });
   if (errors.length > 0) return { ok: false, errors };
@@ -162,9 +149,7 @@ export function validateCatalog(raw) {
       if (!isNonEmptyString(ev.backend.packageName))
         errors.push(`${at}.backend.packageName: expected a non-empty string`);
       if (!isNonEmptyString(ev.backend.packageVersion))
-        errors.push(
-          `${at}.backend.packageVersion: expected a non-empty string`,
-        );
+        errors.push(`${at}.backend.packageVersion: expected a non-empty string`);
       if (!isNonEmptyString(ev.backend.backendId))
         errors.push(`${at}.backend.backendId: expected a non-empty string`);
     }
@@ -204,10 +189,8 @@ export function validateCatalog(raw) {
       if (!isNonEmptyString(ev.suite.version))
         errors.push(`${at}.suite.version: expected a non-empty string`);
     }
-    if (!isNonEmptyString(ev.commit))
-      errors.push(`${at}.commit: expected a non-empty string`);
-    if (!isIso8601(ev.verifiedAt))
-      errors.push(`${at}.verifiedAt: expected an ISO-8601 string`);
+    if (!isNonEmptyString(ev.commit)) errors.push(`${at}.commit: expected a non-empty string`);
+    if (!isIso8601(ev.verifiedAt)) errors.push(`${at}.verifiedAt: expected an ISO-8601 string`);
     if (ev.reportRef !== undefined && !isNonEmptyString(ev.reportRef))
       errors.push(`${at}.reportRef: expected a non-empty string if present`);
 
@@ -216,11 +199,7 @@ export function validateCatalog(raw) {
       isNonEmptyString(ev.backend?.packageVersion) &&
       isNonEmptyString(ev.backend?.backendId) &&
       !packageIdentities.has(
-        identityKey(
-          ev.backend.packageName,
-          ev.backend.packageVersion,
-          ev.backend.backendId,
-        ),
+        identityKey(ev.backend.packageName, ev.backend.packageVersion, ev.backend.backendId),
       )
     ) {
       errors.push(
@@ -233,11 +212,9 @@ export function validateCatalog(raw) {
   return { ok: true, catalog: raw };
 }
 
-const identityKey = (name, version, backendId) =>
-  `${name}@${version}#${backendId}`;
+const identityKey = (name, version, backendId) => `${name}@${version}#${backendId}`;
 
-const tupleKey = (tuple) =>
-  `${tuple.os ?? "*"}/${tuple.arch ?? "*"}/${tuple.libc ?? "-"}`;
+const tupleKey = (tuple) => `${tuple.os ?? "*"}/${tuple.arch ?? "*"}/${tuple.libc ?? "-"}`;
 
 const sameTuple = (a, b) =>
   (a.os ?? null) === (b.os ?? null) &&
@@ -250,8 +227,7 @@ const sameTuple = (a, b) =>
  */
 const coversTuple = (target, tuple) => {
   if (target.os !== undefined && !target.os.includes(tuple.os)) return false;
-  if (target.arch !== undefined && !target.arch.includes(tuple.arch))
-    return false;
+  if (target.arch !== undefined && !target.arch.includes(tuple.arch)) return false;
   if (tuple.os === "linux" && target.libc !== undefined) {
     if (!target.libc.includes(tuple.libc)) return false;
   }
@@ -285,8 +261,7 @@ const extraTuplesFor = (targets, pkgEvidence) => {
     for (const os of target.os) {
       // Linux native evidence requires a libc axis; a libc-less Linux
       // declaration displays on the npm-default glibc axis.
-      const libcs =
-        os === "linux" ? (target.libc ?? ["glibc"]) : [undefined];
+      const libcs = os === "linux" ? (target.libc ?? ["glibc"]) : [undefined];
       for (const arch of target.arch) {
         for (const libc of libcs) {
           add({ os, arch, ...(libc !== undefined ? { libc } : {}) });
@@ -320,17 +295,10 @@ export function derivePresentation(catalog) {
   }
 
   const routes = catalog.packages.map((pkg) => {
-    const key = identityKey(
-      pkg.package.name,
-      pkg.package.version,
-      pkg.backend.id,
-    );
+    const key = identityKey(pkg.package.name, pkg.package.version, pkg.backend.id);
     const pkgEvidence = evidenceByPackage.get(key) ?? [];
     const declaredRuntimes = [...new Set(pkg.targets.map((t) => t.runtime))];
-    const tuples = [
-      ...TUPLE_GRID,
-      ...extraTuplesFor(pkg.targets, pkgEvidence),
-    ];
+    const tuples = [...TUPLE_GRID, ...extraTuplesFor(pkg.targets, pkgEvidence)];
 
     const rows = [];
     for (const tuple of tuples) {
@@ -339,10 +307,7 @@ export function derivePresentation(catalog) {
           runtime,
           targets: pkg.targets.filter((t) => t.runtime === runtime),
         }))
-        .filter(
-          ({ targets }) =>
-            targets.some((target) => coversTuple(target, tuple)),
-        );
+        .filter(({ targets }) => targets.some((target) => coversTuple(target, tuple)));
 
       if (covered.length === 0) {
         rows.push({
@@ -354,9 +319,7 @@ export function derivePresentation(catalog) {
         continue;
       }
       for (const { runtime } of covered) {
-        const matched = pkgEvidence.filter((ev) =>
-          evidenceMatches(pkg, runtime, tuple, ev),
-        );
+        const matched = pkgEvidence.filter((ev) => evidenceMatches(pkg, runtime, tuple, ev));
         rows.push({
           tuple,
           runtime,

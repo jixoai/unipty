@@ -3,8 +3,15 @@
   "version": "0.1.0",
   "description": "Official UniPty Backend adapting the third-party @sigma/pty-ffi (Rust portable-pty) substrate for Deno; self-contained npm package with vendored noinit closure and target dynamic libraries.",
   "license": "MIT",
+  "files": [
+    "dist",
+    "vendor"
+  ],
   "type": "module",
   "sideEffects": false,
+  "imports": {
+    "#package.json": "./package.json"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,13 +22,6 @@
       "import": "./dist/unipty.metadata.js"
     }
   },
-  "imports": {
-    "#package.json": "./package.json"
-  },
-  "files": [
-    "dist",
-    "vendor"
-  ],
   "scripts": {
     "build:vendor": "deno run -A scripts/vendor.sh.ts",
     "build": "deno run -A scripts/vendor.sh.ts --ensure && tsdown && deno run -A scripts/vendor.sh.ts --check",

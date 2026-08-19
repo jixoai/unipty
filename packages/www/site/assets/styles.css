@@ -31,8 +31,7 @@
   --code-number: oklch(0.45 0.17 260);
   --radius: 0px;
   --font-mono:
-    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
-    monospace;
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --measure: 72rem;
 }
 

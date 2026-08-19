@@ -71,9 +71,7 @@ export function defineUniPtyBackendManifest(
   }
   const inputEntries = (input as { entries: readonly unknown[] }).entries;
   if (inputEntries.length === 0) {
-    throwInvalidArgument(
-      "defineUniPtyBackendManifest requires a non-empty entries list",
-    );
+    throwInvalidArgument("defineUniPtyBackendManifest requires a non-empty entries list");
   }
 
   const seenPackages = new Set<string>();
@@ -81,11 +79,7 @@ export function defineUniPtyBackendManifest(
 
   for (const [index, rawEntry] of inputEntries.entries()) {
     const path = `entries[${index}]`;
-    if (
-      typeof rawEntry !== "object" ||
-      rawEntry === null ||
-      Array.isArray(rawEntry)
-    ) {
+    if (typeof rawEntry !== "object" || rawEntry === null || Array.isArray(rawEntry)) {
       throwInvalidArgument(`${path} must be a manifest entry object`, {
         entry: rawEntry,
       });
@@ -107,13 +101,10 @@ export function defineUniPtyBackendManifest(
     try {
       metadata = validateUniPtyBackendMetadata(entry.metadata);
     } catch (error) {
-      throwInvalidArgument(
-        `${path}.metadata does not satisfy the UniPty Backend Metadata schema`,
-        {
-          packageName: entry.packageName,
-          cause: error,
-        },
-      );
+      throwInvalidArgument(`${path}.metadata does not satisfy the UniPty Backend Metadata schema`, {
+        packageName: entry.packageName,
+        cause: error,
+      });
     }
 
     if (metadata.package.name !== entry.packageName) {
@@ -130,10 +121,9 @@ export function defineUniPtyBackendManifest(
     }
 
     if (seenPackages.has(entry.packageName)) {
-      throwInvalidArgument(
-        `Duplicate manifest package identity "${entry.packageName}"`,
-        { packageName: entry.packageName },
-      );
+      throwInvalidArgument(`Duplicate manifest package identity "${entry.packageName}"`, {
+        packageName: entry.packageName,
+      });
     }
     seenPackages.add(entry.packageName);
 

@@ -7,7 +7,10 @@ import { expectSyncCode } from "./support/helpers.ts";
 
 describe("UniPty constructor validation", () => {
   it("rejects null options", () => {
-    expectSyncCode(() => new UniPty(null as unknown as UniPtyOptions<ReadyPtyBackend>), "invalid-argument");
+    expectSyncCode(
+      () => new UniPty(null as unknown as UniPtyOptions<ReadyPtyBackend>),
+      "invalid-argument",
+    );
   });
 
   it("rejects non-object options", () => {

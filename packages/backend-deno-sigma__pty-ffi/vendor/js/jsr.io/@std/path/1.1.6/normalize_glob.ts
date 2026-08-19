@@ -4,9 +4,7 @@
 import type { GlobOptions } from "./_common/glob_to_reg_exp.ts";
 import { isWindows } from "../../internal/1.0.14/os.ts";
 import { normalizeGlob as posixNormalizeGlob } from "./posix/normalize_glob.ts";
-import {
-  normalizeGlob as windowsNormalizeGlob,
-} from "./windows/normalize_glob.ts";
+import { normalizeGlob as windowsNormalizeGlob } from "./windows/normalize_glob.ts";
 
 export type { GlobOptions };
 
@@ -35,11 +33,6 @@ export type { GlobOptions };
  * @param options Glob options.
  * @returns The normalized glob string.
  */
-export function normalizeGlob(
-  glob: string,
-  options: GlobOptions = {},
-): string {
-  return isWindows
-    ? windowsNormalizeGlob(glob, options)
-    : posixNormalizeGlob(glob, options);
+export function normalizeGlob(glob: string, options: GlobOptions = {}): string {
+  return isWindows ? windowsNormalizeGlob(glob, options) : posixNormalizeGlob(glob, options);
 }

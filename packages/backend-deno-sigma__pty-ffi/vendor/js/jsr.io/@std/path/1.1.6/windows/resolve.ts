@@ -32,13 +32,9 @@ export function resolve(...pathSegments: string[]): string {
     if (i >= 0) {
       path = pathSegments[i]!;
     } else if (!resolvedDevice) {
-      path = cwd(
-        "Resolved a drive-letter-less path without a current working directory (CWD)",
-      );
+      path = cwd("Resolved a drive-letter-less path without a current working directory (CWD)");
     } else {
-      path = cwd(
-        "Resolved a relative path without a current working directory (CWD)",
-      );
+      path = cwd("Resolved a relative path without a current working directory (CWD)");
 
       // Verify that a cwd was found and that it actually points
       // to our drive. If not, default to the drive's root.
@@ -155,12 +151,7 @@ export function resolve(...pathSegments: string[]): string {
   // but handle relative paths to be safe (might happen when cwd() fails)
 
   // Normalize the tail path
-  resolvedTail = normalizeString(
-    resolvedTail,
-    !resolvedAbsolute,
-    "\\",
-    isPathSeparator,
-  );
+  resolvedTail = normalizeString(resolvedTail, !resolvedAbsolute, "\\", isPathSeparator);
 
   return resolvedDevice + (resolvedAbsolute ? "\\" : "") + resolvedTail || ".";
 }

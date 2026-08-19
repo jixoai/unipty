@@ -49,9 +49,7 @@ export class UniPtyHelperCandidateError extends Error {
   }
 }
 
-function reportDiagnostics(
-  report: UniPtyHelperCandidateError["report"],
-): string {
+function reportDiagnostics(report: UniPtyHelperCandidateError["report"]): string {
   if (report.status === "unresolved") {
     return `unresolved (${report.reason})`;
   }
@@ -112,8 +110,7 @@ export async function generateUniPtyBackendManifestModule(
     );
   }
 
-  const metadataByIdentifier: { packageName: string; metadata: UniPtyBackendMetadata }[] =
-    [];
+  const metadataByIdentifier: { packageName: string; metadata: UniPtyBackendMetadata }[] = [];
   for (const packageName of options.candidates as readonly string[]) {
     const resolution = await resolveUniPtyBackend(packageName, {
       from: options.from,

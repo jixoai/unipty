@@ -20,12 +20,12 @@ describe("spawn validation", () => {
   it("rejects non-string argv elements", () => {
     const backend = new MockBackend();
     const unipty = backend.createUniPty();
-    expectSyncCode(() => unipty.spawn(["/bin/sh", "-c", 42 as unknown as string]), "invalid-argument");
-    expectSyncCode(() => unipty.spawn([null as unknown as string]), "invalid-argument");
     expectSyncCode(
-      () => unipty.spawn([{ cmd: "ls" } as unknown as string]),
+      () => unipty.spawn(["/bin/sh", "-c", 42 as unknown as string]),
       "invalid-argument",
     );
+    expectSyncCode(() => unipty.spawn([null as unknown as string]), "invalid-argument");
+    expectSyncCode(() => unipty.spawn([{ cmd: "ls" } as unknown as string]), "invalid-argument");
     expect(backend.spawnCalls.length).toBe(0);
   });
 

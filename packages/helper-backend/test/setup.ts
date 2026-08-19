@@ -11,15 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const testRoot = fileURLToPath(new URL(".", import.meta.url));
 const consumerRoot = join(testRoot, "fixtures", "consumer");
-const backendFixturesRoot = join(
-  testRoot,
-  "..",
-  "..",
-  "backend",
-  "test",
-  "fixtures",
-  "backends",
-);
+const backendFixturesRoot = join(testRoot, "..", "..", "backend", "test", "fixtures", "backends");
 const backendPackageRoot = join(testRoot, "..", "..", "backend");
 
 export const CONSUMER_ROOT = consumerRoot;
@@ -37,11 +29,7 @@ export function linkConsumerNodeModules(): void {
   mkdirSync(fixtureScope, { recursive: true });
   for (const entry of readdirSync(backendFixturesRoot, { withFileTypes: true })) {
     if (entry.isDirectory()) {
-      symlinkSync(
-        join(backendFixturesRoot, entry.name),
-        join(fixtureScope, entry.name),
-        "dir",
-      );
+      symlinkSync(join(backendFixturesRoot, entry.name), join(fixtureScope, entry.name), "dir");
     }
   }
 

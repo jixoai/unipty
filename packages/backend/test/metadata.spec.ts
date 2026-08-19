@@ -4,10 +4,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import {
-  MetadataValidationError,
-  validateUniPtyBackendMetadata,
-} from "../src/index.ts";
+import { MetadataValidationError, validateUniPtyBackendMetadata } from "../src/index.ts";
 
 function validMetadata(): Record<string, unknown> {
   return {
@@ -85,15 +82,15 @@ describe("validateUniPtyBackendMetadata", () => {
     expect(pathsOf({ ...validMetadata(), package: {} })).toEqual(
       expect.arrayContaining(["package.name", "package.version"]),
     );
-    expect(
-      pathsOf({ ...validMetadata(), package: { name: "", version: "1.0.0" } }),
-    ).toContain("package.name");
+    expect(pathsOf({ ...validMetadata(), package: { name: "", version: "1.0.0" } })).toContain(
+      "package.name",
+    );
     expect(
       pathsOf({ ...validMetadata(), package: { name: " padded ", version: "1.0.0" } }),
     ).toContain("package.name");
-    expect(
-      pathsOf({ ...validMetadata(), package: { name: "x", version: "1.0 beta" } }),
-    ).toContain("package.version");
+    expect(pathsOf({ ...validMetadata(), package: { name: "x", version: "1.0 beta" } })).toContain(
+      "package.version",
+    );
     expect(pathsOf({ ...validMetadata(), package: null })).toContain("package");
   });
 
@@ -101,50 +98,42 @@ describe("validateUniPtyBackendMetadata", () => {
     expect(pathsOf({ ...validMetadata(), backend: { id: "", factoryExport: "x" } })).toContain(
       "backend.id",
     );
-    expect(
-      pathsOf({ ...validMetadata(), backend: { id: "x", factoryExport: "" } }),
-    ).toContain("backend.factoryExport");
+    expect(pathsOf({ ...validMetadata(), backend: { id: "x", factoryExport: "" } })).toContain(
+      "backend.factoryExport",
+    );
   });
 
   it("rejects empty, non-positive, non-integer, or duplicate protocol majors", () => {
-    expect(pathsOf({ ...validMetadata(), protocol: { core: [] } })).toContain(
-      "protocol.core",
-    );
-    expect(pathsOf({ ...validMetadata(), protocol: { core: [0] } })).toContain(
-      "protocol.core[0]",
-    );
-    expect(pathsOf({ ...validMetadata(), protocol: { core: [-1] } })).toContain(
-      "protocol.core[0]",
-    );
+    expect(pathsOf({ ...validMetadata(), protocol: { core: [] } })).toContain("protocol.core");
+    expect(pathsOf({ ...validMetadata(), protocol: { core: [0] } })).toContain("protocol.core[0]");
+    expect(pathsOf({ ...validMetadata(), protocol: { core: [-1] } })).toContain("protocol.core[0]");
     expect(pathsOf({ ...validMetadata(), protocol: { core: [1.5] } })).toContain(
       "protocol.core[0]",
     );
     expect(pathsOf({ ...validMetadata(), protocol: { core: ["1"] } })).toContain(
       "protocol.core[0]",
     );
-    expect(pathsOf({ ...validMetadata(), protocol: { core: [1, 1] } })).toContain(
-      "protocol.core",
-    );
+    expect(pathsOf({ ...validMetadata(), protocol: { core: [1, 1] } })).toContain("protocol.core");
   });
 
   it("rejects empty or malformed targets", () => {
     expect(pathsOf({ ...validMetadata(), targets: [] })).toContain("targets");
     expect(pathsOf({ ...validMetadata(), targets: [{}] })).toContain("targets[0].runtime");
-    expect(
-      pathsOf({ ...validMetadata(), targets: [{ runtime: "browser" }] }),
-    ).toContain("targets[0].runtime");
-    expect(
-      pathsOf({ ...validMetadata(), targets: [{ runtime: "node", os: "darwin" }] }),
-    ).toContain("targets[0].os");
-    expect(
-      pathsOf({ ...validMetadata(), targets: [{ runtime: "node", os: [] }] }),
-    ).toContain("targets[0].os");
-    expect(
-      pathsOf({ ...validMetadata(), targets: [{ runtime: "node", arch: [""] }] }),
-    ).toContain("targets[0].arch[0]");
-    expect(
-      pathsOf({ ...validMetadata(), targets: [{ runtime: "node", libc: [42] }] }),
-    ).toContain("targets[0].libc[0]");
+    expect(pathsOf({ ...validMetadata(), targets: [{ runtime: "browser" }] })).toContain(
+      "targets[0].runtime",
+    );
+    expect(pathsOf({ ...validMetadata(), targets: [{ runtime: "node", os: "darwin" }] })).toContain(
+      "targets[0].os",
+    );
+    expect(pathsOf({ ...validMetadata(), targets: [{ runtime: "node", os: [] }] })).toContain(
+      "targets[0].os",
+    );
+    expect(pathsOf({ ...validMetadata(), targets: [{ runtime: "node", arch: [""] }] })).toContain(
+      "targets[0].arch[0]",
+    );
+    expect(pathsOf({ ...validMetadata(), targets: [{ runtime: "node", libc: [42] }] })).toContain(
+      "targets[0].libc[0]",
+    );
     expect(pathsOf({ ...validMetadata(), targets: ["node"] })).toContain("targets[0]");
   });
 

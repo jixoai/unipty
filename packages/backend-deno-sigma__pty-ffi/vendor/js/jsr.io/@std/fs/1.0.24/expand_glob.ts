@@ -7,11 +7,7 @@ import { resolve } from "../../path/1.1.6/resolve.ts";
 import { SEPARATOR_PATTERN } from "../../path/1.1.6/constants.ts";
 import { walk, walkSync } from "./walk.ts";
 import { toPathString } from "./_to_path_string.ts";
-import {
-  createWalkEntry,
-  createWalkEntrySync,
-  type WalkEntry,
-} from "./_create_walk_entry.ts";
+import { createWalkEntry, createWalkEntrySync, type WalkEntry } from "./_create_walk_entry.ts";
 import { isWindows } from "../../internal/1.0.14/os.ts";
 
 export type { GlobOptions, WalkEntry };
@@ -61,9 +57,7 @@ interface SplitPath {
 
 function split(path: string): SplitPath {
   const s = SEPARATOR_PATTERN.source;
-  const segments = path
-    .replace(new RegExp(`^${s}|${s}$`, "g"), "")
-    .split(SEPARATOR_PATTERN);
+  const segments = path.replace(new RegExp(`^${s}|${s}$`, "g"), "").split(SEPARATOR_PATTERN);
   const isAbsolute_ = isAbsolute(path);
   const split: SplitPath = {
     segments,
@@ -289,7 +283,7 @@ export async function* expandGlob(
     hasTrailingSep,
     winRoot,
   } = split(toPathString(glob));
-  root ??= isGlobAbsolute ? winRoot ?? "/" : Deno.cwd();
+  root ??= isGlobAbsolute ? (winRoot ?? "/") : Deno.cwd();
 
   const globOptions: GlobOptions = { extended, globstar, caseInsensitive };
   const absRoot = isGlobAbsolute ? root : resolve(root!); // root is always string here
@@ -297,10 +291,9 @@ export async function* expandGlob(
   const excludePatterns = exclude
     .map(resolveFromRoot)
     .map((s: string): RegExp => globToRegExp(s, globOptions));
-  const shouldInclude = (path: string) =>
-    !excludePatterns.some((p) => p.test(path));
+  const shouldInclude = (path: string) => !excludePatterns.some((p) => p.test(path));
 
-  let fixedRoot = isGlobAbsolute ? winRoot ?? "/" : absRoot;
+  let fixedRoot = isGlobAbsolute ? (winRoot ?? "/") : absRoot;
   while (segments.length > 0 && !isGlob(segments[0]!)) {
     const seg = segments.shift()!;
     fixedRoot = joinGlobs([fixedRoot, unescapeGlobSegment(seg)], globOptions);
@@ -334,17 +327,12 @@ export async function* expandGlob(
       });
     }
     const globPattern = globToRegExp(globSegment, globOptions);
-    for await (
-      const walkEntry of walk(walkInfo.path, {
-        maxDepth: 1,
-        skip: excludePatterns,
-        followSymlinks,
-      })
-    ) {
-      if (
-        walkEntry.path !== walkInfo.path &&
-        walkEntry.name.match(globPattern)
-      ) {
+    for await (const walkEntry of walk(walkInfo.path, {
+      maxDepth: 1,
+      skip: excludePatterns,
+      followSymlinks,
+    })) {
+      if (walkEntry.path !== walkInfo.path && walkEntry.name.match(globPattern)) {
         yield walkEntry;
       }
     }
@@ -366,14 +354,10 @@ export async function* expandGlob(
   }
 
   if (hasTrailingSep) {
-    currentMatches = currentMatches.filter(
-      (entry: WalkEntry): boolean => entry.isDirectory,
-    );
+    currentMatches = currentMatches.filter((entry: WalkEntry): boolean => entry.isDirectory);
   }
   if (!includeDirs) {
-    currentMatches = currentMatches.filter(
-      (entry: WalkEntry): boolean => !entry.isDirectory,
-    );
+    currentMatches = currentMatches.filter((entry: WalkEntry): boolean => !entry.isDirectory);
   }
   yield* currentMatches;
 }
@@ -446,7 +430,7 @@ export function* expandGlobSync(
     hasTrailingSep,
     winRoot,
   } = split(toPathString(glob));
-  root ??= isGlobAbsolute ? winRoot ?? "/" : Deno.cwd();
+  root ??= isGlobAbsolute ? (winRoot ?? "/") : Deno.cwd();
 
   const globOptions: GlobOptions = { extended, globstar, caseInsensitive };
   const absRoot = isGlobAbsolute ? root : resolve(root!); // root is always string here
@@ -454,10 +438,9 @@ export function* expandGlobSync(
   const excludePatterns = exclude
     .map(resolveFromRoot)
     .map((s: string): RegExp => globToRegExp(s, globOptions));
-  const shouldInclude = (path: string) =>
-    !excludePatterns.some((p) => p.test(path));
+  const shouldInclude = (path: string) => !excludePatterns.some((p) => p.test(path));
 
-  let fixedRoot = isGlobAbsolute ? winRoot ?? "/" : absRoot;
+  let fixedRoot = isGlobAbsolute ? (winRoot ?? "/") : absRoot;
   while (segments.length > 0 && !isGlob(segments[0]!)) {
     const seg = segments.shift()!;
     fixedRoot = joinGlobs([fixedRoot, unescapeGlobSegment(seg)], globOptions);
@@ -470,10 +453,7 @@ export function* expandGlobSync(
     return throwUnlessNotFound(error);
   }
 
-  function* advanceMatch(
-    walkInfo: WalkEntry,
-    globSegment: string,
-  ): IterableIterator<WalkEntry> {
+  function* advanceMatch(walkInfo: WalkEntry, globSegment: string): IterableIterator<WalkEntry> {
     if (!walkInfo.isDirectory) {
       return;
     } else if (globSegment === "..") {
@@ -491,17 +471,12 @@ export function* expandGlobSync(
       });
     }
     const globPattern = globToRegExp(globSegment, globOptions);
-    for (
-      const walkEntry of walkSync(walkInfo.path, {
-        maxDepth: 1,
-        skip: excludePatterns,
-        followSymlinks,
-      })
-    ) {
-      if (
-        walkEntry.path !== walkInfo.path &&
-        walkEntry.name.match(globPattern)
-      ) {
+    for (const walkEntry of walkSync(walkInfo.path, {
+      maxDepth: 1,
+      skip: excludePatterns,
+      followSymlinks,
+    })) {
+      if (walkEntry.path !== walkInfo.path && walkEntry.name.match(globPattern)) {
         yield walkEntry;
       }
     }
@@ -521,14 +496,10 @@ export function* expandGlobSync(
   }
 
   if (hasTrailingSep) {
-    currentMatches = currentMatches.filter(
-      (entry: WalkEntry): boolean => entry.isDirectory,
-    );
+    currentMatches = currentMatches.filter((entry: WalkEntry): boolean => entry.isDirectory);
   }
   if (!includeDirs) {
-    currentMatches = currentMatches.filter(
-      (entry: WalkEntry): boolean => !entry.isDirectory,
-    );
+    currentMatches = currentMatches.filter((entry: WalkEntry): boolean => !entry.isDirectory);
   }
   yield* currentMatches;
 }

@@ -109,9 +109,7 @@ export { download } from "./download.ts";
 type Cast<A, B> = A extends B ? A : B;
 type Const<T> = Cast<
   T,
-  | (T extends string | number | bigint | boolean ? T : never)
-  | { [K in keyof T]: Const<T[K]> }
-  | []
+  (T extends string | number | bigint | boolean ? T : never) | { [K in keyof T]: Const<T[K]> } | []
 >;
 
 /**

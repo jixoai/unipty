@@ -37,9 +37,6 @@ export function hostTtySize(): { cols?: number; rows?: number } {
 
 function isPositiveInteger(value: number | undefined): value is number {
   return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value > 0 &&
-    Number.isFinite(value)
+    typeof value === "number" && Number.isInteger(value) && value > 0 && Number.isFinite(value)
   );
 }

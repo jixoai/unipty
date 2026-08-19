@@ -30,10 +30,7 @@ Deno.test("spawn echoes argv bytes and observes exit 0", async () => {
   const backend = await makeBackend();
   const endpoint = backend.spawn({ argv: ["/bin/echo", "hello", "world"], cols: 80, rows: 24 });
   assertEqual(endpoint.native, { input: "bytes", output: "bytes" });
-  const { text, done } = await collectUntil(
-    endpoint,
-    (t) => t.includes("hello world"),
-  );
+  const { text, done } = await collectUntil(endpoint, (t) => t.includes("hello world"));
   assertEqual(text.trim(), "hello world");
   assertEqual(done, false);
   const exit = await endpoint.exited;
@@ -85,11 +82,10 @@ Deno.test("resize is observable by the child", async () => {
   // read the SECOND stty line to observe the resize landing.
   const phase1 = await collectUntil(endpoint, (t) => t.trim().length > 0);
   endpoint.resize(120, 40);
-  const phase2 = await collectUntil(
-    endpoint,
-    (t) => t.trim().length > 0,
-    { reader: phase1.reader, timeoutMs: 8_000 },
-  );
+  const phase2 = await collectUntil(endpoint, (t) => t.trim().length > 0, {
+    reader: phase1.reader,
+    timeoutMs: 8_000,
+  });
   assertEqual(phase1.text.trim(), "37 101"); // initial geometry reached the child
   assertEqual(phase2.text.trim(), "40 120"); // resize observed by the second stty
   await phase2.reader.cancel().catch(() => {});
@@ -159,7 +155,9 @@ Deno.test("write rejects NUL and non-UTF-8 input explicitly", async () => {
     "invalid-argument",
   );
   assertEqual(
-    await errorCode(() => endpoint.write({ kind: "bytes", bytes: new Uint8Array([0x61, 0x00, 0x62]) })),
+    await errorCode(() =>
+      endpoint.write({ kind: "bytes", bytes: new Uint8Array([0x61, 0x00, 0x62]) }),
+    ),
     "invalid-argument",
   );
   assertEqual(
@@ -236,7 +234,13 @@ Deno.test("close defers physical teardown: stream completes, child stays alive",
   ]);
   assertEqual(exitStillPending, true);
   await sleep(1_000);
-  assertEqual(await Deno.stat(marker).then(() => true, () => false), false);
+  assertEqual(
+    await Deno.stat(marker).then(
+      () => true,
+      () => false,
+    ),
+    false,
+  );
   // Explicit termination afterwards settles the observation honestly.
   endpoint.terminate();
   assertEqual(await endpoint.exited, { exitCode: null, signal: null });

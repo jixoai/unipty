@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { UniPty } from "../src/index.ts";
 import { MockBackend, setupPty } from "./support/mock-backend.ts";
 import { expectSyncCode, flushMicrotasks, isPending } from "./support/helpers.ts";
 
@@ -87,5 +88,32 @@ describe("UniPty disposal", () => {
     await expect(disposal).rejects.toThrowError("backend release failed");
     expect(backend.disposeCount).toBe(1);
     expectSyncCode(() => unipty.spawn(["still-blocked"]), "closed");
+  });
+});
+
+describe("disposal reentrancy from inside backend disposal", () => {
+  it("blocks a synchronous spawn issued from backend.dispose() and reuses one disposal", async () => {
+    const mock = new MockBackend();
+    let reentrantCode: string | undefined;
+    let disposed = 0;
+    const wrapped = {
+      spawn: (launch: Parameters<MockBackend["spawn"]>[0]) => mock.spawn(launch),
+      dispose: (): Promise<void> => {
+        disposed += 1;
+        try {
+          unipty.spawn(["reentrant"]);
+        } catch (error) {
+          reentrantCode = (error as { code?: string }).code;
+        }
+        return mock.dispose();
+      },
+    };
+    const unipty = new UniPty({ backend: wrapped });
+    const first = unipty.dispose();
+    const second = unipty.dispose();
+    expect(first).toBe(second);
+    await first;
+    expect(reentrantCode).toBe("closed");
+    expect(disposed).toBe(1);
   });
 });

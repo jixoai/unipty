@@ -12,10 +12,7 @@
 import { existsSync, realpathSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
-import {
-  generateUniPtyBackendManifestModule,
-  UniPtyHelperCandidateError,
-} from "./generate.ts";
+import { generateUniPtyBackendManifestModule, UniPtyHelperCandidateError } from "./generate.ts";
 
 const USAGE = `usage: unipty-helper-backend manifest
   --candidate <packageName>   ordered candidate; repeatable, required (>= 1)
@@ -187,9 +184,7 @@ export async function main(
 
   const outFile = resolve(io.cwd(), parsed.out as string);
   if (io.exists(outFile) && !parsed.force) {
-    io.stderr.write(
-      `error: ${outFile} already exists; pass --force to replace it\n`,
-    );
+    io.stderr.write(`error: ${outFile} already exists; pass --force to replace it\n`);
     return 1;
   }
   io.writeFile(outFile, source);

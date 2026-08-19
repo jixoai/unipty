@@ -11,12 +11,8 @@ concurrency:
 
 jobs:
   quality:
-    name: Format, architecture, types, build, unit tests
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
+    name: Format, architecture, types, build, node-runtime unit suites
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,8 +24,10 @@ jobs:
       - run: pnpm check:arch
       - run: pnpm build
       - run: pnpm typecheck
-      - name: Unit tests (node-runtime packages)
-        run: pnpm -r --filter './packages/*' --filter '!@unipty/www' --if-present run test:node || pnpm -r --filter './packages/unipty' --filter './packages/backend' --filter './packages/helper-backend' --filter './packages/backend-node-pty' --filter './packages/conformance' run test
+      - name: Unit suites (vitest packages)
+        run: >-
+          pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend
+          --filter @unipty/backend-node-pty --filter @unipty/conformance run test
 
   bun-suite:
     name: Bun runtime suite
@@ -49,7 +47,7 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: @unipty/backend-bun adapter suite (real PTY)
+      - name: "@unipty/backend-bun adapter suite (real PTY)"
         run: cd packages/backend-bun && bun test
 
   deno-suite:
@@ -70,5 +68,64 @@ jobs:
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
-      - name: @unipty/backend-deno-sigma__pty-ffi adapter suite (real FFI PTY)
-        run: cd packages/backend-deno-sigma__pty-ffi && deno test -A test/
+      - name: "@unipty/backend-deno-sigma__pty-ffi adapter suite (real FFI PTY)"
+        run: cd packages/backend-deno-sigma__pty-ffi && deno test -A --no-check test/
+
+  conformance-matrix:
+    name: Installed public-package conformance
+    needs: [quality, bun-suite, deno-suite]
+    if: github.event_name == 'push'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - route: node-pty
+            os: ubuntu-latest
+            runtime: node
+          - route: node-pty
+            os: macos-latest
+            runtime: node
+          - route: bun
+            os: ubuntu-latest
+            runtime: bun
+          - route: bun
+            os: macos-latest
+            runtime: bun
+          - route: deno-sigma__pty-ffi
+            os: ubuntu-latest
+            runtime: deno
+          - route: deno-sigma__pty-ffi
+            os: macos-latest
+            runtime: deno
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Evidence records the exact tested commit; a full history keeps
+          # `git rev-parse HEAD` stable.
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.9.4"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Pack and install the public packages into an isolated consumer
+        run: node packages/conformance/scripts/pack-and-install.mjs ${{ matrix.route }}
+      - name: Run the full public conformance profile (evidence only on full pass)
+        run: node packages/conformance/scripts/run-installed-profile.mjs ${{ matrix.route }} ${{ matrix.runtime }}
+      - name: Upload conformance report and evidence artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: conformance-${{ matrix.route }}-${{ matrix.os }}
+          path: |
+            packages/conformance/reports/
+            packages/conformance/evidence/
+          if-no-files-found: warn

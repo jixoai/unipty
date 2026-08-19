@@ -10,8 +10,6 @@
 
 export { generateUniPtyBackendManifestModule } from "./generate.ts";
 export { UniPtyHelperCandidateError } from "./generate.ts";
-export type {
-  GenerateUniPtyBackendManifestModuleOptions,
-} from "./generate.ts";
+export type { GenerateUniPtyBackendManifestModuleOptions } from "./generate.ts";
 export { main } from "./cli.ts";
 export type { CliIo } from "./cli.ts";

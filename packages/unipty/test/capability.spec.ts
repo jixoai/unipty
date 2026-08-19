@@ -23,7 +23,9 @@ describe("capability lookup", () => {
   it("returns undefined for an equal-looking token from another package copy", () => {
     const registered = defineCapabilityToken<KillCapability>();
     const duplicate = defineCapabilityToken<KillCapability>();
-    const capabilities = new Map<CapabilityToken<unknown>, unknown>([[registered, { kill: () => {} }]]);
+    const capabilities = new Map<CapabilityToken<unknown>, unknown>([
+      [registered, { kill: () => {} }],
+    ]);
     const { pty } = setupPty({ capabilities });
     // Both tokens are structurally empty objects; only identity may match.
     expect(pty.capability(duplicate)).toBeUndefined();

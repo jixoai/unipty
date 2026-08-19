@@ -67,23 +67,24 @@ class PtyImpl implements Pty {
 
   stream(options: { encoding: "utf8" }): ReadableStream<string>;
   stream(options: { encoding: "bytes" }): ReadableStream<Uint8Array>;
-  stream(options: { encoding: "utf8" | "bytes" }): ReadableStream<string> | ReadableStream<Uint8Array> {
+  stream(options: {
+    encoding: "utf8" | "bytes";
+  }): ReadableStream<string> | ReadableStream<Uint8Array> {
     this.assertOpen("stream");
-    if (
-      options.encoding === "bytes" &&
-      this.endpoint.native.output === "text"
-    ) {
-      throw new UniPtyError(
-        "unsupported",
-        'stream({ encoding: "bytes" }) requires a Backend that exposes native Terminal Bytes; re-encoded text is never claimed as native bytes',
-      );
-    }
     if (this.pump.hasActiveView) {
       // One Terminal Stream per PTY: the established view must detach
-      // (cancel or complete) before a new one may be created.
+      // (cancel or complete) before a new one may be created. This check
+      // precedes representation checks so the failure is attributable to
+      // the stream slot, not the encoding.
       throw new UniPtyError(
         "active-stream",
         "a Terminal Stream is already established for this PTY; cancel it before creating another",
+      );
+    }
+    if (options.encoding === "bytes" && this.endpoint.native.output === "text") {
+      throw new UniPtyError(
+        "unsupported",
+        'stream({ encoding: "bytes" }) requires a Backend that exposes native Terminal Bytes; re-encoded text is never claimed as native bytes',
       );
     }
     const stream = new ReadableStream<string | Uint8Array>({
@@ -197,7 +198,10 @@ export class UniPty<TBackend extends ReadyPtyBackend = ReadyPtyBackend> {
       throw new UniPtyError("closed", "this UniPty is disposed; spawn() is blocked");
     }
     if (!Array.isArray(argv) || argv.length === 0) {
-      throw new UniPtyError("invalid-argument", "argv must be a non-empty executable-plus-arguments vector");
+      throw new UniPtyError(
+        "invalid-argument",
+        "argv must be a non-empty executable-plus-arguments vector",
+      );
     }
     for (const element of argv) {
       if (typeof element !== "string") {

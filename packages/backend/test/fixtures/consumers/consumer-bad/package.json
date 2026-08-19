@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@fixture/no-metadata": "*",
-    "@fixture/incompatible-protocol": "*"
+    "@fixture/incompatible-protocol": "*",
+    "@fixture/no-metadata": "*"
   }
 }

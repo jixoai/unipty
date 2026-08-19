@@ -3,10 +3,10 @@
     <p class="kicker">UniPty v1 · PTY platform</p>
     <h1>The runtime-neutral PTY contract for Node, Bun, and Deno.</h1>
     <p class="lede">
-      One Core API for pseudo-terminals. Bring your own native substrate —
-      node-pty, <code>Bun.Terminal</code>, or <code>@sigma/pty-ffi</code> —
-      through developer-selectable, replaceable Backends. Support claims come
-      only from the release evidence catalog, never from metadata.
+      One Core API for pseudo-terminals. Bring your own native substrate — node-pty,
+      <code>Bun.Terminal</code>, or <code>@sigma/pty-ffi</code> — through developer-selectable,
+      replaceable Backends. Support claims come only from the release evidence catalog, never from
+      metadata.
     </p>
     <p class="hero-actions">
       <a class="btn btn-primary" href="/docs.html">Read the docs</a>
@@ -19,8 +19,8 @@
   <div class="container">
     <h2>Quick start</h2>
     <p>
-      Acquire a ready Backend, hand it to Core, spawn a shell with a
-      structured argv — no string commands, no implicit shell.
+      Acquire a ready Backend, hand it to Core, spawn a shell with a structured argv — no string
+      commands, no implicit shell.
     </p>
     <pre class="code" data-lang="ts"><code>import { UniPty } from "unipty";
 import { createNodePtyBackend } from "@unipty/backend-node-pty";
@@ -49,8 +49,8 @@ if (!pty.write("echo hello\r")) {
 // 6. Observe process exit independently of the stream.
 const { exitCode, signal } = await pty.exited;</code></pre>
     <p>
-      The same Core contract runs on every official Backend route. Swapping
-      routes means swapping the Backend you acquire — nothing else changes.
+      The same Core contract runs on every official Backend route. Swapping routes means swapping
+      the Backend you acquire — nothing else changes.
     </p>
   </div>
 </section>
@@ -62,26 +62,24 @@ const { exitCode, signal } = await pty.exited;</code></pre>
       <article class="card">
         <h3>One contract, three runtimes</h3>
         <p>
-          Core owns streams, bootstrap buffering, UTF-8 conversion,
-          backpressure, common errors, and lifecycle. Your code stays
-          runtime-neutral across Node, Bun, and Deno.
+          Core owns streams, bootstrap buffering, UTF-8 conversion, backpressure, common errors, and
+          lifecycle. Your code stays runtime-neutral across Node, Bun, and Deno.
         </p>
       </article>
       <article class="card">
         <h3>Backends are replaceable</h3>
         <p>
-          The native substrate — node-pty, <code>Bun.Terminal</code>,
-          <code>@sigma/pty-ffi</code> — lives behind a Backend Endpoint seam.
-          Persistent or remote hosts arrive as Backends, not a second plugin
-          lifecycle.
+          The native substrate — node-pty, <code>Bun.Terminal</code>, <code>@sigma/pty-ffi</code> —
+          lives behind a Backend Endpoint seam. Persistent or remote hosts arrive as Backends, not a
+          second plugin lifecycle.
         </p>
       </article>
       <article class="card">
         <h3>Evidence, not promises</h3>
         <p>
-          Metadata declares targets; it never claims support. Only a
-          full-suite conformance pass against an installed package on an exact
-          runtime/platform tuple becomes <span class="badge badge-verified">verified</span>
+          Metadata declares targets; it never claims support. Only a full-suite conformance pass
+          against an installed package on an exact runtime/platform tuple becomes
+          <span class="badge badge-verified">verified</span>
           in the release catalog.
         </p>
       </article>
@@ -95,7 +93,12 @@ const { exitCode, signal } = await pty.exited;</code></pre>
     <div class="table-scroll">
       <table>
         <thead>
-          <tr><th>Package</th><th>Substrate</th><th>Runtime</th><th>Provenance</th></tr>
+          <tr>
+            <th>Package</th>
+            <th>Substrate</th>
+            <th>Runtime</th>
+            <th>Provenance</th>
+          </tr>
         </thead>
         <tbody>
           <tr>

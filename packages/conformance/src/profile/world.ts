@@ -11,7 +11,13 @@
 import type { Pty, ReadyPtyBackend, UniPtySpawnOptions } from "unipty";
 import { UniPty } from "unipty";
 import { childArgv, type CurrentRuntimeInfo, type FixtureName } from "../fixtures/fixtures.ts";
-import { quiescePty, readReaderToCompletion, readReaderUntil, withTimeout, normalizeTtyText } from "./util.ts";
+import {
+  quiescePty,
+  readReaderToCompletion,
+  readReaderUntil,
+  withTimeout,
+  normalizeTtyText,
+} from "./util.ts";
 
 /** Backend-declared accommodations, recorded explicitly on scenario results. */
 export interface ScenarioAccommodations {

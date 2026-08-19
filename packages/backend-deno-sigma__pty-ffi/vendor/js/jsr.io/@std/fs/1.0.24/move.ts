@@ -58,10 +58,7 @@ export async function move(
 
   const srcStat = await Deno.stat(src);
 
-  if (
-    srcStat.isDirectory &&
-    (isSubdir(src, dest) || isSamePath(src, dest))
-  ) {
+  if (srcStat.isDirectory && (isSubdir(src, dest) || isSamePath(src, dest))) {
     throw new Deno.errors.NotSupported(
       `Cannot move '${src}' to a subdirectory of itself, '${dest}'.`,
     );
@@ -126,19 +123,12 @@ export async function move(
  * This will move the file or directory at `./foo` to `./bar`, overwriting
  * `./bar` if it already exists.
  */
-export function moveSync(
-  src: string | URL,
-  dest: string | URL,
-  options?: MoveOptions,
-): void {
+export function moveSync(src: string | URL, dest: string | URL, options?: MoveOptions): void {
   const { overwrite = false } = options ?? {};
 
   const srcStat = Deno.statSync(src);
 
-  if (
-    srcStat.isDirectory &&
-    (isSubdir(src, dest) || isSamePath(src, dest))
-  ) {
+  if (srcStat.isDirectory && (isSubdir(src, dest) || isSamePath(src, dest))) {
     throw new Deno.errors.NotSupported(
       `Cannot move '${src}' to a subdirectory of itself, '${dest}'.`,
     );

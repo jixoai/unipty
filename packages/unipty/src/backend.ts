@@ -9,7 +9,12 @@
  */
 
 import type { CapabilityToken } from "./capability.ts";
-import type { BackendExitResult, NativeChunk, NativeInput, NativeRepresentation } from "./native.ts";
+import type {
+  BackendExitResult,
+  NativeChunk,
+  NativeInput,
+  NativeRepresentation,
+} from "./native.ts";
 
 /**
  * Structured launch request handed to a ready Backend. Geometry is already

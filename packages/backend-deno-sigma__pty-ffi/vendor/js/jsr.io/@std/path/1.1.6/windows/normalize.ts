@@ -109,12 +109,7 @@ export function normalize(path: string | URL): string {
 
   let tail: string;
   if (rootEnd < len) {
-    tail = normalizeString(
-      path.slice(rootEnd),
-      !isAbsolute,
-      "\\",
-      isPathSeparator,
-    );
+    tail = normalizeString(path.slice(rootEnd), !isAbsolute, "\\", isPathSeparator);
   } else {
     tail = "";
   }

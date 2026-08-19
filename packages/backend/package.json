@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "UniPty Backend acquisition convenience: caller-rooted resolution, metadata inspection, deterministic AutoResolve, and the explicit bundle manifest constructor.",
   "license": "MIT",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -11,9 +14,6 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit -p tsconfig.json",

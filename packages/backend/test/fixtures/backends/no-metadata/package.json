@@ -1,9 +1,12 @@
 {
   "name": "@fixture/no-metadata",
   "version": "1.0.0",
-  "type": "module",
   "description": "Test fixture package without the ./unipty.metadata subpath.",
+  "type": "module",
   "exports": {
-    ".": { "import": "./index.js", "default": "./index.js" }
+    ".": {
+      "import": "./index.js",
+      "default": "./index.js"
+    }
   }
 }

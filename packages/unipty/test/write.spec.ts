@@ -8,7 +8,10 @@ describe("write representation selection", () => {
     const { endpoint, pty } = setupPty({ native: { input: "text", output: "text" } });
     expect(pty.write("héllo")).toBe(true);
     expect(endpoint.acceptedWrites.length).toBe(1);
-    expect(endpoint.acceptedWrites[0]).toEqual({ kind: "text", text: "héllo" } satisfies NativeInput);
+    expect(endpoint.acceptedWrites[0]).toEqual({
+      kind: "text",
+      text: "héllo",
+    } satisfies NativeInput);
   });
 
   it("delivers a string as UTF-8-encoded native bytes to a byte-native endpoint", () => {
@@ -74,11 +77,9 @@ describe("write readiness", () => {
     pty.write("a");
     pty.write("b");
     pty.write("c");
-    expect(endpoint.acceptedWrites.map((input) => (input.kind === "text" ? input.text : ""))).toEqual([
-      "a",
-      "b",
-      "c",
-    ]);
+    expect(
+      endpoint.acceptedWrites.map((input) => (input.kind === "text" ? input.text : "")),
+    ).toEqual(["a", "b", "c"]);
   });
 });
 
@@ -95,10 +96,9 @@ describe("write saturation", () => {
     expect(pty.write("kept")).toBe(true);
     expectSyncCode(() => pty.write("dropped"), "backpressure");
     expect(pty.write("also-kept")).toBe(true);
-    expect(endpoint.acceptedWrites.map((input) => (input.kind === "text" ? input.text : ""))).toEqual([
-      "kept",
-      "also-kept",
-    ]);
+    expect(
+      endpoint.acceptedWrites.map((input) => (input.kind === "text" ? input.text : "")),
+    ).toEqual(["kept", "also-kept"]);
   });
 
   it("rejects write after close with closed and never reaches the endpoint", () => {

@@ -36,8 +36,7 @@
 const SUBSTRATE_PACKAGE = "@sigma/pty-ffi";
 const SUBSTRATE_VERSION = "0.42.0";
 const ENTRY_SPECIFIER = `jsr:${SUBSTRATE_PACKAGE}@${SUBSTRATE_VERSION}/noinit`;
-const RELEASE_BASE =
-  `https://github.com/sigmaSd/deno-pty-ffi/releases/download/${SUBSTRATE_VERSION}`;
+const RELEASE_BASE = `https://github.com/sigmaSd/deno-pty-ffi/releases/download/${SUBSTRATE_VERSION}`;
 
 /** Native release assets, pinned by sha256. */
 interface NativeAsset {
@@ -221,9 +220,10 @@ async function denoInfoJson(): Promise<string> {
     const start = text.search(/^{$/m);
     if (code !== 0 || start < 0) {
       fail(
-        `deno info failed (exit ${code}): ${
-          stripAnsi(new TextDecoder().decode(stderr)).slice(0, 2000)
-        }`,
+        `deno info failed (exit ${code}): ${stripAnsi(new TextDecoder().decode(stderr)).slice(
+          0,
+          2000,
+        )}`,
       );
     }
     return text.slice(start);
@@ -294,9 +294,10 @@ async function loadGraph(pins: Map<string, string>): Promise<Graph> {
     modules?: { specifier: string; mediaType?: string }[];
   };
   const urls = (info.modules ?? [])
-    .filter((m) =>
-      m.specifier.startsWith("https://jsr.io/") &&
-      (m.mediaType === "TypeScript" || m.mediaType === "Json")
+    .filter(
+      (m) =>
+        m.specifier.startsWith("https://jsr.io/") &&
+        (m.mediaType === "TypeScript" || m.mediaType === "Json"),
     )
     .map((m) => m.specifier)
     .sort();
@@ -383,9 +384,7 @@ function parseJsrSpecifier(spec: string, pins: Map<string, string>): JsrSpecifie
   const pinned = pins.get(pkg);
   if (pinned === undefined) return undefined;
   if (versionRange !== undefined && !satisfiesRange(pinned, versionRange)) {
-    fail(
-      `specifier ${spec} wants ${versionRange} but the root deno.lock pins ${pkg}@${pinned}`,
-    );
+    fail(`specifier ${spec} wants ${versionRange} but the root deno.lock pins ${pkg}@${pinned}`);
   }
   return { pkg, version: pinned, subpath };
 }
@@ -404,14 +403,15 @@ function satisfiesRange(pinned: string, range: string): boolean {
 function resolveModuleUrl(graph: Graph, spec: JsrSpecifier): string | undefined {
   const base = `https://jsr.io/${spec.pkg}/${spec.version}`;
   const files = new Set(graph.modules.filter((u) => !u.endsWith(".json")));
-  const candidates = spec.subpath === ""
-    ? [`${base}/mod.ts`, `${base}/index.ts`, `${base}/mod.js`, `${base}/index.js`]
-    : [
-      `${base}/${spec.subpath}`,
-      `${base}/${spec.subpath}.ts`,
-      `${base}/${spec.subpath}/mod.ts`,
-      `${base}/${spec.subpath}.js`,
-    ];
+  const candidates =
+    spec.subpath === ""
+      ? [`${base}/mod.ts`, `${base}/index.ts`, `${base}/mod.js`, `${base}/index.js`]
+      : [
+          `${base}/${spec.subpath}`,
+          `${base}/${spec.subpath}.ts`,
+          `${base}/${spec.subpath}/mod.ts`,
+          `${base}/${spec.subpath}.js`,
+        ];
   for (const candidate of candidates) {
     if (files.has(candidate)) return candidate;
   }
@@ -448,7 +448,10 @@ function rewriteSource(
           `(referenced from ${fromVendorFile})`,
       );
     }
-    source = source.replaceAll(`"${literal}"`, `"${relativeSpec(dirname(fromVendorFile), vendorPathFor(target))}"`);
+    source = source.replaceAll(
+      `"${literal}"`,
+      `"${relativeSpec(dirname(fromVendorFile), vendorPathFor(target))}"`,
+    );
   }
   return source;
 }
@@ -515,7 +518,11 @@ function rewriteJsonSource(
   }
   if (value === null || typeof value !== "object") return source;
   const record = value as Record<string, unknown>;
-  if (record.imports !== undefined && record.imports !== null && typeof record.imports === "object") {
+  if (
+    record.imports !== undefined &&
+    record.imports !== null &&
+    typeof record.imports === "object"
+  ) {
     const imports = { ...(record.imports as Record<string, unknown>) };
     for (const key of Object.keys(imports)) {
       const spec = imports[key];
@@ -550,8 +557,8 @@ async function vendorJs(graph: Graph, pins: Map<string, string>): Promise<Manife
     const rewritten = url.endsWith(".ts")
       ? rewriteSource(source, target, graph, pins)
       : url.endsWith(".json")
-      ? rewriteJsonSource(source, target, graph, pins)
-      : source;
+        ? rewriteJsonSource(source, target, graph, pins)
+        : source;
     if (/jsr:/.test(rewritten)) {
       fail(`a jsr: specifier survived rewriting while producing ${target}`);
     }
@@ -583,7 +590,7 @@ async function vendorLibs(): Promise<ManifestLib[]> {
     let data: Uint8Array | undefined;
     try {
       const existing = await Deno.readFile(target);
-      if (existing.length > 0 && await sha256Bytes(existing) === asset.sha256) {
+      if (existing.length > 0 && (await sha256Bytes(existing)) === asset.sha256) {
         data = existing;
       }
     } catch {
@@ -641,10 +648,37 @@ async function runFull(): Promise<void> {
     js: { count: jsFiles.length, files: jsFiles },
     libs,
   };
-  await writeBytes(manifestPath, new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`));
+  await writeBytes(
+    manifestPath,
+    new TextEncoder().encode(`${JSON.stringify(manifest, null, 2)}\n`),
+  );
+  await bundleClosure();
   log(
     `vendored ${jsFiles.length} modules -> vendor/js and ${libs.length} libraries -> vendor/lib; manifest written`,
   );
+}
+
+/**
+ * Bundle the mirrored TypeScript closure into ONE plain-JavaScript ESM file
+ * (`vendor/js/noinit.bundle.js`) with the repository's rolldown. Deno
+ * refuses to type-strip TypeScript under `node_modules`, so the packed npm
+ * artifact consumed by an isolated installer must ship precompiled JS; the
+ * factory imports the bundle, never the mirrored .ts graph.
+ */
+async function bundleClosure(): Promise<void> {
+  const entry = join(packageDir, "vendor/js/jsr.io/@sigma/pty-ffi/0.42.0/mod_noinit.ts");
+  const out = join(packageDir, "vendor/js/noinit.bundle.js");
+  log(`bundling vendored closure -> ${relativeSpec(packageDir, out)}`);
+  const command = new Deno.Command(join(packageDir, "../../node_modules/.bin/rolldown"), {
+    args: [entry, "--format", "esm", "--file", out],
+    cwd: packageDir,
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  const status = await command.spawn().status;
+  if (!status.success) {
+    fail(`rolldown failed to bundle the vendored closure (exit ${status.code})`);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -674,7 +708,7 @@ async function verifyVendor(manifest: Manifest): Promise<void> {
     } catch {
       fail(`vendored file missing: ${entry.path}`);
     }
-    if (data.length !== entry.bytes || await sha256Bytes(data) !== entry.sha256) {
+    if (data.length !== entry.bytes || (await sha256Bytes(data)) !== entry.sha256) {
       fail(`vendored file corrupted: ${entry.path}`);
     }
   }

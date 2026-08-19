@@ -30,9 +30,7 @@ export function resolve(...pathSegments: string[]): string {
 
     if (i >= 0) path = pathSegments[i]!;
     else {
-      path = cwd(
-        "Resolved a relative path without a current working directory (CWD)",
-      );
+      path = cwd("Resolved a relative path without a current working directory (CWD)");
     }
 
     assertPath(path);
@@ -50,12 +48,7 @@ export function resolve(...pathSegments: string[]): string {
   // handle relative paths to be safe (might happen when cwd() fails)
 
   // Normalize the path
-  resolvedPath = normalizeString(
-    resolvedPath,
-    !resolvedAbsolute,
-    "/",
-    isPosixPathSeparator,
-  );
+  resolvedPath = normalizeString(resolvedPath, !resolvedAbsolute, "/", isPosixPathSeparator);
 
   if (resolvedAbsolute) {
     if (resolvedPath.length > 0) return `/${resolvedPath}`;

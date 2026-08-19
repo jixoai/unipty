@@ -20,18 +20,15 @@ import {
 async function fixtureMetadata(dir: string): Promise<UniPtyBackendMetadata> {
   // Reuse the runtime evaluator instead of duplicating fixture literals: the
   // metadata modules are side-effect-free by design.
-  const moduleUrl = new URL(
-    `./fixtures/backends/${dir}/unipty.metadata.js`,
-    import.meta.url,
-  ).href;
+  const moduleUrl = new URL(`./fixtures/backends/${dir}/unipty.metadata.js`, import.meta.url).href;
   const imported = (await import(moduleUrl)) as { default: unknown };
   return validateUniPtyBackendMetadata(imported.default);
 }
 
 function readyFixtureModule(): Promise<{ default: Record<string, unknown> }> {
-  return import(
-    new URL("./fixtures/backends/good-a/index.js", import.meta.url).href
-  ) as Promise<{ default: Record<string, unknown> }>;
+  return import(new URL("./fixtures/backends/good-a/index.js", import.meta.url).href) as Promise<{
+    default: Record<string, unknown>;
+  }>;
 }
 
 async function buildFixtureManifest(
@@ -45,7 +42,9 @@ async function buildFixtureManifest(
   }[] = [];
   for (const dir of dirs) {
     const plainLoad = (): Promise<object> =>
-      import(new URL(`./fixtures/backends/${dir}/index.js`, import.meta.url).href) as Promise<object>;
+      import(
+        new URL(`./fixtures/backends/${dir}/index.js`, import.meta.url).href
+      ) as Promise<object>;
     entries.push({
       packageName: `@fixture/${dir}`,
       metadata: await fixtureMetadata(dir),
@@ -65,9 +64,7 @@ describe("defineUniPtyBackendManifest", () => {
           metadata: await fixtureMetadata("good-a"),
           load: () => {
             loadCalls += 1;
-            return import(
-              new URL("./fixtures/backends/good-a/index.js", import.meta.url).href
-            );
+            return import(new URL("./fixtures/backends/good-a/index.js", import.meta.url).href);
           },
         },
       ],
@@ -80,15 +77,11 @@ describe("defineUniPtyBackendManifest", () => {
   });
 
   it("rejects an empty or malformed entry set", () => {
-    expect(() => defineUniPtyBackendManifest({ entries: [] })).toThrowError(
-      /non-empty/,
+    expect(() => defineUniPtyBackendManifest({ entries: [] })).toThrowError(/non-empty/);
+    expect(() => defineUniPtyBackendManifest({ entries: [{}] as never })).toThrowError(
+      /packageName/,
     );
-    expect(() =>
-      defineUniPtyBackendManifest({ entries: [{}] as never }),
-    ).toThrowError(/packageName/);
-    expect(() =>
-      defineUniPtyBackendManifest(undefined as never),
-    ).toThrowError(/entries/);
+    expect(() => defineUniPtyBackendManifest(undefined as never)).toThrowError(/entries/);
   });
 
   it("rejects invalid metadata", () => {
@@ -191,11 +184,7 @@ describe("defineUniPtyBackendManifest", () => {
 
 describe("autoResolveUniPtyBackend manifest mode", () => {
   it("selects the first compatible entry across all entries in manifest order", async () => {
-    const manifest = await buildFixtureManifest([
-      "runtime-bun",
-      "good-a",
-      "good-b",
-    ]);
+    const manifest = await buildFixtureManifest(["runtime-bun", "good-a", "good-b"]);
     const backend = await autoResolveUniPtyBackend({
       manifest,
       onWarning: () => {},

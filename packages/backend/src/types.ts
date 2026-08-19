@@ -101,8 +101,4 @@ export type UniPtyBackendInitializationError = Error & {
 };
 
 /** A ready Backend value returned by a successful acquisition. */
-export type {
-  ReadyPtyBackend,
-  BackendEndpoint,
-  StructuredLaunch,
-} from "unipty";
+export type { ReadyPtyBackend, BackendEndpoint, StructuredLaunch } from "unipty";

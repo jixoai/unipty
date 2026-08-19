@@ -125,16 +125,18 @@ export async function instantiate(libPath?: string): Promise<void> {
       cache: isLocalDev ? "reloadAll" : "use",
       // cargo build outputs libpty.so/libpty.dylib (no arch suffix),
       // while GitHub release artifacts are named with arch suffix.
-      suffixes: isLocalDev ? {} : {
-        linux: {
-          aarch64: "_aarch64",
-          x86_64: "_x86_64",
-        },
-        darwin: {
-          aarch64: "_arm64",
-          x86_64: "_x86_64",
-        },
-      },
+      suffixes: isLocalDev
+        ? {}
+        : {
+            linux: {
+              aarch64: "_aarch64",
+              x86_64: "_x86_64",
+            },
+            darwin: {
+              aarch64: "_arm64",
+              x86_64: "_x86_64",
+            },
+          },
     },
     SYMBOLS,
   );
@@ -149,9 +151,7 @@ export function libName(): string {
     case "linux":
       return `libpty_${Deno.build.arch}.so`;
     case "darwin":
-      return `libpty_${
-        Deno.build.arch === "x86_64" ? "x86_64" : "arm64"
-      }.dylib`;
+      return `libpty_${Deno.build.arch === "x86_64" ? "x86_64" : "arm64"}.dylib`;
     case "windows":
       return "pty.dll";
     default:

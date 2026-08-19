@@ -111,10 +111,7 @@ export function parse(path: string): ParsedPath {
   }
 
   if (startPart > 0) {
-    ret.dir = stripTrailingSeparators(
-      path.slice(0, startPart - 1),
-      isPosixPathSeparator,
-    );
+    ret.dir = stripTrailingSeparators(path.slice(0, startPart - 1), isPosixPathSeparator);
   } else if (isAbsolute) ret.dir = "/";
 
   return ret;

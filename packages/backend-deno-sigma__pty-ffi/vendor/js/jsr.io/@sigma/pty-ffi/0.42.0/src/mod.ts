@@ -56,9 +56,7 @@ export class Pty {
     const rustCommand = {
       cmd: command,
       ...options,
-      ...(options.size
-        ? { size: { pixel_width: 0, pixel_height: 0, ...options.size } }
-        : {}),
+      ...(options.size ? { size: { pixel_width: 0, pixel_height: 0, ...options.size } } : {}),
     };
     const cmdData = encodePointerLenData(rustCommand);
     const cmdDataPtr = Deno.UnsafePointer.of(cmdData); // Get pointer TO the TS buffer containing serialized data
@@ -115,7 +113,8 @@ export class Pty {
     const status = getLibrary().symbols.pty_read(this.#ptr, resultPtrBuf);
 
     switch (status) {
-      case 0: { // Success, data available (or empty string)
+      case 0: {
+        // Success, data available (or empty string)
         const dataPtr = readPointerFromResultBuffer(resultPtrBuf);
         if (!dataPtr) {
           // Rust's CString::new("") results in a valid, non-null pointer to a zero-byte string.
@@ -133,7 +132,8 @@ export class Pty {
           freeRustString(getLibrary(), dataPtr);
         }
       }
-      case 99: { // Special status code indicating the process has finished
+      case 99: {
+        // Special status code indicating the process has finished
         const dataPtr = readPointerFromResultBuffer(resultPtrBuf);
         if (!dataPtr) {
           console.warn("could not read exit code");
@@ -147,7 +147,8 @@ export class Pty {
           freeRustString(getLibrary(), dataPtr);
         }
       }
-      case -1: { // Error occurred
+      case -1: {
+        // Error occurred
         // resultPtrBuf contains the error CString pointer
         const errorMsg = readErrorAndFree(getLibrary(), resultPtrBuf);
         throw new Error(`Pty read failed: ${errorMsg}`);
@@ -402,11 +403,13 @@ export class Pty {
     return new ReadableStream<string>({
       start(controller) {
         (async () => {
-          while (!isCancelled) { // Check cancellation flag
+          while (!isCancelled) {
+            // Check cancellation flag
             try {
               // Check pointer validity before reading (in case close() was called)
               if (!ptyInstance.#ptr) {
-                if (!isCancelled) { // Avoid closing twice if cancelled already
+                if (!isCancelled) {
+                  // Avoid closing twice if cancelled already
                   controller.close();
                 }
                 clearTimeoutIfActive();
@@ -418,7 +421,8 @@ export class Pty {
               // Always pause after read attempt
               // IMPORTANT: this needs to be done immmediatly afer read before enqueueuing data
               // This gives the event loop a better chance to process other tasks
-              await new Promise<void>((resolve) => { // Use void for clarity
+              await new Promise<void>((resolve) => {
+                // Use void for clarity
                 // Ensure previous timer is cleared before setting new one (shouldn't be necessary but safe)
                 clearTimeoutIfActive();
                 currentTimeoutId = setTimeout(() => {
@@ -468,38 +472,41 @@ export class Pty {
         start(controller) {
           controller.error(new Error("Pty is closed."));
         },
-        write() { // Also error on write if closed at creation
+        write() {
+          // Also error on write if closed at creation
           throw new Error("Pty is closed.");
         },
       });
     }
     // deno-lint-ignore no-this-alias
     const ptyInstance = this;
-    return new WritableStream<string>({
-      write(chunk, controller) {
-        // Check if Pty is still valid *before* writing
-        if (!ptyInstance.#ptr) {
-          const err = new Error("Pty is closed.");
-          controller.error(err); // Signal error to the writer
-          throw err; // Also throw to stop potential pipelines
-        }
-        try {
-          ptyInstance.write(chunk); // Use the low-level write
-        } catch (e) {
-          controller.error(e); // Signal error to the writer
-          throw e; // Re-throw error
-        }
-      },
-      close() {
-        // Closing the writer doesn't necessarily mean we should close the Pty itself.
-        // It just means no more data will be written via this stream instance.
-        // console.log("[PTY Writable] Stream closed."); // Optional debug log
-      },
-      abort(_reason) {
-        // Similar to close, aborting the writer doesn't automatically close the Pty.
-        // console.log("[PTY Writable] Stream aborted:", reason); // Optional debug log
-      },
-    } /* new ByteLengthQueuingStrategy({ highWaterMark: 1024 * 16 }) */); // Optional: Add queuing strategy if needed
+    return new WritableStream<string>(
+      {
+        write(chunk, controller) {
+          // Check if Pty is still valid *before* writing
+          if (!ptyInstance.#ptr) {
+            const err = new Error("Pty is closed.");
+            controller.error(err); // Signal error to the writer
+            throw err; // Also throw to stop potential pipelines
+          }
+          try {
+            ptyInstance.write(chunk); // Use the low-level write
+          } catch (e) {
+            controller.error(e); // Signal error to the writer
+            throw e; // Re-throw error
+          }
+        },
+        close() {
+          // Closing the writer doesn't necessarily mean we should close the Pty itself.
+          // It just means no more data will be written via this stream instance.
+          // console.log("[PTY Writable] Stream closed."); // Optional debug log
+        },
+        abort(_reason) {
+          // Similar to close, aborting the writer doesn't automatically close the Pty.
+          // console.log("[PTY Writable] Stream aborted:", reason); // Optional debug log
+        },
+      } /* new ByteLengthQueuingStrategy({ highWaterMark: 1024 * 16 }) */,
+    ); // Optional: Add queuing strategy if needed
   }
 
   /**

@@ -1,0 +1,102 @@
+name: Release
+
+# Task 7.4 release gate: package publication requires at least one native
+# passing tuple for EVERY official route, proven by uploaded conformance
+# artifacts from the same tested commit; the aggregated catalog attaches to
+# the same tagged release. Site deployment stays independently retryable
+# (deploy-www.yml) and never blocks publication.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  verify-route-coverage:
+    name: Verify route coverage and aggregate the release catalog
+    runs-on: ubuntu-latest
+    outputs:
+      commit: ${{ steps.identity.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - name: Download every conformance artifact for this commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              per_page: 100,
+            });
+            fs.mkdirSync("/tmp/artifact-index.json", { recursive: true });
+            fs.writeFileSync(
+              "/tmp/artifact-index.json",
+              JSON.stringify(artifacts.data.artifacts.map((a) => ({
+                name: a.name, id: a.id, workflow_run: a.workflow_run?.head_sha ?? null,
+              })), null, 2),
+            );
+      - name: Collect evidence records for the tested commit
+        run: node packages/conformance/scripts/collect-release-evidence.mjs "${GITHUB_SHA}" /tmp/artifact-index.json
+      - id: identity
+        run: echo "commit=${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+      - name: Aggregate the deterministic release catalog (validates schema, identity, tuple, uniqueness, route coverage)
+        run: >-
+          node packages/conformance/runners/aggregate.ts
+          --evidence /tmp/release-evidence/node-pty-evidence.json
+          --evidence /tmp/release-evidence/bun-evidence.json
+          --evidence /tmp/release-evidence/deno-sigma__pty-ffi-evidence.json
+          --metadata /tmp/release-metadata/node.json
+          --metadata /tmp/release-metadata/bun.json
+          --metadata /tmp/release-metadata/deno.json
+          --commit "${GITHUB_SHA}" --release-tag "${GITHUB_REF_NAME}"
+          --out dist-release/catalog.json
+      - name: Upload the catalog artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-catalog-${{ github.ref_name }}
+          path: dist-release/catalog.json
+
+  publish:
+    name: Publish packages from the tested commit
+    needs: verify-route-coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify-route-coverage.outputs.commit }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+          registry-url: https://registry.npmjs.org
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - name: Pack the publishable set
+        run: >-
+          corepack pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend
+          --filter @unipty/backend-node-pty --filter @unipty/backend-bun
+          --filter @unipty/backend-deno-sigma__pty-ffi pack
+      - name: Attach the catalog to the tagged release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist-release/catalog.json
+      # npm publication itself is Owner-gated (task 9.3): the workflow is
+      # wired but remains a manual decision until the Owner accepts the
+      # release artifact. Uncomment after acceptance.
+      # - run: corepack pnpm -r --filter './packages/*' --filter '!@unipty/conformance' --filter '!@unipty/www' publish --access public --no-git-checks
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

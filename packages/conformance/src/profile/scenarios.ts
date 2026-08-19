@@ -59,7 +59,6 @@ const METACHARACTER_ARGS = [
   "  spaced  ",
 ];
 
-
 /**
  * Termination exit honesty: backends normally report a non-zero exit or an
  * observed signal; a substrate whose termination primitive destroys the

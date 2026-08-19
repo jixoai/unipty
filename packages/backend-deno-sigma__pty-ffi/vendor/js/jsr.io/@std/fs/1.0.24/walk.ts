@@ -4,18 +4,9 @@
 // Copyright 2009 The Go Authors. All rights reserved. BSD license.
 import { join } from "../../path/1.1.6/join.ts";
 import { toPathString } from "./_to_path_string.ts";
-import {
-  createWalkEntry,
-  createWalkEntrySync,
-  type WalkEntry,
-} from "./_create_walk_entry.ts";
+import { createWalkEntry, createWalkEntrySync, type WalkEntry } from "./_create_walk_entry.ts";
 
-function include(
-  path: string,
-  exts?: string[],
-  match?: RegExp[],
-  skip?: RegExp[],
-): boolean {
+function include(path: string, exts?: string[], match?: RegExp[], skip?: RegExp[]): boolean {
   if (exts && !exts.some((ext): boolean => path.endsWith(ext))) {
     return false;
   }
@@ -467,7 +458,7 @@ export async function* walk(
   }
   root = toPathString(root);
   if (exts) {
-    exts = exts.map((ext) => ext.startsWith(".") ? ext : `.${ext}`);
+    exts = exts.map((ext) => (ext.startsWith(".") ? ext : `.${ext}`));
   }
   if (includeDirs && include(root, exts, match, skip)) {
     yield await createWalkEntry(root);
@@ -875,10 +866,7 @@ export async function* walk(
  * // ]
  * ```
  */
-export function* walkSync(
-  root: string | URL,
-  options?: WalkOptions,
-): IterableIterator<WalkEntry> {
+export function* walkSync(root: string | URL, options?: WalkOptions): IterableIterator<WalkEntry> {
   let {
     maxDepth = Infinity,
     includeFiles = true,
@@ -893,7 +881,7 @@ export function* walkSync(
 
   root = toPathString(root);
   if (exts) {
-    exts = exts.map((ext) => ext.startsWith(".") ? ext : `.${ext}`);
+    exts = exts.map((ext) => (ext.startsWith(".") ? ext : `.${ext}`));
   }
   if (maxDepth < 0) {
     return;

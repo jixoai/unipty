@@ -32,11 +32,6 @@ export type { GlobOptions };
  * @param options Glob options.
  * @returns The joined and normalized glob string.
  */
-export function joinGlobs(
-  globs: string[],
-  options: GlobOptions = {},
-): string {
-  return isWindows
-    ? windowsJoinGlobs(globs, options)
-    : posixJoinGlobs(globs, options);
+export function joinGlobs(globs: string[], options: GlobOptions = {}): string {
+  return isWindows ? windowsJoinGlobs(globs, options) : posixJoinGlobs(globs, options);
 }

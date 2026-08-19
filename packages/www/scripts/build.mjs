@@ -17,20 +17,12 @@
  */
 
 import { createHash } from "node:crypto";
-import {
-  mkdirSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { derivePresentation, validateCatalog } from "./lib/catalog.mjs";
 
-const packageRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "..",
-);
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(packageRoot, "dist");
 const defaultCatalog = path.join(packageRoot, "fixtures", "catalog.dev.json");
 const siteDir = path.join(packageRoot, "site");
@@ -115,9 +107,7 @@ function renderEvidenceCell(row) {
   }
   const items = row.evidence
     .map((ev) => {
-      const report = ev.reportRef
-        ? ` · report <code>${escapeHtml(ev.reportRef)}</code>`
-        : "";
+      const report = ev.reportRef ? ` · report <code>${escapeHtml(ev.reportRef)}</code>` : "";
       return (
         `<li><span class="evidence-line">` +
         `<strong>${escapeHtml(ev.runtimeName)} ${escapeHtml(ev.runtimeVersion)}</strong>` +
@@ -175,15 +165,12 @@ function renderMatrix(presentation) {
 /* --------------------------------------------------------------------- */
 
 const substitute = (template, vars) => {
-  const out = template.replace(
-    /\{\{([A-Z][A-Z0-9_]*)\}\}/g,
-    (match, name) => {
-      if (!(name in vars)) {
-        throw new BuildError(`template references unknown token ${match}`);
-      }
-      return vars[name];
-    },
-  );
+  const out = template.replace(/\{\{([A-Z][A-Z0-9_]*)\}\}/g, (match, name) => {
+    if (!(name in vars)) {
+      throw new BuildError(`template references unknown token ${match}`);
+    }
+    return vars[name];
+  });
   const leftover = out.match(/\{\{[A-Z][A-Z0-9_]*\}\}/);
   if (leftover) throw new BuildError(`unsubstituted token ${leftover[0]}`);
   return out;
@@ -200,10 +187,7 @@ export function resolveCatalogPath(argv = process.argv, env = process.env) {
   return defaultCatalog;
 }
 
-export function runBuild(
-  catalogPath,
-  { cname = false, quiet = false } = {},
-) {
+export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
   const log = (...args) => {
     if (!quiet) console.log("[www-build]", ...args);
   };
@@ -223,9 +207,7 @@ export function runBuild(
   }
   const validated = validateCatalog(parsed);
   if (!validated.ok) {
-    throw new BuildError(
-      `catalog validation failed:\n  ${validated.errors.join("\n  ")}`,
-    );
+    throw new BuildError(`catalog validation failed:\n  ${validated.errors.join("\n  ")}`);
   }
   const presentation = derivePresentation(validated.catalog);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
@@ -309,7 +291,9 @@ if (invokedDirectly) {
       cname: process.env.WWW_CNAME === "1",
     });
   } catch (error) {
-    console.error(`[www-build] ${error instanceof BuildError ? error.message : error.stack ?? error}`);
+    console.error(
+      `[www-build] ${error instanceof BuildError ? error.message : (error.stack ?? error)}`,
+    );
     process.exit(1);
   }
 }

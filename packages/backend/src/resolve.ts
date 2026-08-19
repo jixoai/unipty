@@ -117,10 +117,9 @@ export async function resolveUniPtyBackend(
   options: ResolveUniPtyBackendOptions,
 ): Promise<BackendResolveReport> {
   if (typeof packageName !== "string" || packageName.trim().length === 0) {
-    throwInvalidArgument(
-      "resolveUniPtyBackend requires a non-empty package name string",
-      { packageName },
-    );
+    throwInvalidArgument("resolveUniPtyBackend requires a non-empty package name string", {
+      packageName,
+    });
   }
   if (options === null || typeof options !== "object" || !("from" in options)) {
     throwInvalidArgument(
@@ -136,9 +135,10 @@ export async function resolveUniPtyBackend(
     packagePath = requireFromCaller.resolve(packageName);
   } catch (error) {
     const nativeCode = errorCodeOf(error);
-    const reason = nativeCode === "MODULE_NOT_FOUND" || nativeCode === "ERR_MODULE_NOT_FOUND"
-      ? "missing"
-      : "invalid";
+    const reason =
+      nativeCode === "MODULE_NOT_FOUND" || nativeCode === "ERR_MODULE_NOT_FOUND"
+        ? "missing"
+        : "invalid";
     const diagnostics: BackendDiagnostic[] = [
       {
         code: nativeCode ?? "resolve-failed",
@@ -153,9 +153,7 @@ export async function resolveUniPtyBackend(
   const metadataDiagnostics: BackendDiagnostic[] = [];
   let metadataUrl: string | undefined;
   try {
-    metadataUrl = pathToFileURL(
-      requireFromCaller.resolve(`${packageName}/unipty.metadata`),
-    ).href;
+    metadataUrl = pathToFileURL(requireFromCaller.resolve(`${packageName}/unipty.metadata`)).href;
   } catch (error) {
     metadataDiagnostics.push({
       code: "metadata-subpath-unavailable",

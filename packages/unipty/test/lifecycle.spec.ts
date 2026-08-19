@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { UniPtyError } from "../src/index.ts";
 import { setupPty, utf8Bytes } from "./support/mock-backend.ts";
-import {
-  collectStream,
-  expectSyncCode,
-  flushMicrotasks,
-  isPending,
-} from "./support/helpers.ts";
+import { collectStream, expectSyncCode, flushMicrotasks, isPending } from "./support/helpers.ts";
 
 describe("resize", () => {
   it("passes valid character-cell sizes through to the endpoint", () => {

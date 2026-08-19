@@ -203,8 +203,7 @@ export async function createBunBackend(options: BunBackendOptions = {}): Promise
       "@unipty/backend-bun requires the Bun runtime with Bun.Terminal (Bun >= 1.3.13 on Linux/macOS, >= 1.3.14 on Windows)",
     );
   }
-  const floor: [number, number, number] =
-    process.platform === "win32" ? [1, 3, 14] : [1, 3, 13];
+  const floor: [number, number, number] = process.platform === "win32" ? [1, 3, 14] : [1, 3, 13];
   if (!isSupportedBunVersion(substrate.version)) {
     throw new UniPtyError(
       "unsupported",
@@ -263,11 +262,7 @@ class BunTerminalEndpoint implements BackendEndpoint {
   private outputDetached = false;
   private outputController: ReadableStreamDefaultController<NativeChunk> | undefined;
 
-  constructor(
-    substrate: BunSubstrate,
-    launch: StructuredLaunch,
-    writeQueueBytes: number,
-  ) {
+  constructor(substrate: BunSubstrate, launch: StructuredLaunch, writeQueueBytes: number) {
     if (launch.argv.length === 0) {
       // Core validates this first; the guard keeps the Backend total.
       throw new UniPtyError("invalid-argument", "launch argv must be a non-empty vector");
@@ -362,7 +357,9 @@ class BunTerminalEndpoint implements BackendEndpoint {
       throw new UniPtyError(
         "backpressure",
         "the bounded pending-write queue is saturated; the whole value was rejected",
-        { details: { pendingBytes: this.pendingBytes, writeQueueBytes: this.hardLimit, valueBytes } },
+        {
+          details: { pendingBytes: this.pendingBytes, writeQueueBytes: this.hardLimit, valueBytes },
+        },
       );
     }
     this.pending.push(bytes);
@@ -375,7 +372,10 @@ class BunTerminalEndpoint implements BackendEndpoint {
   drain(): Promise<void> {
     if (this.endpointClosed || this.inputClosed) {
       return Promise.reject(
-        new UniPtyError("closed", "PTY input is no longer writable; drain() cannot recover readiness"),
+        new UniPtyError(
+          "closed",
+          "PTY input is no longer writable; drain() cannot recover readiness",
+        ),
       );
     }
     if (this.pendingBytes <= this.softMark) {

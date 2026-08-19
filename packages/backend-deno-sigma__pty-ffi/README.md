@@ -5,7 +5,7 @@ Official UniPty Backend for the Deno runtime, adapting the third-party
 wrapper over the Rust [`portable-pty`](https://docs.rs/portable-pty) crate.
 
 - **Provenance**: the implementation is `@sigma/pty-ffi` over Rust
-  `portable-pty`. Deno is this route's *runtime metadata*, not its
+  `portable-pty`. Deno is this route's _runtime metadata_, not its
   implementation identity; this package never claims a native Deno PTY API.
 - **Distribution**: npm-only. The npm artifact is self-contained: it vendors
   the `@sigma/pty-ffi@0.42.0/noinit` JavaScript closure and the native dynamic

@@ -10,11 +10,7 @@ import {
   isBackendReady,
   type UniPtyBackendWarning,
 } from "../src/index.ts";
-import {
-  consumerFixtureDir,
-  fixtureImports,
-  resetFixtureImports,
-} from "./setup.ts";
+import { consumerFixtureDir, fixtureImports, resetFixtureImports } from "./setup.ts";
 
 const from = consumerFixtureDir("consumer-single");
 
@@ -71,11 +67,7 @@ describe("autoResolveUniPtyBackend explicit candidates", () => {
   it("warns for metadata-missing and metadata-invalid candidates and continues", async () => {
     const warnings: UniPtyBackendWarning[] = [];
     const backend = await autoResolveUniPtyBackend({
-      candidates: [
-        "@fixture/no-metadata",
-        "@fixture/bad-metadata",
-        "@fixture/good-a",
-      ],
+      candidates: ["@fixture/no-metadata", "@fixture/bad-metadata", "@fixture/good-a"],
       from,
       onWarning: (warning) => warnings.push(warning),
     });
@@ -90,11 +82,7 @@ describe("autoResolveUniPtyBackend explicit candidates", () => {
   it("processes duplicate candidates by first occurrence", async () => {
     const warnings: UniPtyBackendWarning[] = [];
     const backend = await autoResolveUniPtyBackend({
-      candidates: [
-        "@fixture/does-not-exist",
-        "@fixture/does-not-exist",
-        "@fixture/good-a",
-      ],
+      candidates: ["@fixture/does-not-exist", "@fixture/does-not-exist", "@fixture/good-a"],
       from,
       onWarning: (warning) => warnings.push(warning),
     });

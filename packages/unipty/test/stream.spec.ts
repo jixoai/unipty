@@ -219,3 +219,25 @@ describe("terminal stream cancellation detaches only the view", () => {
     expect(await collected).toEqual(["future"]);
   });
 });
+
+describe("view settlement releases the active-stream slot", () => {
+  it("allows a new stream after a bytes view fails conversion on native text", async () => {
+    const { endpoint, pty } = setupPty({ native: { input: "both", output: "both" } });
+    const reader = pty.stream({ encoding: "bytes" }).getReader();
+    endpoint.pushText("native-text");
+    await endpoint.waitForDelivered(1);
+    await reader.read().then(
+      () => {
+        throw new Error("the bytes view must reject native text");
+      },
+      (error) => {
+        expect((error as { code?: string }).code).toBe("unsupported");
+      },
+    );
+    // The failed view released the one-active-stream slot.
+    const second = pty.stream({ encoding: "utf8" });
+    expect(typeof second).toBe("object");
+    await second.cancel();
+    pty.close();
+  });
+});

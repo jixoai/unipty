@@ -15,11 +15,7 @@ import { toPathString } from "./_to_path_string.ts";
  *
  * @returns `true` if `src` is a sub-directory of `dest`, `false` otherwise.
  */
-export function isSubdir(
-  src: string | URL,
-  dest: string | URL,
-  sep = SEPARATOR,
-): boolean {
+export function isSubdir(src: string | URL, dest: string | URL, sep = SEPARATOR): boolean {
   src = toPathString(src);
   dest = toPathString(dest);
 

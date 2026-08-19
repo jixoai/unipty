@@ -25,9 +25,7 @@
       "package": { "name": "@unipty/backend-bun", "version": "0.1.0" },
       "backend": { "id": "bun", "factoryExport": "createBunBackend" },
       "protocol": { "core": [1] },
-      "targets": [
-        { "runtime": "bun", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }
-      ],
+      "targets": [{ "runtime": "bun", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }],
       "provenance": { "kind": "adapter", "substrate": "Bun.Terminal" }
     },
     {
@@ -35,9 +33,7 @@
       "package": { "name": "@unipty/backend-deno-sigma__pty-ffi", "version": "0.1.0" },
       "backend": { "id": "@sigma/pty-ffi", "factoryExport": "createDenoSigmaPtyFfiBackend" },
       "protocol": { "core": [1] },
-      "targets": [
-        { "runtime": "deno", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }
-      ],
+      "targets": [{ "runtime": "deno", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }],
       "provenance": { "kind": "ffi", "substrate": "@sigma/pty-ffi" }
     }
   ],

@@ -32,9 +32,7 @@ export async function ensureFile(filePath: string | URL): Promise<void> {
     const stat = await Deno.lstat(filePath);
     if (!stat.isFile) {
       throw new Error(
-        `Failed to ensure file exists: expected 'file', got '${
-          getFileInfoType(stat)
-        }'`,
+        `Failed to ensure file exists: expected 'file', got '${getFileInfoType(stat)}'`,
       );
     }
   } catch (err) {
@@ -79,9 +77,7 @@ export function ensureFileSync(filePath: string | URL): void {
     const stat = Deno.lstatSync(filePath);
     if (!stat.isFile) {
       throw new Error(
-        `Failed to ensure file exists: expected 'file', got '${
-          getFileInfoType(stat)
-        }'`,
+        `Failed to ensure file exists: expected 'file', got '${getFileInfoType(stat)}'`,
       );
     }
   } catch (err) {

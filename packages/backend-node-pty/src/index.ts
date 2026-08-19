@@ -47,6 +47,15 @@ export interface NodePtyBackendOptions {
 
   /** Passed to the substrate as the pty name (becomes `$TERM` in the child). */
   readonly name?: string;
+
+  /**
+   * Hard bound in bytes of each Endpoint's bounded pending-write admission
+   * queue (default 1 MiB; soft resume mark at three quarters). The substrate
+   * accepts writes into its own internal fd queue, so this adapter-owned
+   * queue is the Endpoint's whole-value backpressure boundary: a value that
+   * cannot fit is rejected synchronously with `backpressure`.
+   */
+  readonly writeQueueBytes?: number;
 }
 
 /** Ready Node-route Backend produced by `createNodePtyBackend()`. */
@@ -72,7 +81,12 @@ interface SubstratePty {
   write(data: string | Buffer): void;
   resize(columns: number, rows: number): void;
   kill(signal?: string): void;
-  readonly _socket: { destroy(): void };
+  readonly _socket: {
+    destroy(): void;
+    pause?(): void;
+    resume?(): void;
+    on?(event: "error", listener: (error: Error) => void): unknown;
+  };
   readonly _writeStream?: { dispose(): void };
 }
 
@@ -206,14 +220,27 @@ class NodePtyEndpoint implements BackendEndpoint {
   private closed = false;
   private terminated = false;
 
+  private readonly hardBytes: number;
+  private readonly softBytes: number;
+  private pending: Uint8Array[] = [];
+  private pendingBytes = 0;
+  private pumpScheduled = false;
+  private drainWaiters: Array<{
+    readonly resolve: () => void;
+    readonly reject: (error: unknown) => void;
+  }> = [];
+
   constructor(
     pty: SubstratePty,
     encoding: "buffer" | "utf8",
     writeDecoder: TextDecoder | undefined,
+    writeQueueBytes: number,
   ) {
     this.pty = pty;
     this.encoding = encoding;
     this.writeDecoder = writeDecoder;
+    this.hardBytes = writeQueueBytes;
+    this.softBytes = Math.max(1, Math.floor((writeQueueBytes * 3) / 4));
     this.native = {
       input: nativeInput(encoding, writeDecoder !== undefined),
       output: encoding === "utf8" ? "text" : "bytes",
@@ -221,6 +248,12 @@ class NodePtyEndpoint implements BackendEndpoint {
     this.output = new ReadableStream<NativeChunk>({
       start: (controller) => {
         this.streamController = controller;
+      },
+      // Consumer-paced backpressure: when Core stops pulling (for example a
+      // full bootstrap buffer), pausing the master socket propagates the
+      // pressure into the kernel instead of growing an adapter queue.
+      pull: () => {
+        this.pty._socket.resume?.();
       },
       // Core never cancels the private source (public views only detach); if
       // something ever does, detach the subscription and drop later chunks.
@@ -236,6 +269,10 @@ class NodePtyEndpoint implements BackendEndpoint {
     this.dataSubscription = pty.onData((data) => this.onData(data));
     pty.onExit((event) => resolveExit(toExitResult(event)));
     pty.on("close", () => this.finishStream());
+    // A master-socket read failure is a transport error, not EOF: it must
+    // error the private source so Core fails the active view instead of
+    // completing it cleanly.
+    this.pty._socket.on?.("error", (error) => this.failStream(error));
   }
 
   private onData(data: string | Buffer): void {
@@ -246,10 +283,28 @@ class NodePtyEndpoint implements BackendEndpoint {
         : { kind: "bytes", bytes: data as Buffer };
     try {
       this.streamController.enqueue(chunk);
+      if ((this.streamController.desiredSize ?? 1) <= 0) {
+        this.pty._socket.pause?.();
+      }
     } catch {
       // The source was cancelled or closed between the guard and the enqueue.
       this.streamFinished = true;
       this.dataSubscription.dispose();
+    }
+  }
+
+  private failStream(cause: Error): void {
+    if (this.streamFinished) return;
+    this.streamFinished = true;
+    this.dataSubscription.dispose();
+    try {
+      this.streamController.error(
+        new UniPtyError("unsupported", "PTY transport read failure on the master socket", {
+          cause,
+        }),
+      );
+    } catch {
+      // Already closed or errored.
     }
   }
 
@@ -270,17 +325,15 @@ class NodePtyEndpoint implements BackendEndpoint {
       // before Endpoint close is invoked.
       throw new UniPtyError("closed", "the endpoint transport is closed");
     }
+    let bytes: Uint8Array | undefined;
     if (input.kind === "text") {
       // Accepted in every mode: the substrate encodes strings for byte-native
-      // PTYs itself.
-      this.pty.write(input.text);
-      return true;
-    }
-    if (this.encoding === "buffer") {
-      this.pty.write(toBuffer(input.bytes));
-      return true;
-    }
-    if (this.writeDecoder !== undefined) {
+      // PTYs itself. The encoded size participates in queue accounting so a
+      // huge string cannot bypass the bound.
+      bytes = Buffer.from(input.text, "utf8");
+    } else if (this.encoding === "buffer") {
+      bytes = toBuffer(input.bytes);
+    } else if (this.writeDecoder !== undefined) {
       let text: string;
       try {
         // Streaming mode keeps partial multibyte sequences pending across
@@ -293,23 +346,84 @@ class NodePtyEndpoint implements BackendEndpoint {
           { details: { mode: "utf8+writeDecode" }, cause },
         );
       }
-      this.pty.write(text);
-      return true;
+      bytes = Buffer.from(text, "utf8");
+    } else {
+      throw new UniPtyError(
+        "unsupported",
+        "byte input requires writeDecode on a utf8-native endpoint",
+      );
     }
-    throw new UniPtyError(
-      "unsupported",
-      "byte input requires writeDecode on a utf8-native endpoint",
-    );
+    if (this.pendingBytes + bytes.byteLength > this.hardBytes) {
+      // Saturation rejects the whole value: nothing of it was accepted.
+      throw new UniPtyError(
+        "backpressure",
+        "the bounded pending-write queue is saturated; the whole value was rejected",
+        { details: { pendingBytes: this.pendingBytes, hardBytes: this.hardBytes } },
+      );
+    }
+    this.pending.push(bytes);
+    this.pendingBytes += bytes.byteLength;
+    this.schedulePump();
+    // Write Readiness: `false` advises pause-and-drain, never a retry.
+    return this.pendingBytes <= this.softBytes;
   }
 
   /**
-   * Readiness never drops: substrate writes are accepted synchronously into
-   * its own file-descriptor write queue (which drains to the OS and retries
-   * `EAGAIN` internally), so there is no bounded admission queue to wait on
-   * and saturation never surfaces through this Endpoint.
+   * Readiness recovery over the bounded admission queue. The substrate's own
+   * fd write queue has no observable completion signal, so drain resolves
+   * once the adapter queue falls below the soft mark — readiness recovery,
+   * not a physical flush guarantee.
    */
   drain(): Promise<void> {
-    return Promise.resolve();
+    if (this.closed) {
+      return Promise.reject(
+        new UniPtyError("closed", "PTY input is closed; drain() cannot recover readiness"),
+      );
+    }
+    if (this.pendingBytes <= this.softBytes) return Promise.resolve();
+    return new Promise<void>((resolve, reject) => {
+      this.drainWaiters.push({ resolve, reject });
+    });
+  }
+
+  private schedulePump(): void {
+    if (this.pumpScheduled) return;
+    this.pumpScheduled = true;
+    queueMicrotask(() => {
+      this.pumpScheduled = false;
+      this.pumpPending();
+    });
+  }
+
+  private pumpPending(): void {
+    while (this.pending.length > 0) {
+      const segment = this.pending[0];
+      if (segment === undefined) break;
+      try {
+        this.pty.write(toBuffer(segment));
+      } catch (cause) {
+        this.failInput(new UniPtyError("closed", "substrate write failed", { cause }));
+        return;
+      }
+      this.pending.shift();
+      this.pendingBytes -= segment.byteLength;
+    }
+    if (this.pendingBytes <= this.softBytes) this.settleDrain();
+  }
+
+  private failInput(error: UniPtyError): void {
+    this.pending = [];
+    this.pendingBytes = 0;
+    this.settleDrain(error);
+  }
+
+  private settleDrain(error?: UniPtyError): void {
+    const waiters = this.drainWaiters;
+    this.drainWaiters = [];
+    for (const waiter of waiters) {
+      if (error === undefined) waiter.resolve();
+      else waiter.reject(error);
+    }
   }
 
   resize(cols: number, rows: number): void {
@@ -326,6 +440,11 @@ class NodePtyEndpoint implements BackendEndpoint {
   close(): void {
     if (this.closed) return;
     this.closed = true;
+    this.pending = [];
+    this.pendingBytes = 0;
+    this.settleDrain(
+      new UniPtyError("closed", "this PTY endpoint was closed; drain() cannot recover readiness"),
+    );
     // Complete the private source first: chunks already enqueued stay
     // readable, then the stream ends — matching "an active stream completes
     // normally on explicit close" without waiting for socket teardown.
@@ -367,12 +486,31 @@ function invalidLaunch(message: string): never {
   throw new UniPtyError("invalid-argument", message);
 }
 
+/**
+ * Fresh stateful decoder for one Endpoint. A caller-supplied TextDecoder
+ * configures the per-endpoint copy (encoding, fatal, BOM policy) rather
+ * than being shared: decoder state must never leak across PTYs.
+ */
+function endpointWriteDecoder(
+  writeDecode: true | TextDecoder | undefined,
+): TextDecoder | undefined {
+  if (writeDecode === undefined) return undefined;
+  if (writeDecode === true) return new TextDecoder();
+  return new TextDecoder(writeDecode.encoding, {
+    fatal: writeDecode.fatal,
+    ignoreBOM: writeDecode.ignoreBOM,
+  });
+}
+
+const DEFAULT_WRITE_QUEUE_BYTES = 1 << 20;
+
 function spawnEndpoint(
   spawn: SubstrateSpawn,
   launch: StructuredLaunch,
   encoding: "buffer" | "utf8",
-  writeDecoder: TextDecoder | undefined,
+  writeDecode: true | TextDecoder | undefined,
   name: string | undefined,
+  writeQueueBytes: number,
 ): NodePtyEndpoint {
   if (!Array.isArray(launch.argv) || launch.argv.length === 0) {
     invalidLaunch("launch.argv must be a non-empty array");
@@ -420,7 +558,7 @@ function spawnEndpoint(
       cause,
     });
   }
-  return new NodePtyEndpoint(pty, encoding, writeDecoder);
+  return new NodePtyEndpoint(pty, encoding, endpointWriteDecoder(writeDecode), writeQueueBytes);
 }
 
 /**
@@ -447,11 +585,16 @@ export async function createNodePtyBackend(
     );
   }
   const name = options?.name;
+  const writeQueueBytes = options?.writeQueueBytes ?? DEFAULT_WRITE_QUEUE_BYTES;
+  if (!Number.isInteger(writeQueueBytes) || writeQueueBytes <= 0) {
+    throw new UniPtyError("invalid-argument", "writeQueueBytes must be a positive integer", {
+      details: { writeQueueBytes },
+    });
+  }
   const spawn = await loadSubstrateSpawn();
-  const writeDecoder =
-    writeDecode === undefined ? undefined : writeDecode === true ? new TextDecoder() : writeDecode;
   return {
-    spawn: (launch: StructuredLaunch) => spawnEndpoint(spawn, launch, encoding, writeDecoder, name),
+    spawn: (launch: StructuredLaunch) =>
+      spawnEndpoint(spawn, launch, encoding, writeDecode, name, writeQueueBytes),
     dispose: () => Promise.resolve(),
   };
 }

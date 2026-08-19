@@ -7,9 +7,10 @@ import metadata from "../src/unipty.metadata.ts";
 import { assertEqual, makeBackend, PACKAGE_DIR, sleep } from "./helpers.ts";
 
 Deno.test("metadata declares the official Deno route identity", async () => {
-  const pkg = JSON.parse(
-    await Deno.readTextFile(new URL("package.json", PACKAGE_DIR)),
-  ) as { name: string; version: string };
+  const pkg = JSON.parse(await Deno.readTextFile(new URL("package.json", PACKAGE_DIR))) as {
+    name: string;
+    version: string;
+  };
   assertEqual(metadata.schema, 1);
   assertEqual(metadata.package.name, pkg.name);
   assertEqual(metadata.package.version, pkg.version);
@@ -100,7 +101,9 @@ Deno.test("factory accepts an explicit libraryPath override", async () => {
   const dir = dirByOs[build.os];
   const file = fileByOs[build.os];
   if (dir === undefined || file === undefined) {
-    throw new Error(`no vendored library for ${build.os}-${build.arch}; extend the vendored tuples`);
+    throw new Error(
+      `no vendored library for ${build.os}-${build.arch}; extend the vendored tuples`,
+    );
   }
   const backend = await factory({
     libraryPath: new URL(`vendor/lib/${dir}/${file}`, PACKAGE_DIR),

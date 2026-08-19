@@ -3,10 +3,7 @@
 import type { Uint8Array_ } from "./_types.ts";
 export type { Uint8Array_ };
 
-export function detach(
-  buffer: Uint8Array_,
-  maxSize: number,
-): [Uint8Array_, number] {
+export function detach(buffer: Uint8Array_, maxSize: number): [Uint8Array_, number] {
   const originalSize = buffer.length;
   if (buffer.byteOffset) {
     const b = new Uint8Array(buffer.buffer);

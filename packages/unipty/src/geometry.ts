@@ -17,10 +17,7 @@ export const DEFAULT_TERMINAL_ROWS = 24;
 /** A finite positive integer character-cell count. */
 export function isValidCellCount(value: unknown): value is number {
   return (
-    typeof value === "number" &&
-    Number.isFinite(value) &&
-    Number.isInteger(value) &&
-    value > 0
+    typeof value === "number" && Number.isFinite(value) && Number.isInteger(value) && value > 0
   );
 }
 
@@ -45,9 +42,13 @@ function resolveDimension(
 ): number {
   if (explicit !== undefined) {
     if (!isValidCellCount(explicit)) {
-      throw new UniPtyError("invalid-argument", `terminal.${dimension} must be a finite positive integer`, {
-        details: { dimension, value: explicit },
-      });
+      throw new UniPtyError(
+        "invalid-argument",
+        `terminal.${dimension} must be a finite positive integer`,
+        {
+          details: { dimension, value: explicit },
+        },
+      );
     }
     return explicit;
   }
@@ -68,10 +69,10 @@ export function validateCellPair(cols: unknown, rows: unknown): { cols: number; 
 }
 
 /** Resolve the initial geometry for a structured launch. */
-export function resolveInitialGeometry(terminal?: {
-  cols?: number;
-  rows?: number;
-}): { cols: number; rows: number } {
+export function resolveInitialGeometry(terminal?: { cols?: number; rows?: number }): {
+  cols: number;
+  rows: number;
+} {
   const tty = hostTtySize();
   const cols = resolveDimension("cols", terminal?.cols, "COLUMNS", tty.cols, DEFAULT_TERMINAL_COLS);
   const rows = resolveDimension("rows", terminal?.rows, "LINES", tty.rows, DEFAULT_TERMINAL_ROWS);

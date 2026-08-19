@@ -35,7 +35,9 @@ async function applyRawMode() {
         stdio: [0, "ignore", "ignore"],
       });
       child.on("error", reject);
-      child.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`stty exited ${code}`))));
+      child.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(`stty exited ${code}`)),
+      );
     });
   } catch {
     // no tty attached: plain pipe semantics

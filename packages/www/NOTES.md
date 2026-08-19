@@ -50,14 +50,14 @@ Rationale:
    constraint (no `pnpm install` from this track) makes a zero-dependency
    path strictly safer.
 2. The reference's SvelteKit stack was evaluated and **not** adopted; its
-   *visual* language (token sheet structure, mono typography, hard-shadow
+   _visual_ language (token sheet structure, mono typography, hard-shadow
    terminal aesthetic, dark-mode-first with `.dark` class and no-flash
    bootstrap) was transcribed into a hand-written token sheet instead.
    Visual cues taken: oklch token naming, mono-first typography scale,
    orange primary / blue accent pair, 1px borders with hard offset shadows,
    bevel-corner upgrade, `#09090b` dark canvas.
 3. Fonts: the system monospace stack (`ui-monospace, SF Mono, Menlo,
-   Consolas, ...`). The reference's JetBrains Mono webfont files are local
+Consolas, ...`). The reference's JetBrains Mono webfont files are local
    assets of that project and were deliberately **not** copied.
 4. Syntax highlighting: hand-authored `<span>` classes in a tiny highlight
    helper at build time; no shiki dependency.
