@@ -1,0 +1,25 @@
+{
+  "name": "@unipty/backend",
+  "version": "0.1.0",
+  "description": "UniPty Backend acquisition convenience: caller-rooted resolution, metadata inspection, deterministic AutoResolve, and the explicit bundle manifest constructor.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "unipty": "workspace:*"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "unipty",
+  "version": "0.1.0",
+  "description": "Runtime-neutral PTY Core: structured launch, terminal streams, lifecycle, and the ready Backend seam for Node, Bun, and Deno.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@unipty/backend-bun",
+  "version": "0.1.0",
+  "description": "Official UniPty Backend adapting the runtime-native Bun.Terminal substrate for Bun >= 1.3.13 (Windows ConPTY since 1.3.14).",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./unipty.metadata": {
+      "types": "./dist/unipty.metadata.d.ts",
+      "import": "./dist/unipty.metadata.js"
+    }
+  },
+  "imports": {
+    "#package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "unipty": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.3.4"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@unipty/backend-node-pty",
+  "version": "0.1.0",
+  "description": "Official UniPty Backend adapting the third-party node-pty substrate for Node runtimes.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./unipty.metadata": {
+      "types": "./dist/unipty.metadata.d.ts",
+      "import": "./dist/unipty.metadata.js"
+    }
+  },
+  "imports": {
+    "#package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@lydell/node-pty": "1.2.0-beta.15",
+    "unipty": "workspace:*"
+  }
+}

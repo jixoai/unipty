@@ -1,13 +1,35 @@
 {
-  "name": "unipty",
+  "name": "unipty-monorepo",
   "version": "0.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "private": true,
+  "description": "UniPty monorepo: runtime-neutral PTY Core, acquisition layer, and official Backends for Node, Bun, and Deno.",
+  "license": "MIT",
+  "packageManager": "pnpm@10.22.0",
+  "engines": {
+    "node": ">=22"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.22.0"
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "node-pty"
+    ]
+  },
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' --filter '!@unipty/www' build",
+    "typecheck": "pnpm -r --filter './packages/*' --filter '!@unipty/www' typecheck",
+    "test": "pnpm -r --filter './packages/*' --filter '!@unipty/www' test",
+    "fmt": "oxfmt .",
+    "fmt:check": "oxfmt --check .",
+    "pack": "pnpm -r --filter './packages/*' --filter '!@unipty/conformance' --filter '!@unipty/www' pack",
+    "check:arch": "bun scripts/check-architecture.sh.ts",
+    "conformance": "pnpm --filter @unipty/conformance run conformance",
+    "evidence": "pnpm --filter @unipty/conformance run evidence",
+    "catalog": "pnpm --filter @unipty/conformance run catalog"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "oxfmt": "^0.64.0",
+    "tsdown": "^0.22.14",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11"
+  }
 }
