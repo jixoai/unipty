@@ -35,13 +35,11 @@ mkdirSync(join(conformanceDir, "evidence"), { recursive: true });
 // Tuple-unique output names: the CI matrix runs one route per OS, and the
 // release collector keeps every distinct tuple — a fixed route name would
 // silently overwrite a sibling platform's record.
-// Linux native tuples additionally carry libc so sibling records stay
-// distinct (mirrors the conformance tuple normalization).
-const libc =
-  process.platform === "linux"
-    ? `-${process.env.LIBC ?? (process.report?.getReport?.()?.header?.glibcVersionRuntime ? "glibc" : "musl")}`
-    : "";
-const tupleSuffix = `${process.platform}-${process.arch}${libc}`;
+// Reuse the suite's authoritative tuple detection so filename tags and
+// evidence tuple identities cannot drift apart.
+const { currentTuple } = await import("../src/host.ts");
+const tuple = currentTuple();
+const tupleSuffix = `${tuple.os}-${tuple.arch}${tuple.libc === undefined ? "" : `-${tuple.libc}`}`;
 const reportOut = join(conformanceDir, "reports", `${route}-${tupleSuffix}-report.json`);
 const evidenceOut = join(conformanceDir, "evidence", `${route}-${tupleSuffix}-evidence.json`);
 const commands = {

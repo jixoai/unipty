@@ -52,8 +52,8 @@ export function listDirectChildPids(): Set<number> | undefined {
  * The substrate forks the child internally without exposing its pid. The
  * synchronous spawn wraps a synchronous fork, so diffing this process's
  * direct children across it identifies the new pid; ambiguity or an
- * unavailable listing yields `undefined` and terminate() falls back to the
- * substrate teardown primitive.
+ * unavailable listing yields `undefined`, and terminate() then fails
+ * explicitly with `unsupported` (never a teardown fallback).
  */
 function discoverSpawnedChildPid(before: Set<number> | undefined): number | undefined {
   if (discoveryOverride !== null) return discoveryOverride(before);

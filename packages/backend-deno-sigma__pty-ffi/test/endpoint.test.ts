@@ -321,12 +321,12 @@ Deno.test("terminate observes the real exit through the live transport (sanity)"
   await settlePump();
 });
 
-// Degraded-host note (tested by inspection, not executable here): when pid
-// discovery is impossible — a host with no pgrep in PATH nor at the absolute
-// fallback locations, or an ambiguous listing — terminate() throws
-// UniPtyError("unsupported") BEFORE any teardown (src/index.ts terminate()).
-// The absolute-path candidates make that state unreachable on this macOS
-// test host, so a subprocess simulation would only re-test the normal path.
+// Degraded-host note (tested by injection in the test below): when pid
+// discovery is impossible — a host whose PATH holds no pgrep, or an
+// ambiguous listing — terminate() throws UniPtyError("unsupported") BEFORE
+// any teardown (src/index.ts terminate()). A PATH-only simulation on this
+// macOS host would re-execute the working system pgrep, so the injected
+// seam covers the degraded branch deterministically.
 
 Deno.test("terminate throws unsupported when pid discovery fails (injected)", async () => {
   const { __setPidDiscoveryForTests } = await import("../src/pid-discovery.ts");
