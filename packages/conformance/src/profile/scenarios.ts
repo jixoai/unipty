@@ -65,15 +65,12 @@ const METACHARACTER_ARGS = [
  * observation channel (declared accommodation) settles null/null instead,
  * which is recorded as a note rather than a failure.
  */
-function assertTerminatedExit(
-  exited: { exitCode: number | null; signal: string | null },
-  world: ScenarioWorld,
-): string | undefined {
+function assertTerminatedExit(exited: {
+  exitCode: number | null;
+  signal: string | null;
+}): string | undefined {
   if (exited.exitCode !== 0 && exited.exitCode !== null) return undefined;
   if (exited.signal !== null) return undefined;
-  if (world.ctx.accommodations.exitUnobservableAfterTerminate === true) {
-    return "terminate() settled the exit observation as unobservable on this substrate (kill and transport teardown are one primitive)";
-  }
   throw new Error(
     `terminated child must report a non-zero exit or a signal per backend honesty (got ${JSON.stringify(exited)})`,
   );
@@ -646,7 +643,7 @@ export const SCENARIOS: readonly ScenarioDef[] = [
         10000,
         "exit observation remains settleable after close",
       );
-      return assertTerminatedExit(exited, world);
+      return assertTerminatedExit(exited);
     },
   ),
 
@@ -664,7 +661,7 @@ export const SCENARIOS: readonly ScenarioDef[] = [
         "new stream creation must remain allowed after terminate()",
       );
       const exited = await withTimeout(pty.exited, 10000, "terminated child exit");
-      const exitNote = assertTerminatedExit(exited, world);
+      const exitNote = assertTerminatedExit(exited);
       pty.close();
       const closedAfterTerminate = (): boolean => pty.closed;
       invariant(closedAfterTerminate() === true, "close after terminate must publish closed");
@@ -681,7 +678,7 @@ export const SCENARIOS: readonly ScenarioDef[] = [
       pty.terminate();
       pty.terminate();
       const exited = await withTimeout(pty.exited, 10000, "exit after repeated terminate");
-      const exitNote = assertTerminatedExit(exited, world);
+      const exitNote = assertTerminatedExit(exited);
       pty.close();
       pty.close();
       invariant(pty.closed === true, "close remains idempotent after terminate");

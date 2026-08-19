@@ -12,7 +12,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { closeSync, copySync, mkdirSync, openSync, readdirSync } from "node:fs";
+import { closeSync, copySync, mkdirSync, openSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const commit = process.argv[2];

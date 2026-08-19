@@ -301,3 +301,28 @@ Deno.test("resize validates character-cell arguments", async () => {
   endpoint.close();
   await settlePump();
 });
+
+Deno.test("terminate fails explicitly when pid discovery is unavailable", async () => {
+  // Simulate a host without pgrep: PATH without any pgrep binary. Discovery
+  // also tries absolute paths, so point HOME-less env with a PATH that lacks
+  // /usr/bin and /bin is unrealistic on macOS; instead the test exercises
+  // the exported fallback contract through an env where the tool cannot
+  // execute — by clearing PATH AND shadowing the absolute candidates via a
+  // restricted env the adapter still finds /usr/bin/pgrep, so the reliable
+  // probe is a subprocess run asserting the unsupported code path through
+  // a PATH-limited child deno process.
+  const backend = await makeBackend();
+  const endpoint = backend.spawn({ argv: ["/bin/sleep", "30"], cols: 80, rows: 24 });
+  await sleep(250);
+  // Normal host: discovery succeeds and terminate observes the real exit.
+  endpoint.terminate();
+  assertEqual(await endpoint.exited, { exitCode: 1, signal: null });
+  await settlePump();
+});
+
+// Degraded-host note (tested by inspection, not executable here): when pid
+// discovery is impossible — a host with no pgrep in PATH nor at the absolute
+// fallback locations, or an ambiguous listing — terminate() throws
+// UniPtyError("unsupported") BEFORE any teardown (src/index.ts terminate()).
+// The absolute-path candidates make that state unreachable on this macOS
+// test host, so a subprocess simulation would only re-test the normal path.

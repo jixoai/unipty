@@ -14,17 +14,23 @@ wrapper over the Rust [`portable-pty`](https://docs.rs/portable-pty) crate.
 
 ## Required Deno permissions
 
-The FFI library load needs `--allow-ffi`, and importing the vendored modules
-needs `--allow-read`. The pragmatic grant is `-A`:
+The FFI library load needs `--allow-ffi`, importing the vendored modules
+needs `--allow-read`, and `terminate()` discovers the child pid through a
+`pgrep` child process (`--allow-run`) before signalling it with `Deno.kill`.
+The pragmatic grant is `-A`:
 
 ```sh
 deno run -A app.ts        # recommended
 # or the minimal set:
-deno run --allow-ffi --allow-read app.ts
+deno run --allow-ffi --allow-read --allow-run app.ts
 ```
 
 A missing FFI permission surfaces as a `UniPtyError` with code `unsupported`
-whose message names the required flag (`Deno.errors.NotCapable` cause).
+whose message names the required flag (`Deno.errors.NotCapable` cause). If
+pid discovery cannot run at terminate time (no `pgrep` on the host, or an
+ambiguous listing), `terminate()` likewise fails explicitly with
+`unsupported` rather than collapsing into the substrate's
+kill-and-close primitive — close and terminate never cascade on this route.
 
 ## Usage
 

@@ -19,10 +19,11 @@
  *   output stream, and keeps a discard-mode exit watcher draining the
  *   transport so the independent exit observation stays settleable; the
  *   physical `pty_close` runs only after the child exits (or on a read
- *   failure), when it can no longer kill a live child. `terminate()` is the
- *   physical request: `pty_close` kills the child immediately, and because
- *   the observation channel dies with the transport, a terminate whose exit
- *   was not yet observed settles as `{ exitCode: null, signal: null }`.
+ *   failure), when it can no longer kill a live child. `terminate()`
+ *   signals the child by its discovered pid (`Deno.kill`) and never touches
+ *   the transport; when pid discovery is impossible it fails explicitly
+ *   with `unsupported` instead of collapsing into the kill-and-close
+ *   primitive.
  * - The child exit code is observable only through reads that return `done`.
  * - The substrate reports exit code `1` for signal-terminated children
  *   (SIGKILL and SIGTERM alike), so `signal` is always `null` here: this
@@ -688,28 +689,29 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
     // without exposing the pid), so it is discovered by diffing the OS
     // process table around spawn and signalled with Deno.kill. The pump
     // then observes the exit through the live transport — a real
-    // observation, not a teardown artifact. When the pid could not be
-    // discovered (already-exited child, unsupported platform), fall back to
-    // the substrate's only teardown primitive, pty_close, which kills and
-    // drops the transport in one step; an exit not yet observed then
-    // settles honestly as { exitCode: null, signal: null }.
+    // observation, not a teardown artifact. When discovery was impossible,
+    // there is NO kill-and-close fallback (the substrate primitive would
+    // cascade termination into transport destruction); the honest outcome
+    // is an explicit typed failure.
     if (this.#terminated) return;
-    this.#terminated = true;
     const pid = this.#childPid;
-    if (pid !== undefined) {
-      const kill = (globalThis as { Deno?: { kill?: (pid: number, signal: string) => void } }).Deno
-        ?.kill;
-      if (typeof kill === "function") {
-        try {
-          kill(pid, "SIGTERM");
-        } catch {
-          // The child already exited (ESRCH): the pump's own observation
-          // settles exited; there is nothing left to signal.
-        }
-        return;
-      }
+    if (pid === undefined) {
+      throw new UniPtyError(
+        "unsupported",
+        "terminate() could not locate the child process on this host (pgrep-based discovery unavailable); this substrate offers no kill-without-close primitive",
+      );
     }
-    this.#closePhysically();
-    this.#settleUnobserved();
+    this.#terminated = true;
+    const kill = (globalThis as { Deno?: { kill?: (pid: number, signal: string) => void } }).Deno
+      ?.kill;
+    if (typeof kill !== "function") {
+      throw new UniPtyError("unsupported", "Deno.kill is unavailable in this runtime");
+    }
+    try {
+      kill(pid, "SIGTERM");
+    } catch {
+      // The child already exited (ESRCH): the pump's own observation
+      // settles exited; there is nothing left to signal.
+    }
   }
 }

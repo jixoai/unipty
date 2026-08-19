@@ -71,6 +71,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm typecheck
+      - name: Retrieve the aggregated catalog from the verification job
+        uses: actions/download-artifact@v4
+        with:
+          name: release-catalog-${{ github.ref_name }}
+          path: dist-release
       - name: Pack the publishable set
         run: >-
           corepack pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend

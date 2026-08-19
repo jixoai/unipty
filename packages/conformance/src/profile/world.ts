@@ -26,13 +26,6 @@ export interface ScenarioAccommodations {
    * (pipe-based test doubles); resize observation is skipped with a record.
    */
   readonly resizeUnobservable?: boolean;
-  /**
-   * The substrate's termination primitive destroys the exit-observation
-   * channel together with the child (kill-without-close does not exist), so
-   * an exit not yet observed at terminate() settles as null/null instead of
-   * a non-zero code or signal. Declared by @unipty/backend-deno-sigma__pty-ffi.
-   */
-  readonly exitUnobservableAfterTerminate?: boolean;
 }
 
 /** Profile-level context every scenario receives. */
