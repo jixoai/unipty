@@ -1,0 +1,10 @@
+{
+  "name": "@fixture/consumer-ambiguous",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@fixture/good-b": "*",
+    "@fixture/good-a": "*"
+  }
+}

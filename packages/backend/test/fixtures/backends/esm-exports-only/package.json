@@ -1,0 +1,10 @@
+{
+  "name": "@fixture/esm-exports-only",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Test fixture whose exports are import-only.",
+  "exports": {
+    ".": { "import": "./index.js" },
+    "./unipty.metadata": { "import": "./unipty.metadata.js" }
+  }
+}

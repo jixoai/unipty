@@ -1,0 +1,9 @@
+{
+  "name": "@fixture/consumer-empty",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "leftpad-ish": "*"
+  }
+}

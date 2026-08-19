@@ -1,0 +1,10 @@
+{
+  "name": "@fixture/multi-target",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Test fixture package for @unipty/backend acquisition tests.",
+  "exports": {
+    ".": { "import": "./index.js", "default": "./index.js" },
+    "./unipty.metadata": { "import": "./unipty.metadata.js", "default": "./unipty.metadata.js" }
+  }
+}
