@@ -1,0 +1,74 @@
+{
+  "catalogVersion": 1,
+  "release": {
+    "commit": "c3d9f17",
+    "generatedAt": "2026-08-20T08:30:00.000Z"
+  },
+  "packages": [
+    {
+      "schema": 1,
+      "package": { "name": "@unipty/backend-node-pty", "version": "0.1.1" },
+      "backend": { "id": "node-pty", "factoryExport": "createNodePtyBackend" },
+      "protocol": { "core": [1] },
+      "targets": [
+        {
+          "runtime": "node",
+          "os": ["darwin", "linux"],
+          "arch": ["arm64", "x64"],
+          "libc": ["glibc"]
+        }
+      ],
+      "provenance": { "kind": "adapter", "substrate": "node-pty" }
+    },
+    {
+      "schema": 1,
+      "package": { "name": "@unipty/backend-bun", "version": "0.1.1" },
+      "backend": { "id": "bun", "factoryExport": "createBunBackend" },
+      "protocol": { "core": [1] },
+      "targets": [
+        { "runtime": "bun", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }
+      ],
+      "provenance": { "kind": "adapter", "substrate": "Bun.Terminal" }
+    },
+    {
+      "schema": 1,
+      "package": { "name": "@unipty/backend-deno-sigma__pty-ffi", "version": "0.1.1" },
+      "backend": { "id": "@sigma/pty-ffi", "factoryExport": "createDenoSigmaPtyFfiBackend" },
+      "protocol": { "core": [1] },
+      "targets": [
+        { "runtime": "deno", "os": ["darwin", "linux"], "arch": ["arm64", "x64"] }
+      ],
+      "provenance": { "kind": "ffi", "substrate": "@sigma/pty-ffi" }
+    }
+  ],
+  "evidence": [
+    {
+      "backend": {
+        "packageName": "@unipty/backend-node-pty",
+        "packageVersion": "0.1.1",
+        "backendId": "node-pty"
+      },
+      "core": { "packageName": "unipty", "packageVersion": "0.1.0", "protocolMajor": 1 },
+      "runtime": { "name": "node", "version": "24.19.0" },
+      "tuple": { "os": "linux", "arch": "x64", "libc": "glibc" },
+      "suite": { "id": "unipty-conformance", "version": "1.1.0" },
+      "commit": "c3d9f17",
+      "verifiedAt": "2026-08-20T07:55:00.000Z",
+      "reportRef": "reports/unipty-conformance@1.1.0/node-pty_linux-x64-glibc_node-24.19.0.json"
+    },
+    {
+      "backend": {
+        "packageName": "@unipty/backend-bun",
+        "packageVersion": "0.1.1",
+        "backendId": "bun"
+      },
+      "core": { "packageName": "unipty", "packageVersion": "0.1.0", "protocolMajor": 1 },
+      "runtime": { "name": "bun", "version": "1.3.14" },
+      "tuple": { "os": "darwin", "arch": "arm64" },
+      "suite": { "id": "unipty-conformance", "version": "1.1.0" },
+      "commit": "c3d9f17",
+      "verifiedAt": "2026-08-20T08:07:00.000Z",
+      "reportRef": "reports/unipty-conformance@1.1.0/bun_darwin-arm64_bun-1.3.14.json"
+    }
+  ]
+}

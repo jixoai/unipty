@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#09090b">
+<meta name="description" content="{{DESCRIPTION}}">
+<title>{{TITLE}} · UniPty</title>
+<link rel="icon" href="/assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/assets/styles.css">
+<script>
+(function () {
+  var dark = true;
+  try {
+    var stored = localStorage.getItem("unipty-theme");
+    dark = stored
+      ? stored === "dark"
+      : window.matchMedia("(prefers-color-scheme: light)").matches === false;
+  } catch (e) {
+    /* keep dark */
+  }
+  if (dark) document.documentElement.classList.add("dark");
+})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="container header-row">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">&gt;_</span>UniPty</a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/"{{NAV_INDEX}}>Overview</a>
+      <a href="/docs.html"{{NAV_DOCS}}>Docs</a>
+      <a href="/compatibility.html"{{NAV_COMPAT}}>Compatibility</a>
+    </nav>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme"><span aria-hidden="true">◐</span></button>
+  </div>
+</header>
+<main id="main">
+{{CONTENT}}
+</main>
+<footer class="site-footer">
+  <div class="container footer-row">
+    <p>UniPty — runtime-neutral PTY contract for Node, Bun, and Deno, with developer-selectable Backends.</p>
+    <p class="footer-meta">Evidence source: one release catalog artifact, copied unchanged (sha256 <code>{{CATALOG_SHA256_SHORT}}</code>) · <a href="/catalog/catalog.json">catalog.json</a></p>
+  </div>
+</footer>
+<script src="/assets/site.js" defer></script>
+</body>
+</html>

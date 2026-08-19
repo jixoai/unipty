@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Format, architecture, types, build, unit tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm fmt:check
+      - run: pnpm check:arch
+      - run: pnpm build
+      - run: pnpm typecheck
+      - name: Unit tests (node-runtime packages)
+        run: pnpm -r --filter './packages/*' --filter '!@unipty/www' --if-present run test:node || pnpm -r --filter './packages/unipty' --filter './packages/backend' --filter './packages/helper-backend' --filter './packages/backend-node-pty' --filter './packages/conformance' run test
+
+  bun-suite:
+    name: Bun runtime suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.14"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: @unipty/backend-bun adapter suite (real PTY)
+        run: cd packages/backend-bun && bun test
+
+  deno-suite:
+    name: Deno runtime suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.20.0"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.9.4"
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: @unipty/backend-deno-sigma__pty-ffi adapter suite (real FFI PTY)
+        run: cd packages/backend-deno-sigma__pty-ffi && deno test -A test/

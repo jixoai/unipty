@@ -1,0 +1,68 @@
+<section class="page-head">
+  <div class="container">
+    <p class="kicker">Compatibility</p>
+    <h1>Verified tuples for this release</h1>
+    <p class="lede">
+      Derived at build time from exactly one release catalog artifact —
+      never merged with history, never recomputed in your browser.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>How to read these states</h2>
+    <dl class="legend">
+      <div class="legend-item">
+        <dt><span class="badge badge-verified">verified</span></dt>
+        <dd>
+          The catalog contains a full public-contract conformance pass for
+          this package version on this exact runtime version and exact
+          os/arch/libc tuple at the listed commit. Nothing less qualifies.
+        </dd>
+      </div>
+      <div class="legend-item">
+        <dt><span class="badge badge-declared-unverified">declared-unverified</span></dt>
+        <dd>
+          The package's metadata declares this tuple as a target, but this
+          catalog holds no exact evidence record for it. It is not a support
+          claim of any strength.
+        </dd>
+      </div>
+      <div class="legend-item">
+        <dt><span class="badge badge-not-targeted">not-targeted</span></dt>
+        <dd>
+          The tuple falls outside every target declaration of the package
+          for this release.
+        </dd>
+      </div>
+    </dl>
+    <ul class="rules">
+      <li>Runtime versions stay exact — they are never widened into ranges.</li>
+      <li>One catalog per release — history is never merged across releases.</li>
+      <li>Absent evidence is always shown conservatively as declared-unverified.</li>
+      <li>CI failures are diagnostics, never permanent "unsupported" claims.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <h2>Release artifact</h2>
+    <div class="release-card">
+      <dl class="release-meta">
+        <div><dt>Tested commit</dt><dd><code>{{CATALOG_COMMIT}}</code></dd></div>
+        <div><dt>Catalog generated</dt><dd><time datetime="{{CATALOG_GENERATED_AT}}">{{CATALOG_GENERATED_AT}}</time></dd></div>
+        <div><dt>Catalog sha256</dt><dd><code>{{CATALOG_SHA256}}</code></dd></div>
+        <div><dt>Artifact</dt><dd><a href="/catalog/catalog.json">catalog.json</a> (copied byte-identical into this site)</dd></div>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>Route matrices</h2>
+{{COMPAT_MATRIX}}
+  </div>
+</section>

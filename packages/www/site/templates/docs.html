@@ -1,0 +1,331 @@
+<section class="page-head">
+  <div class="container">
+    <p class="kicker">Documentation</p>
+    <h1>Using UniPty</h1>
+    <p class="lede">
+      The public contract, how to acquire a Backend, what each official route
+      really is, and what a static documentation site can and cannot do in a
+      browser.
+    </p>
+    <nav class="toc" aria-label="On this page">
+      <a href="#core">Core usage</a>
+      <a href="#acquisition">Backend acquisition</a>
+      <a href="#routes">Official routes</a>
+      <a href="#metadata">Metadata protocol</a>
+      <a href="#browser-limits">Browser limits</a>
+    </nav>
+  </div>
+</section>
+
+<section class="section" id="core">
+  <div class="container">
+    <h2>Core usage</h2>
+
+    <h3>Construct with a ready Backend</h3>
+    <p>
+      Core never loads, names, or resolves a Backend for you. A factory (or
+      <code>.ready()</code>) performs one-time runtime loading first; then
+      Core accepts the ready instance. The concrete Backend type is preserved
+      and exposed read-only.
+    </p>
+    <pre class="code" data-lang="ts"><code>import { UniPty } from "unipty";
+import { createNodePtyBackend, NodePtyBackend } from "@unipty/backend-node-pty";
+
+const backend: NodePtyBackend = await createNodePtyBackend();
+const unipty = new UniPty({ backend });
+
+unipty.backend === backend; // readonly, concrete type preserved</code></pre>
+
+    <h3>Spawn with structured argv</h3>
+    <p>
+      The launch entry is <code>unipty.spawn(argv, options)</code>: argv is
+      non-empty, its first value is the executable, and there is no
+      string-command overload. Core never implicitly invokes a shell.
+      Initial geometry lives under <code>terminal: { cols, rows }</code> in
+      character cells; omitted dimensions resolve independently from the
+      value, <code>COLUMNS</code>/<code>LINES</code>, a trusted host TTY
+      probe, then <code>80 × 24</code>.
+    </p>
+    <pre class="code" data-lang="ts"><code>const pty = unipty.spawn(["/bin/sh", "-i", "-l"], {
+  terminal: { cols: 120, rows: 40 },
+  env: { TERM: "xterm-256color" }, // launch context; never overrides geometry
+});</code></pre>
+
+    <h3>One stream per PTY</h3>
+    <p>
+      <code>stream()</code> selects the representation: Terminal Text
+      (<code>ReadableStream&lt;string&gt;</code>) or Terminal Bytes
+      (<code>ReadableStream&lt;Uint8Array&gt;</code>). One active stream per
+      PTY — a second call fails with the <code>active-stream</code> code;
+      use caller-owned <code>tee()</code> for fan-out. Cancelling the stream
+      detaches that view only: it never closes input and never terminates
+      the child. Startup output is preserved in a bounded bootstrap buffer
+      until the first view attaches.
+    </p>
+    <pre class="code" data-lang="ts"><code>const text = pty.stream({ encoding: "utf8" }); // ReadableStream&lt;string&gt;
+const bytes = pty.stream({ encoding: "bytes" }); // only after the first detaches
+
+const reader = text.getReader();
+for (;;) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  render(value);
+}</code></pre>
+
+    <h3>Write with boolean readiness</h3>
+    <p>
+      <code>write()</code> accepts <code>string | Uint8Array</code> and
+      returns a boolean. Either return value means the whole value was
+      accepted exactly once; <code>false</code> only means "pause and
+      drain". Backpressure is advisory, but saturation rejects one whole
+      value with the <code>backpressure</code> code — never a partial
+      accept, silent drop, or unbounded queue.
+    </p>
+    <pre class="code" data-lang="ts"><code>if (!pty.write("ls -la\r")) {
+  await pty.drain(); // readiness recovery, not a physical flush
+}</code></pre>
+
+    <h3>Resize</h3>
+    <p>
+      <code>resize(cols, rows)</code> takes positive integer character cells
+      only. Pixel dimensions stay Backend-specific; a Backend that cannot
+      resize reports <code>unsupported</code> explicitly.
+    </p>
+    <pre class="code" data-lang="ts"><code>pty.resize(120, 40);</code></pre>
+
+    <h3>Terminate and close are non-cascading</h3>
+    <p>
+      <code>terminate()</code> is an idempotent synchronous termination
+      request. <code>close()</code> is an idempotent synchronous logical
+      close: it publishes <code>closed</code> before returning, invalidates
+      all I/O surfaces, and lets an active stream complete normally — but it
+      does not terminate the child, and terminate does not close the
+      transport.
+    </p>
+    <pre class="code" data-lang="ts"><code>pty.terminate(); // request only; exit is observed independently
+pty.close();     // publishes closed; further write/resize/stream() reject with "closed"
+console.log(pty.closed);</code></pre>
+
+    <h3>Exit is an independent observation</h3>
+    <p>
+      <code>exited</code> is a repeatable promise for
+      <code>{ exitCode, signal }</code>. It is independent of transport EOF,
+      stream cancellation, and close: an already-established exit
+      observation survives close, and <code>signal</code> records the
+      observed termination cause, not a general <code>kill(signal)</code>
+      vocabulary.
+    </p>
+    <pre class="code" data-lang="ts"><code>const result = await pty.exited;
+console.log(result.exitCode, result.signal); // number | null, string | null</code></pre>
+
+    <h3>Capabilities and error codes</h3>
+    <p>
+      Backend extensions ride on opaque capability tokens looked up by
+      object identity — no string registry, no fallback. Operational
+      failures carry stable codes:
+      <code>unsupported</code>, <code>closed</code>,
+      <code>backpressure</code>, <code>invalid-argument</code>,
+      <code>active-stream</code>.
+    </p>
+    <pre class="code" data-lang="ts"><code>import { signalsCapability } from "@unipty/backend-node-pty";
+
+const signals = pty.capability(signalsCapability.token);
+if (signals) signals.kill("SIGHUP"); // Backend vocabulary; explicit, never silent</code></pre>
+
+    <h3>Dispose the Backend owner</h3>
+    <p>
+      <code>UniPty.dispose()</code> blocks new spawns, keeps existing PTYs
+      caller-owned, waits for them to close, then releases shared Backend
+      resources exactly once. Repeated calls reuse one promise.
+    </p>
+    <pre class="code" data-lang="ts"><code>await unipty.dispose();</code></pre>
+  </div>
+</section>
+
+<section class="section section-alt" id="acquisition">
+  <div class="container">
+    <h2>Backend acquisition</h2>
+
+    <h3>Manual import — the first-class path</h3>
+    <p>
+      Import an official Backend package, call its async factory, and pass
+      the ready result to Core. This path never goes away.
+    </p>
+    <pre class="code" data-lang="ts"><code>const { createBunBackend } = await import("@unipty/backend-bun");
+const backend = await createBunBackend();
+const unipty = new UniPty({ backend });</code></pre>
+
+    <h3>AutoResolve</h3>
+    <p>
+      <code>autoResolveUniPtyBackend</code> analyzes the current runtime,
+      processes your explicit <code>candidates</code> first (unavailable
+      candidates emit a structured warning), then falls back to candidates
+      inferred from your <code>package.json</code> dependencies. Fallback
+      requires exactly one compatible result; several produce
+      <code>ambiguous</code>. The selected candidate's initialization is
+      terminal — a failure is reported with the structured
+      <code>backend-initialization</code> code, never silently retried with
+      the next Backend.
+    </p>
+    <pre class="code" data-lang="ts"><code>import { autoResolveUniPtyBackend } from "@unipty/backend";
+
+const backend = await autoResolveUniPtyBackend({
+  candidates: ["@unipty/backend-node-pty", "@unipty/backend-bun"],
+  onWarning: (warning) => console.warn(warning.code, warning.message),
+});</code></pre>
+
+    <h3>Pure resolution and inspection</h3>
+    <p>
+      <code>resolveUniPtyBackend</code> resolves one package location at a
+      time and requires an explicit caller <code>from: URL</code>;
+      <code>inspectUniPtyBackend</code> imports only the side-effect-free
+      metadata subpath — never the Backend entry module or factory. Neither
+      stage initializes anything.
+    </p>
+    <pre class="code" data-lang="ts"><code>import { resolveUniPtyBackend, inspectUniPtyBackend } from "@unipty/backend";
+
+const report = resolveUniPtyBackend("@unipty/backend-deno-sigma__pty-ffi", {
+  from: import.meta.url,
+});
+if (report.status === "resolved") {
+  const inspection = await inspectUniPtyBackend(report);
+  if (inspection.status === "compatible") {
+    /* metadata-compatible with this Core; still no native initialization */
+  }
+}</code></pre>
+
+    <h3>Bundled deployments: explicit manifest</h3>
+    <p>
+      Bundlers cannot resolve runtime package graphs. Generate an explicit
+      build-time manifest with the helper CLI, then let AutoResolve select
+      from it. Generated modules default-export one manifest, statically
+      import each package's <code>./unipty.metadata</code>, and keep Backend
+      entry imports inside deferred loaders — evaluating the manifest
+      imports no Backend entry and initializes nothing.
+    </p>
+    <pre class="code" data-lang="sh"><code>pnpm unipty-helper-backend manifest \
+  --candidate @unipty/backend-node-pty \
+  --candidate @unipty/backend-bun \
+  --candidate @unipty/backend-deno-sigma__pty-ffi \
+  --out src/unipty-backends.manifest.ts</code></pre>
+    <pre class="code" data-lang="ts"><code>import backendManifest from "./unipty-backends.manifest";
+
+const backend = await autoResolveUniPtyBackend({
+  manifest: backendManifest,
+  candidates: ["@unipty/backend-node-pty"],
+});</code></pre>
+  </div>
+</section>
+
+<section class="section" id="routes">
+  <div class="container">
+    <h2>Official routes</h2>
+    <p>
+      Every official package states its substrate honestly in metadata
+      provenance. None of these declarations is a support claim — only the
+      <a href="/compatibility.html">evidence catalog</a> can say
+      <span class="badge badge-verified">verified</span>.
+    </p>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Package</th><th>Runtime</th><th>Substrate</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@unipty/backend-node-pty</code></td>
+            <td>Node</td>
+            <td>node-pty via <code>@lydell/node-pty</code> prebuilds</td>
+            <td>
+              A third-party native addon with prebuilt binaries. Node has no
+              native PTY API; this route wraps the ecosystem's standard
+              substrate rather than pretending otherwise.
+            </td>
+          </tr>
+          <tr>
+            <td><code>@unipty/backend-bun</code></td>
+            <td>Bun</td>
+            <td><code>Bun.Terminal</code></td>
+            <td>
+              Bun's built-in terminal API: Linux/macOS since Bun 1.3.13,
+              Windows via ConPTY since 1.3.14. Support is versioned evidence,
+              not a blanket claim.
+            </td>
+          </tr>
+          <tr>
+            <td><code>@unipty/backend-deno-sigma__pty-ffi</code></td>
+            <td>Deno</td>
+            <td><code>@sigma/pty-ffi</code> (Rust <code>portable-pty</code>)</td>
+            <td>
+              An npm-only package whose build vendors the
+              <code>@sigma/pty-ffi/noinit</code> JavaScript closure and
+              targeted dynamic libraries. Requires explicit Deno FFI
+              permission; no default download or cache.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="metadata">
+  <div class="container">
+    <h2>Metadata protocol</h2>
+    <p>
+      Every official Backend package exposes a side-effect-free
+      <code>./unipty.metadata</code> subpath. The minimum schema carries
+      package identity, Backend identity, the factory export name, the Core
+      protocol, and target declarations for side-effect-free prefiltering.
+      Optional provenance describes the implementation kind and substrate —
+      and that is all it does: metadata contains no maturity, capability,
+      or verified-support claim.
+    </p>
+    <pre class="code" data-lang="json"><code>{
+  "schema": 1,
+  "package": { "name": "@unipty/backend-node-pty", "version": "0.1.0" },
+  "backend": { "id": "node-pty", "factoryExport": "createNodePtyBackend" },
+  "protocol": { "core": [1] },
+  "targets": [
+    {
+      "runtime": "node",
+      "os": ["darwin", "linux"],
+      "arch": ["arm64", "x64"],
+      "libc": ["glibc"]
+    }
+  ],
+  "provenance": { "kind": "adapter", "substrate": "node-pty" }
+}</code></pre>
+    <p>
+      Target declarations use normalized Node/npm tokens:
+      <code>os</code> follows <code>process.platform</code>/npm
+      <code>os</code>, <code>arch</code> follows
+      <code>process.arch</code>/npm <code>cpu</code>, and
+      <code>libc</code> is an independent, Linux-only axis for native
+      evidence.
+    </p>
+  </div>
+</section>
+
+<section class="section" id="browser-limits">
+  <div class="container">
+    <h2>Browser-local PTY limits</h2>
+    <p>
+      Browsers expose no pseudo-terminal API, and UniPty does not pretend
+      otherwise. This website is a static documentation surface:
+    </p>
+    <ul class="limits">
+      <li>It never imports or initializes a native Backend in the browser.</li>
+      <li>It never executes local PTY operations; there is nothing to spawn here.</li>
+      <li>
+        Its compatibility page is fully pre-rendered at build time from one
+        release catalog artifact — no browser-side evidence recomputation.
+      </li>
+    </ul>
+    <p>
+      Running a terminal for browser clients means hosting a UniPty Backend
+      outside the browser and streaming over a transport — an arrangement v1
+      deliberately leaves to Backend owners rather than Core.
+    </p>
+  </div>
+</section>

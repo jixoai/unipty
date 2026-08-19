@@ -5,6 +5,7 @@
   "description": "Private static official documentation site for UniPty; deploys to GitHub Pages and consumes exactly one release catalog artifact.",
   "license": "MIT",
   "scripts": {
-    "build": "echo 'site build pending (task 8.x)' && exit 1"
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/check-site.mjs"
   }
 }
