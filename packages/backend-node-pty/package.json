@@ -29,5 +29,8 @@
   "dependencies": {
     "@lydell/node-pty": "1.2.0-beta.15",
     "unipty": "workspace:*"
+  },
+  "devDependencies": {
+    "@unipty/backend": "workspace:*"
   }
 }

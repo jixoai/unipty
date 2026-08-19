@@ -29,5 +29,8 @@
   },
   "dependencies": {
     "unipty": "workspace:*"
+  },
+  "devDependencies": {
+    "@unipty/backend": "workspace:*"
   }
 }
