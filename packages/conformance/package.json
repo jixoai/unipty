@@ -8,10 +8,10 @@
   "scripts": {
     "build": "tsc --noEmit -p tsconfig.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --passWithNoTests",
-    "conformance": "echo 'conformance runner pending (task 4.x)' && exit 1",
-    "evidence": "echo 'evidence writer pending (task 7.1)' && exit 1",
-    "catalog": "echo 'catalog aggregator pending (task 7.2)' && exit 1"
+    "test": "vitest run",
+    "conformance": "node runners/run-profile.ts",
+    "evidence": "node runners/emit-evidence.ts",
+    "catalog": "node runners/aggregate.ts"
   },
   "devDependencies": {
     "@unipty/backend": "workspace:*",

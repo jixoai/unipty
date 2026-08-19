@@ -252,7 +252,6 @@ class BunTerminalEndpoint implements BackendEndpoint {
   private pending: Uint8Array[] = [];
   private pendingBytes = 0;
   private pumpScheduled = false;
-  private substrateWritable = true;
   private inputClosed = false;
   private endpointClosed = false;
   private terminated = false;
@@ -338,6 +337,15 @@ class BunTerminalEndpoint implements BackendEndpoint {
       () => this.observeExit(),
       () => this.observeExit(),
     );
+    // The Terminal `exit` callback reports transport teardown, not child
+    // completion: a child that exits normally leaves the master readable at
+    // EOF without any substrate callback. Synthesize the transport EOF the
+    // substrate fails to report so Core can complete its output pump and
+    // active views; physical transport release still belongs to
+    // close()/terminate().
+    void this.exited.then(() => {
+      this.onSubstrateExit(0);
+    });
   }
 
   write(input: NativeInput): boolean {
@@ -485,7 +493,9 @@ class BunTerminalEndpoint implements BackendEndpoint {
   }
 
   private onSubstrateDrain(): void {
-    this.substrateWritable = true;
+    // Kept for substrate honesty: the drain callback never fired in probes
+    // (the substrate buffers writes internally), but a future Bun release
+    // may fire it; pumping is idempotent and pending is usually empty here.
     this.schedulePump();
   }
 
@@ -504,31 +514,25 @@ class BunTerminalEndpoint implements BackendEndpoint {
     if (this.endpointClosed || this.inputClosed) {
       return;
     }
-    while (this.pending.length > 0 && this.substrateWritable) {
+    while (this.pending.length > 0) {
       const segment = this.pending[0];
       if (segment === undefined) {
         break;
       }
-      let accepted: number;
+      // Substrate truth (probed on darwin 1.3.14): terminal.write accepts the
+      // whole value and buffers it internally; the numeric return is a flush
+      // count (a 64 KiB value reports ~1 KiB flushed while the rest is
+      // queued), NOT partial acceptance. Treating it as partial acceptance
+      // and re-writing the remainder duplicates data. The adapter's bounded
+      // queue above the hand-off is therefore the only backpressure boundary.
       try {
-        accepted = this.terminal.write(segment);
+        this.terminal.write(segment);
       } catch (cause) {
         this.failInput(new UniPtyError("closed", "Bun.Terminal write failed", { cause }));
         return;
       }
-      const written = Math.max(0, accepted);
-      if (written >= segment.byteLength) {
-        this.pending.shift();
-        this.pendingBytes -= segment.byteLength;
-        continue;
-      }
-      // Partial substrate acceptance (not observed on macOS 1.3.14, kept for
-      // cross-platform honesty): retain the remainder at the queue head and
-      // wait for the substrate drain callback before writing again.
-      this.pending[0] = segment.slice(written);
-      this.pendingBytes -= written;
-      this.substrateWritable = false;
-      break;
+      this.pending.shift();
+      this.pendingBytes -= segment.byteLength;
     }
     if (this.pendingBytes <= this.softMark) {
       this.settleDrain();

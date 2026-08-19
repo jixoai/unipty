@@ -1,0 +1,4 @@
+# Generated conformance artifacts (CI writes them per job; only the
+# aggregated release catalog is attached to a tagged release).
+reports/
+evidence/
