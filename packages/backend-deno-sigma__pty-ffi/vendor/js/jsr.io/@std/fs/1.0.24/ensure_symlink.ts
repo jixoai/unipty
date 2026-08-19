@@ -15,7 +15,9 @@ function resolveSymlinkTarget(target: string | URL, linkName: string | URL) {
   }
 }
 
-function getSymlinkOption(type: PathType | undefined): Deno.SymlinkOptions | undefined {
+function getSymlinkOption(
+  type: PathType | undefined,
+): Deno.SymlinkOptions | undefined {
   return isWindows ? { type: type === "dir" ? "dir" : "file" } : undefined;
 }
 
@@ -53,7 +55,10 @@ function getSymlinkOption(type: PathType | undefined): Deno.SymlinkOptions | und
  * await ensureSymlink("./targetFile.dat", "./folder/targetFile.link.dat");
  * ```
  */
-export async function ensureSymlink(target: string | URL, linkName: string | URL) {
+export async function ensureSymlink(
+  target: string | URL,
+  linkName: string | URL,
+) {
   const targetRealPath = resolveSymlinkTarget(target, linkName);
   let srcStatInfo;
   try {
@@ -81,7 +86,9 @@ export async function ensureSymlink(target: string | URL, linkName: string | URL
     const linkStatInfo = await Deno.lstat(linkName);
     if (!linkStatInfo.isSymlink) {
       const type = getFileInfoType(linkStatInfo);
-      throw new Deno.errors.AlreadyExists(`A '${type}' already exists at the path: ${linkName}`);
+      throw new Deno.errors.AlreadyExists(
+        `A '${type}' already exists at the path: ${linkName}`,
+      );
     }
     const linkPath = await Deno.readLink(linkName);
     const linkRealPath = resolve(linkPath);
@@ -126,7 +133,10 @@ export async function ensureSymlink(target: string | URL, linkName: string | URL
  * ensureSymlinkSync("./targetFile.dat", "./folder/targetFile.link.dat");
  * ```
  */
-export function ensureSymlinkSync(target: string | URL, linkName: string | URL) {
+export function ensureSymlinkSync(
+  target: string | URL,
+  linkName: string | URL,
+) {
   const targetRealPath = resolveSymlinkTarget(target, linkName);
   let srcStatInfo;
   try {
@@ -154,7 +164,9 @@ export function ensureSymlinkSync(target: string | URL, linkName: string | URL) 
     const linkStatInfo = Deno.lstatSync(linkName);
     if (!linkStatInfo.isSymlink) {
       const type = getFileInfoType(linkStatInfo);
-      throw new Deno.errors.AlreadyExists(`A '${type}' already exists at the path: ${linkName}`);
+      throw new Deno.errors.AlreadyExists(
+        `A '${type}' already exists at the path: ${linkName}`,
+      );
     }
     const linkPath = Deno.readLinkSync(linkName);
     const linkRealPath = resolve(linkPath);

@@ -79,12 +79,10 @@ async function readUntil(
         readonly done: boolean;
         readonly chunk: Uint8Array | undefined;
       }>([
-        reader
-          .read()
-          .then((read) => ({
-            done: read.done,
-            chunk: read.value?.kind === "bytes" ? read.value.bytes : undefined,
-          })),
+        reader.read().then((read) => ({
+          done: read.done,
+          chunk: read.value?.kind === "bytes" ? read.value.bytes : undefined,
+        })),
         pause(100).then(() => ({ done: false, chunk: undefined })),
       ]);
       if (result.done) {

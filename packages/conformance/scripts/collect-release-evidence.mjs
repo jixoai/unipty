@@ -12,7 +12,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { copySync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, copySync, mkdirSync, openSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const commit = process.argv[2];
@@ -73,9 +73,12 @@ if (wanted.length === 0) {
 }
 for (const artifact of wanted) {
   const zip = `/tmp/${artifact.name}.zip`;
-  execFileSync("sh", ["-c", `gh api ${artifact.archive_download_url} > ${zip}`], {
-    stdio: "ignore",
-  });
+  const zipFd = openSync(zip, "w");
+  try {
+    gh(["api", artifact.archive_download_url], { stdout: zipFd, maxBuffer: 256 * 1024 * 1024 });
+  } finally {
+    closeSync(zipFd);
+  }
   const dest = `/tmp/${artifact.name}`;
   execFileSync("unzip", ["-o", zip, "-d", dest], { stdio: "ignore" });
   const evidenceDir = join(dest, "packages/conformance/evidence");

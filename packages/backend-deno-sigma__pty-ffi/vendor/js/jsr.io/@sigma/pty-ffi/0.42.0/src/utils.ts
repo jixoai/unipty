@@ -38,7 +38,9 @@ export function encodePointerLenData<T>(data: T): Uint8Array<ArrayBuffer> {
  * Assumes `ptr` is valid and was allocated by Rust (e.g., error messages, read data).
  * IMPORTANT: The caller is responsible for freeing the `ptr` using `freeRustString` afterwards.
  */
-export function decodeCString(ptr: NonNullable<Deno.PointerValue>): string {
+export function decodeCString(
+  ptr: NonNullable<Deno.PointerValue>,
+): string {
   assert(ptr !== null, "decodeCString received a null pointer");
   return new Deno.UnsafePointerView(ptr).getCString();
 }
@@ -49,7 +51,10 @@ export function decodeCString(ptr: NonNullable<Deno.PointerValue>): string {
  * Assumes `ptr` and `len` are valid and came from Rust (e.g., `pty_get_size`).
  * IMPORTANT: The caller is responsible for freeing the data using `freeRustData` afterwards.
  */
-export function decodePointerLenData<T>(ptr: NonNullable<Deno.PointerValue>, len: number): T {
+export function decodePointerLenData<T>(
+  ptr: NonNullable<Deno.PointerValue>,
+  len: number,
+): T {
   assert(ptr !== null, "decodePointerLenData received a null pointer");
   assert(len >= 0, "decodePointerLenData received negative length");
   if (len === 0) {
@@ -59,7 +64,9 @@ export function decodePointerLenData<T>(ptr: NonNullable<Deno.PointerValue>, len
     // For now, assume non-empty valid JSON if len > 0.
     if (ptr === null) return JSON.parse("{}"); // Or throw, or return default
     // If ptr is non-null but len is 0, what does it mean? Let's throw.
-    throw new Error("decodePointerLenData received non-null pointer but zero length");
+    throw new Error(
+      "decodePointerLenData received non-null pointer but zero length",
+    );
   }
   const view = new Deno.UnsafePointerView(ptr);
   const bytes = view.getArrayBuffer(len);
@@ -74,7 +81,9 @@ export function decodePointerLenData<T>(ptr: NonNullable<Deno.PointerValue>, len
  * from a result buffer (BigUint64Array of length 1) and
  * converts it into a Deno.PointerValue (or null if address is 0).
  */
-export function readPointerFromResultBuffer(resultBuffer: BigUint64Array): Deno.PointerValue {
+export function readPointerFromResultBuffer(
+  resultBuffer: BigUint64Array,
+): Deno.PointerValue {
   assert(resultBuffer.length >= 1, "Result buffer must have length >= 1");
   return Deno.UnsafePointer.create(resultBuffer[0]);
 }
@@ -84,7 +93,10 @@ export function readPointerFromResultBuffer(resultBuffer: BigUint64Array): Deno.
  * Assumes the FFI function placed the CString pointer into the result buffer.
  * Automatically frees the Rust-allocated memory for the string.
  */
-export function readErrorAndFree(lib: PtyLib, resultBuffer: BigUint64Array): string {
+export function readErrorAndFree(
+  lib: PtyLib,
+  resultBuffer: BigUint64Array,
+): string {
   const errorPtr = readPointerFromResultBuffer(resultBuffer);
   if (!errorPtr) {
     return "FFI call failed: Unknown error (null pointer returned)";
@@ -103,9 +115,11 @@ export function readErrorAndFree(lib: PtyLib, resultBuffer: BigUint64Array): str
  * Calls the Rust `free_string` function to deallocate memory
  * previously allocated by Rust for a CString.
  */
-export function freeRustString(lib: PtyLib, ptr: Deno.PointerValue): void {
-  if (ptr) {
-    // Only call free if the pointer is not null
+export function freeRustString(
+  lib: PtyLib,
+  ptr: Deno.PointerValue,
+): void {
+  if (ptr) { // Only call free if the pointer is not null
     lib.symbols.free_string(ptr);
   }
 }
@@ -114,9 +128,12 @@ export function freeRustString(lib: PtyLib, ptr: Deno.PointerValue): void {
  * Calls the Rust `free_data` function to deallocate memory
  * previously allocated by Rust for raw byte data (pointer + length).
  */
-export function freeRustData(lib: PtyLib, ptr: Deno.PointerValue, len: number): void {
-  if (ptr && len > 0) {
-    // Only call free if pointer is not null and len > 0
+export function freeRustData(
+  lib: PtyLib,
+  ptr: Deno.PointerValue,
+  len: number,
+): void {
+  if (ptr && len > 0) { // Only call free if pointer is not null and len > 0
     lib.symbols.free_data(ptr, BigInt(len));
   } else if (ptr && len === 0) {
     // Optional: Decide if Rust ever returns non-null ptr with len 0 that needs freeing.

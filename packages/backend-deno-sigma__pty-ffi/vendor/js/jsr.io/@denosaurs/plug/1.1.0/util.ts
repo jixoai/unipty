@@ -27,7 +27,9 @@ function baseUrlToFilename(url: URL): string {
     case "blob":
       break;
     default:
-      throw new TypeError(`Don't know how to create cache name for protocol: ${protocol}`);
+      throw new TypeError(
+        `Don't know how to create cache name for protocol: ${protocol}`,
+      );
   }
 
   return join(...out);
@@ -40,7 +42,9 @@ function baseUrlToFilename(url: URL): string {
  */
 export function stringToURL(url: string): URL {
   // deno-fmt-ignore
-  return url.startsWith("file://") || url.startsWith("http://") || url.startsWith("https://")
+  return url.startsWith("file://") ||
+    url.startsWith("http://") ||
+    url.startsWith("https://")
     ? new URL(url)
     : toFileUrl(resolve(url));
 }
@@ -51,7 +55,11 @@ export function stringToURL(url: string): URL {
  * @private
  */
 export async function hash(value: string): Promise<string> {
-  return encodeHex(new Uint8Array(await crypto.subtle.digest("SHA-256", encoder.encode(value))));
+  return encodeHex(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", encoder.encode(value)),
+    ),
+  );
 }
 
 /**

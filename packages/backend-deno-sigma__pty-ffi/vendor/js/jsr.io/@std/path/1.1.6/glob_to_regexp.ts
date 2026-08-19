@@ -5,7 +5,9 @@ import type { GlobOptions } from "./_common/glob_to_reg_exp.ts";
 import { isWindows } from "../../internal/1.0.14/os.ts";
 
 import { globToRegExp as posixGlobToRegExp } from "./posix/glob_to_regexp.ts";
-import { globToRegExp as windowsGlobToRegExp } from "./windows/glob_to_regexp.ts";
+import {
+  globToRegExp as windowsGlobToRegExp,
+} from "./windows/glob_to_regexp.ts";
 
 export type { GlobOptions };
 
@@ -82,6 +84,11 @@ export type { GlobOptions };
  * @param options Conversion options.
  * @returns The regular expression equivalent to the glob.
  */
-export function globToRegExp(glob: string, options: GlobOptions = {}): RegExp {
-  return isWindows ? windowsGlobToRegExp(glob, options) : posixGlobToRegExp(glob, options);
+export function globToRegExp(
+  glob: string,
+  options: GlobOptions = {},
+): RegExp {
+  return isWindows
+    ? windowsGlobToRegExp(glob, options)
+    : posixGlobToRegExp(glob, options);
 }

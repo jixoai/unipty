@@ -121,16 +121,25 @@ export interface ExistsOptions {
  * await exists("./not_readable_file", { isReadable: true, isFile: true }); // false
  * ```
  */
-export async function exists(path: string | URL, options?: ExistsOptions): Promise<boolean> {
+export async function exists(
+  path: string | URL,
+  options?: ExistsOptions,
+): Promise<boolean> {
   try {
     const stat = await Deno.stat(path);
-    if (options && (options.isReadable || options.isDirectory || options.isFile)) {
+    if (
+      options &&
+      (options.isReadable || options.isDirectory || options.isFile)
+    ) {
       if (options.isDirectory && options.isFile) {
         throw new TypeError(
           "ExistsOptions.options.isDirectory and ExistsOptions.options.isFile must not be true together",
         );
       }
-      if ((options.isDirectory && !stat.isDirectory) || (options.isFile && !stat.isFile)) {
+      if (
+        (options.isDirectory && !stat.isDirectory) ||
+        (options.isFile && !stat.isFile)
+      ) {
         return false;
       }
       if (options.isReadable) {
@@ -143,7 +152,10 @@ export async function exists(path: string | URL, options?: ExistsOptions): Promi
       return false;
     }
     if (error instanceof Deno.errors.PermissionDenied) {
-      if ((await Deno.permissions.query({ name: "read", path })).state === "granted") {
+      if (
+        (await Deno.permissions.query({ name: "read", path })).state ===
+          "granted"
+      ) {
         // --allow-read not missing
         return !options?.isReadable; // PermissionDenied was raised by file system, so the item exists, but can't be read
       }
@@ -248,16 +260,25 @@ export async function exists(path: string | URL, options?: ExistsOptions): Promi
  * existsSync("./not_readable_file", { isReadable: true, isFile: true }); // false
  * ```
  */
-export function existsSync(path: string | URL, options?: ExistsOptions): boolean {
+export function existsSync(
+  path: string | URL,
+  options?: ExistsOptions,
+): boolean {
   try {
     const stat = Deno.statSync(path);
-    if (options && (options.isReadable || options.isDirectory || options.isFile)) {
+    if (
+      options &&
+      (options.isReadable || options.isDirectory || options.isFile)
+    ) {
       if (options.isDirectory && options.isFile) {
         throw new TypeError(
           "ExistsOptions.options.isDirectory and ExistsOptions.options.isFile must not be true together",
         );
       }
-      if ((options.isDirectory && !stat.isDirectory) || (options.isFile && !stat.isFile)) {
+      if (
+        (options.isDirectory && !stat.isDirectory) ||
+        (options.isFile && !stat.isFile)
+      ) {
         return false;
       }
       if (options.isReadable) {
@@ -270,7 +291,9 @@ export function existsSync(path: string | URL, options?: ExistsOptions): boolean
       return false;
     }
     if (error instanceof Deno.errors.PermissionDenied) {
-      if (Deno.permissions.querySync({ name: "read", path }).state === "granted") {
+      if (
+        Deno.permissions.querySync({ name: "read", path }).state === "granted"
+      ) {
         // --allow-read not missing
         return !options?.isReadable; // PermissionDenied was raised by file system, so the item exists, but can't be read
       }

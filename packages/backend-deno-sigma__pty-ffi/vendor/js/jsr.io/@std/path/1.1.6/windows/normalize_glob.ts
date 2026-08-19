@@ -23,7 +23,10 @@ export type { GlobOptions };
  * @param options The options for glob pattern.
  * @returns The normalized glob pattern.
  */
-export function normalizeGlob(glob: string, options: Pick<GlobOptions, "globstar"> = {}): string {
+export function normalizeGlob(
+  glob: string,
+  options: Pick<GlobOptions, "globstar"> = {},
+): string {
   const { globstar = false }: GlobOptions = options;
   if (glob.match(/\0/g)) {
     throw new Error(`Glob contains invalid characters: "${glob}"`);
@@ -32,6 +35,9 @@ export function normalizeGlob(glob: string, options: Pick<GlobOptions, "globstar
     return normalize(glob);
   }
   const s = SEPARATOR_PATTERN.source;
-  const badParentPattern = new RegExp(`(?<=(${s}|^)\\*\\*${s})\\.\\.(?=${s}|$)`, "g");
+  const badParentPattern = new RegExp(
+    `(?<=(${s}|^)\\*\\*${s})\\.\\.(?=${s}|$)`,
+    "g",
+  );
   return normalize(glob.replace(badParentPattern, "\0")).replace(/\0/g, "..");
 }

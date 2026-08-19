@@ -45,6 +45,12 @@ Deno.test("vendored output matches the vendor manifest", async () => {
   for (const entry of [...manifest.js.files, ...manifest.libs]) {
     const stat = await Deno.stat(new URL(entry.path, PACKAGE_DIR));
     assertEqual(stat.size, entry.bytes, entry.path);
+    // Byte-level integrity: the committed tree must match the manifest's
+    // pinned sha256 exactly (catches post-generation reformatting drift).
+    const bytes = await Deno.readFile(new URL(entry.path, PACKAGE_DIR));
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const hex = [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+    assertEqual(hex, entry.sha256, entry.path);
   }
 });
 

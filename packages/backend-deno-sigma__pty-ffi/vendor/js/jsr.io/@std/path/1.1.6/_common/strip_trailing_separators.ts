@@ -3,7 +3,10 @@
 // Ported from https://github.com/browserify/path-browserify/
 // This module is browser compatible.
 
-export function stripTrailingSeparators(segment: string, isSep: (char: number) => boolean): string {
+export function stripTrailingSeparators(
+  segment: string,
+  isSep: (char: number) => boolean,
+): string {
   if (segment.length <= 1) {
     return segment;
   }

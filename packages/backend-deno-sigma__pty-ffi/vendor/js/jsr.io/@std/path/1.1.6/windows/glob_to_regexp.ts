@@ -1,7 +1,11 @@
 // Copyright 2018-2026 the Deno authors. MIT license.
 // This module is browser compatible.
 
-import { _globToRegExp, type GlobConstants, type GlobOptions } from "../_common/glob_to_reg_exp.ts";
+import {
+  _globToRegExp,
+  type GlobConstants,
+  type GlobOptions,
+} from "../_common/glob_to_reg_exp.ts";
 
 const constants: GlobConstants = {
   sep: "(?:\\\\|/)+",
@@ -80,6 +84,9 @@ const constants: GlobConstants = {
  * @param options Conversion options.
  * @returns The regular expression equivalent to the glob.
  */
-export function globToRegExp(glob: string, options: GlobOptions = {}): RegExp {
+export function globToRegExp(
+  glob: string,
+  options: GlobOptions = {},
+): RegExp {
   return _globToRegExp(constants, glob, options);
 }

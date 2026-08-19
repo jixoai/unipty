@@ -28,14 +28,12 @@ export async function emptyDir(dir: string | URL) {
   try {
     const items = await Array.fromAsync(Deno.readDir(dir));
 
-    await Promise.all(
-      items.map((item) => {
-        if (item && item.name) {
-          const filepath = join(toPathString(dir), item.name);
-          return Deno.remove(filepath, { recursive: true });
-        }
-      }),
-    );
+    await Promise.all(items.map((item) => {
+      if (item && item.name) {
+        const filepath = join(toPathString(dir), item.name);
+        return Deno.remove(filepath, { recursive: true });
+      }
+    }));
   } catch (err) {
     if (!(err instanceof Deno.errors.NotFound)) {
       throw err;

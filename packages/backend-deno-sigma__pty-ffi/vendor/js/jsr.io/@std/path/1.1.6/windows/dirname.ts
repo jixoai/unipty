@@ -4,7 +4,11 @@
 import { assertArg } from "../_common/dirname.ts";
 import { CHAR_COLON } from "../_common/constants.ts";
 import { stripTrailingSeparators } from "../_common/strip_trailing_separators.ts";
-import { isPathSeparator, isPosixPathSeparator, isWindowsDeviceRoot } from "./_util.ts";
+import {
+  isPathSeparator,
+  isPosixPathSeparator,
+  isWindowsDeviceRoot,
+} from "./_util.ts";
 import { fromFileUrl } from "./from_file_url.ts";
 
 /**

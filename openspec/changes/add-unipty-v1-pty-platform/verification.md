@@ -7,37 +7,37 @@ committed lockfile).
 
 ## Environment identity
 
-| Dimension    | Value                                      |
-| ------------ | ------------------------------------------ |
-| OS           | darwin (macOS, arm64)                      |
-| Node         | v22.20.0                                   |
-| Bun          | 1.3.14                                     |
-| Deno         | 2.9.4                                      |
-| pnpm         | 10.22.0 (corepack)                         |
-| Tested commit| 0b57425 (HEAD, main)                       |
+| Dimension     | Value                 |
+| ------------- | --------------------- |
+| OS            | darwin (macOS, arm64) |
+| Node          | v22.20.0              |
+| Bun           | 1.3.14                |
+| Deno          | 2.9.4                 |
+| pnpm          | 10.22.0 (corepack)    |
+| Tested commit | 0b57425 (HEAD, main)  |
 
 ## Command log (all green)
 
-| Command | Result |
-| --- | --- |
-| `pnpm build` | all 8 packages build |
-| `pnpm typecheck` | clean (strict, no `any`) |
-| `pnpm check:arch` | 8 packages, ownership rules hold |
-| `pnpm fmt:check` (`oxfmt --check .`) | clean |
-| `pnpm --filter unipty test` | 102/102 |
-| `pnpm --filter @unipty/backend test` | 66/66 |
-| `pnpm --filter @unipty/helper-backend test` | 24/24 |
-| `pnpm --filter @unipty/backend-node-pty test` | 31/31 (real PTY) |
-| `cd packages/backend-bun && bun test` | 22/22 (real PTY) |
-| `cd packages/backend-deno-sigma__pty-ffi && deno test -A --no-check test/` | 25/25 (real FFI PTY, offline vendored assets) |
-| `pnpm --filter @unipty/conformance test` | 67/67 |
-| conformance profile — node-pty | 25/25 pass, 0 fail |
-| conformance profile — bun (under Bun) | 25/25 pass, 0 fail |
-| conformance profile — deno-sigma__pty-ffi (under Deno) | 25/25 pass, 0 fail |
-| conformance profile — mock (harness self-check) | 24 pass + 1 recorded skip (pipe transport cannot propagate geometry; keeps the evidence gate closed) |
-| installed-consumer acceptance (pack → isolated install → profile → evidence) | node-pty 25/25, bun 25/25, deno 25/25; three evidence records emitted |
-| catalog aggregation (3 evidence + 3 metadata snapshots, exact commit) | routes: node=1 bun=1 deno=1; catalog written |
-| `packages/www` build + static checks against the locally produced real catalog | all checks pass; catalog copied byte-identical (sha recorded) |
+| Command                                                                        | Result                                                                                               |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `pnpm build`                                                                   | all 8 packages build                                                                                 |
+| `pnpm typecheck`                                                               | clean (strict, no `any`)                                                                             |
+| `pnpm check:arch`                                                              | 8 packages, ownership rules hold                                                                     |
+| `pnpm fmt:check` (`oxfmt --check .`)                                           | clean                                                                                                |
+| `pnpm --filter unipty test`                                                    | 102/102                                                                                              |
+| `pnpm --filter @unipty/backend test`                                           | 66/66                                                                                                |
+| `pnpm --filter @unipty/helper-backend test`                                    | 24/24                                                                                                |
+| `pnpm --filter @unipty/backend-node-pty test`                                  | 31/31 (real PTY)                                                                                     |
+| `cd packages/backend-bun && bun test`                                          | 22/22 (real PTY)                                                                                     |
+| `cd packages/backend-deno-sigma__pty-ffi && deno test -A --no-check test/`     | 25/25 (real FFI PTY, offline vendored assets)                                                        |
+| `pnpm --filter @unipty/conformance test`                                       | 67/67                                                                                                |
+| conformance profile — node-pty                                                 | 25/25 pass, 0 fail                                                                                   |
+| conformance profile — bun (under Bun)                                          | 25/25 pass, 0 fail                                                                                   |
+| conformance profile — deno-sigma__pty-ffi (under Deno)                         | 25/25 pass, 0 fail                                                                                   |
+| conformance profile — mock (harness self-check)                                | 24 pass + 1 recorded skip (pipe transport cannot propagate geometry; keeps the evidence gate closed) |
+| installed-consumer acceptance (pack → isolated install → profile → evidence)   | node-pty 25/25, bun 25/25, deno 25/25; three evidence records emitted                                |
+| catalog aggregation (3 evidence + 3 metadata snapshots, exact commit)          | routes: node=1 bun=1 deno=1; catalog written                                                         |
+| `packages/www` build + static checks against the locally produced real catalog | all checks pass; catalog copied byte-identical (sha recorded)                                        |
 
 ## Requirement-to-evidence summary (task 9.2)
 

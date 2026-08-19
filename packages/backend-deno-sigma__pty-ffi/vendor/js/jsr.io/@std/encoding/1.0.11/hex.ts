@@ -31,10 +31,13 @@ import { detach } from "./_common_detach.ts";
 import type { Uint8Array_ } from "./_types.ts";
 export type { Uint8Array_ };
 
-const alphabet = new TextEncoder().encode("0123456789abcdef");
+const alphabet = new TextEncoder()
+  .encode("0123456789abcdef");
 const rAlphabet = new Uint8Array(128).fill(16); // alphabet.length
-alphabet.forEach((byte, i) => (rAlphabet[byte] = i));
-new TextEncoder().encode("ABCDEF").forEach((byte, i) => (rAlphabet[byte] = i + 10));
+alphabet.forEach((byte, i) => rAlphabet[byte] = i);
+new TextEncoder()
+  .encode("ABCDEF")
+  .forEach((byte, i) => rAlphabet[byte] = i + 10);
 
 /**
  * Converts data into a hex-encoded string.
@@ -56,7 +59,10 @@ export function encodeHex(src: string | Uint8Array | ArrayBuffer): string {
     src = new TextEncoder().encode(src) as Uint8Array_;
   } else if (src instanceof ArrayBuffer) src = new Uint8Array(src).slice();
   else src = src.slice();
-  const [output, i] = detach(src as Uint8Array_, calcSizeHex((src as Uint8Array_).length));
+  const [output, i] = detach(
+    src as Uint8Array_,
+    calcSizeHex((src as Uint8Array_).length),
+  );
   encode(output, i, 0, alphabet);
   return new TextDecoder().decode(output);
 }
@@ -83,5 +89,6 @@ export function encodeHex(src: string | Uint8Array | ArrayBuffer): string {
 export function decodeHex(src: string): Uint8Array_ {
   const output = new TextEncoder().encode(src) as Uint8Array_;
   // deno-lint-ignore no-explicit-any
-  return new Uint8Array((output.buffer as any).transfer(decode(output, 0, 0, rAlphabet)));
+  return new Uint8Array((output.buffer as any)
+    .transfer(decode(output, 0, 0, rAlphabet)));
 }

@@ -54,7 +54,9 @@
 
 // deno-lint-ignore no-explicit-any
 const { Deno } = globalThis as any;
-const noColor = typeof Deno?.noColor === "boolean" ? (Deno.noColor as boolean) : false;
+const noColor = typeof Deno?.noColor === "boolean"
+  ? Deno.noColor as boolean
+  : false;
 
 interface Code {
   open: string;
@@ -136,7 +138,9 @@ function code(open: number[], close: number): Code {
  * @param code The color code to apply
  */
 function run(str: string, code: Code): string {
-  return enabled ? `${code.open}${str.replace(code.regexp, code.open)}${code.close}` : str;
+  return enabled
+    ? `${code.open}${str.replace(code.regexp, code.open)}${code.close}`
+    : str;
 }
 
 /**
@@ -907,12 +911,24 @@ export function bgRgb8(str: string, color: number): string {
  */
 export function rgb24(str: string, color: number | Rgb): string {
   if (typeof color === "number") {
-    return run(str, code([38, 2, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff], 39));
+    return run(
+      str,
+      code(
+        [38, 2, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff],
+        39,
+      ),
+    );
   }
   return run(
     str,
     code(
-      [38, 2, clampAndTruncate(color.r), clampAndTruncate(color.g), clampAndTruncate(color.b)],
+      [
+        38,
+        2,
+        clampAndTruncate(color.r),
+        clampAndTruncate(color.g),
+        clampAndTruncate(color.b),
+      ],
       39,
     ),
   );
@@ -936,12 +952,24 @@ export function rgb24(str: string, color: number | Rgb): string {
  */
 export function bgRgb24(str: string, color: number | Rgb): string {
   if (typeof color === "number") {
-    return run(str, code([48, 2, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff], 49));
+    return run(
+      str,
+      code(
+        [48, 2, (color >> 16) & 0xff, (color >> 8) & 0xff, color & 0xff],
+        49,
+      ),
+    );
   }
   return run(
     str,
     code(
-      [48, 2, clampAndTruncate(color.r), clampAndTruncate(color.g), clampAndTruncate(color.b)],
+      [
+        48,
+        2,
+        clampAndTruncate(color.r),
+        clampAndTruncate(color.g),
+        clampAndTruncate(color.b),
+      ],
       49,
     ),
   );

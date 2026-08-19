@@ -16,8 +16,8 @@ export function getFileInfoType(fileInfo: Deno.FileInfo): PathType | undefined {
   return fileInfo.isFile
     ? "file"
     : fileInfo.isDirectory
-      ? "dir"
-      : fileInfo.isSymlink
-        ? "symlink"
-        : undefined;
+    ? "dir"
+    : fileInfo.isSymlink
+    ? "symlink"
+    : undefined;
 }

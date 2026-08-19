@@ -1,0 +1,3 @@
+# oxfmt respects this by default; the vendored JSR closure keeps its
+# upstream formatting so the pinned vendor manifest hashes stay stable.
+packages/backend-deno-sigma__pty-ffi/vendor/

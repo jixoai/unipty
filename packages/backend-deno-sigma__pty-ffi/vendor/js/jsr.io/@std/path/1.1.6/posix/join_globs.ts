@@ -24,7 +24,10 @@ export type { GlobOptions };
  * @param options The options to use.
  * @returns The joined path.
  */
-export function joinGlobs(globs: string[], options: Pick<GlobOptions, "globstar"> = {}): string {
+export function joinGlobs(
+  globs: string[],
+  options: Pick<GlobOptions, "globstar"> = {},
+): string {
   const { globstar = false } = options;
   if (!globstar || globs.length === 0) {
     return join(...globs);

@@ -10,6 +10,8 @@ import { fromFileUrl } from "../../path/1.1.6/from_file_url.ts";
  *
  * @returns The path as a string.
  */
-export function toPathString(pathUrl: string | URL): string {
+export function toPathString(
+  pathUrl: string | URL,
+): string {
   return pathUrl instanceof URL ? fromFileUrl(pathUrl) : pathUrl;
 }

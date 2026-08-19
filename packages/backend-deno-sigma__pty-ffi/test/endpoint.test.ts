@@ -195,16 +195,17 @@ Deno.test("bounded write queue: soft false, drain recovery, hard rejection", asy
   await settlePump();
 });
 
-Deno.test("terminate settles an unobserved exit and closes transport I/O", async () => {
+Deno.test("terminate signals the child and observes the exit through the live transport", async () => {
   const backend = await makeBackend();
   const endpoint = backend.spawn({ argv: ["/bin/sleep", "30"], cols: 80, rows: 24 });
   await sleep(250);
   endpoint.terminate();
   endpoint.terminate(); // idempotent
-  assertEqual(await endpoint.exited, { exitCode: null, signal: null });
-  assertEqual(await errorCode(() => endpoint.write({ kind: "text", text: "x" })), "closed");
-  assertEqual(await errorCode(() => endpoint.resize(80, 24)), "closed");
-  endpoint.close(); // already torn down; still a no-op
+  // The child is signalled by pid (discovered around spawn) without closing
+  // the transport, so the pump observes the real exit: signal deaths report
+  // exit code 1 on this substrate and no signal is distinguishable.
+  assertEqual(await endpoint.exited, { exitCode: 1, signal: null });
+  endpoint.close(); // explicit close still publishes and tears down
   await settlePump();
 });
 
@@ -241,9 +242,10 @@ Deno.test("close defers physical teardown: stream completes, child stays alive",
     ),
     false,
   );
-  // Explicit termination afterwards settles the observation honestly.
+  // Explicit termination afterwards signals by pid and the live transport
+  // observes the real exit (signal deaths report exit code 1 here).
   endpoint.terminate();
-  assertEqual(await endpoint.exited, { exitCode: null, signal: null });
+  assertEqual(await endpoint.exited, { exitCode: 1, signal: null });
   await settlePump();
 });
 

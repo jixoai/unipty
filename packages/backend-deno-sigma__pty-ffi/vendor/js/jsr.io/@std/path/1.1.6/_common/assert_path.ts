@@ -3,6 +3,8 @@
 
 export function assertPath(path?: string) {
   if (typeof path !== "string") {
-    throw new TypeError(`Path must be a string, received "${JSON.stringify(path)}"`);
+    throw new TypeError(
+      `Path must be a string, received "${JSON.stringify(path)}"`,
+    );
   }
 }

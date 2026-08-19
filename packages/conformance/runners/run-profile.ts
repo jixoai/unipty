@@ -152,16 +152,12 @@ async function loadOfficialBackend(packageName: string): Promise<LoadedBackend> 
     );
   }
   const factory = factoryCandidate as () => Promise<ReadyPtyBackend>;
-  // The @sigma/pty-ffi substrate's pty_close kills the child and consumes
-  // the transport in one primitive; an exit not yet observed at terminate()
-  // is honestly unobservable ({exitCode: null, signal: null}).
-  const accommodations: ScenarioAccommodations =
-    metadata.backend.id === "deno-sigma__pty-ffi" ? { exitUnobservableAfterTerminate: true } : {};
+
   return {
     createBackend: factory,
     backendIdentity: { packageName: metadata.package.name, backendId: metadata.backend.id },
     packageVersion: metadata.package.version,
-    accommodations,
+    accommodations: {},
   };
 }
 

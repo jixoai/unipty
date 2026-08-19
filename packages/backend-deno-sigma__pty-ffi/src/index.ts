@@ -32,6 +32,7 @@
  *   `invalid-argument` instead of being silently truncated or corrupted.
  */
 
+import { execFileSync } from "node:child_process";
 import { UniPtyError } from "unipty";
 import type {
   BackendEndpoint,
@@ -362,6 +363,10 @@ class DenoSigmaPtyFfiBackendImpl implements DenoSigmaPtyFfiBackend {
     if (launch.env !== undefined) substrateOptions.env = { ...launch.env };
 
     let pty: SubstratePty;
+    // The substrate forks the child internally without exposing its pid;
+    // diffing this process's direct children around the synchronous spawn
+    // identifies it so terminate() can signal without closing the transport.
+    const childrenBefore = listDirectChildPids();
     try {
       pty = new this.#closure.Pty(executable, substrateOptions);
     } catch (cause) {
@@ -374,7 +379,8 @@ class DenoSigmaPtyFfiBackendImpl implements DenoSigmaPtyFfiBackend {
         },
       );
     }
-    return new DenoSigmaPtyEndpoint(pty, this.#settings);
+    const childPid = discoverSpawnedChildPid(childrenBefore);
+    return new DenoSigmaPtyEndpoint(pty, this.#settings, childPid);
   }
 
   async dispose(): Promise<void> {
@@ -382,6 +388,59 @@ class DenoSigmaPtyFfiBackendImpl implements DenoSigmaPtyFfiBackend {
     // until process exit (substrate limitation, documented in README).
     this.#disposed = true;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Child-pid discovery (terminate-without-close support)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pids of this process's direct children (synchronous: spawn() must stay
+ * synchronous, so the OS listing runs through node:child_process, which
+ * Deno provides). `undefined` means discovery is unavailable (missing
+ * pgrep); an empty set means the listing worked and no children exist.
+ */
+function listDirectChildPids(): Set<number> | undefined {
+  const self = (globalThis as { Deno?: { pid?: number } }).Deno?.pid;
+  if (self === undefined) return undefined;
+  try {
+    const out = execFileSync("pgrep", ["-P", String(self)], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const pids = new Set<number>();
+    for (const line of out.split("\n")) {
+      const pid = Number.parseInt(line, 10);
+      if (Number.isInteger(pid) && pid > 0) pids.add(pid);
+    }
+    return pids;
+  } catch (cause) {
+    // pgrep exits 1 for "no children" — a valid empty listing; anything
+    // else (tool missing on non-POSIX hosts) disables discovery.
+    if (
+      cause instanceof Error &&
+      "status" in cause &&
+      (cause as { status?: number }).status === 1
+    ) {
+      return new Set<number>();
+    }
+    return undefined;
+  }
+}
+
+/**
+ * The substrate forks the child internally without exposing its pid. The
+ * synchronous spawn wraps a synchronous fork, so diffing this process's
+ * direct children across it identifies the new pid; ambiguity or an
+ * unavailable listing yields `undefined` and terminate() falls back to the
+ * substrate teardown primitive.
+ */
+function discoverSpawnedChildPid(before: Set<number> | undefined): number | undefined {
+  if (before === undefined) return undefined;
+  const after = listDirectChildPids();
+  if (after === undefined) return undefined;
+  const candidates = [...after].filter((pid) => !before.has(pid));
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -412,7 +471,10 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
   #discardOutput = false;
   #inflightBytes = 0;
 
-  constructor(pty: SubstratePty, settings: BackendSettings) {
+  #childPid: number | undefined;
+
+  constructor(pty: SubstratePty, settings: BackendSettings, childPid: number | undefined) {
+    this.#childPid = childPid;
     this.#pty = pty;
     this.#softBytes = settings.softBytes;
     this.#hardBytes = settings.hardBytes;
@@ -621,13 +683,32 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
   }
 
   terminate(): void {
-    // Physical termination request: pty_close SIGKILLs the child and drops
-    // the transport (the substrate exposes no kill-without-close). The exit
-    // observation channel dies with the transport, so an exit not yet
-    // observed settles honestly as { exitCode: null, signal: null }; the
-    // public closed state is NOT published by a termination request.
+    // Termination request that keeps the transport open: the child is a
+    // direct child of this process (the substrate forks it internally
+    // without exposing the pid), so it is discovered by diffing the OS
+    // process table around spawn and signalled with Deno.kill. The pump
+    // then observes the exit through the live transport — a real
+    // observation, not a teardown artifact. When the pid could not be
+    // discovered (already-exited child, unsupported platform), fall back to
+    // the substrate's only teardown primitive, pty_close, which kills and
+    // drops the transport in one step; an exit not yet observed then
+    // settles honestly as { exitCode: null, signal: null }.
     if (this.#terminated) return;
     this.#terminated = true;
+    const pid = this.#childPid;
+    if (pid !== undefined) {
+      const kill = (globalThis as { Deno?: { kill?: (pid: number, signal: string) => void } }).Deno
+        ?.kill;
+      if (typeof kill === "function") {
+        try {
+          kill(pid, "SIGTERM");
+        } catch {
+          // The child already exited (ESRCH): the pump's own observation
+          // settles exited; there is nothing left to signal.
+        }
+        return;
+      }
+    }
     this.#closePhysically();
     this.#settleUnobserved();
   }

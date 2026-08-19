@@ -48,7 +48,9 @@ export function normalize(path: string | URL): string {
   assertArg(path);
 
   const isAbsolute = isPosixPathSeparator(path.charCodeAt(0));
-  const trailingSeparator = isPosixPathSeparator(path.charCodeAt(path.length - 1));
+  const trailingSeparator = isPosixPathSeparator(
+    path.charCodeAt(path.length - 1),
+  );
 
   // Normalize the path
   path = normalizeString(path, !isAbsolute, "/", isPosixPathSeparator);
