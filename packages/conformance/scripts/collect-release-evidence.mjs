@@ -89,8 +89,11 @@ for (const artifact of wanted) {
     files = [];
   }
   for (const file of files) {
-    copySync(join(evidenceDir, file), join(outEvidence, file));
-    console.log(`[collect-release-evidence] evidence ${file}`);
+    // Prefix with the artifact id: same-commit reruns and duplicate
+    // artifacts must never overwrite each other — the aggregator receives
+    // every record and applies the duplicate/contradiction rules itself.
+    copySync(join(evidenceDir, file), join(outEvidence, `${artifact.id}-${file}`));
+    console.log(`[collect-release-evidence] evidence ${artifact.id}-${file}`);
   }
 }
 

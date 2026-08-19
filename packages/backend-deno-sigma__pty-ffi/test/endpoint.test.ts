@@ -5,8 +5,9 @@
  * bounds, and idempotency.
  *
  * Lifecycle facts under test are substrate truths (documented in README):
- * close() kills the child and drops the transport; terminate() funnels to the
- * same primitive; an unobserved exit settles as {exitCode: null, signal: null}.
+ * close() defers the physical pty_close until the child exits; terminate()
+ * signals the discovered child pid without closing the transport, and fails
+ * explicitly with unsupported when discovery or signal delivery is impossible.
  */
 
 import type { BackendEndpoint } from "unipty";
@@ -328,7 +329,7 @@ Deno.test("terminate observes the real exit through the live transport (sanity)"
 // test host, so a subprocess simulation would only re-test the normal path.
 
 Deno.test("terminate throws unsupported when pid discovery fails (injected)", async () => {
-  const { __setPidDiscoveryForTests } = await import("../src/index.ts");
+  const { __setPidDiscoveryForTests } = await import("../src/pid-discovery.ts");
   __setPidDiscoveryForTests(() => undefined);
   try {
     const backend = await makeBackend();

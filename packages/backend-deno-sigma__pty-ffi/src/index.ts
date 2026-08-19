@@ -22,8 +22,8 @@
  *   failure), when it can no longer kill a live child. `terminate()`
  *   signals the child by its discovered pid (`Deno.kill`) and never touches
  *   the transport; when pid discovery is impossible, or the signal cannot be
- *   delivered, it fails explicitly with `unsupported` instead of collapsing
- *   into the kill-and-close primitive or masquerading as acceptance.
+ *   delivered, it fails explicitly with `unsupported` — never a fallback to
+ *   the kill-and-close primitive and never a silent acceptance.
  * - The child exit code is observable only through reads that return `done`.
  * - The substrate reports exit code `1` for signal-terminated children
  *   (SIGKILL and SIGTERM alike), so `signal` is always `null` here: this
@@ -33,8 +33,11 @@
  *   `invalid-argument` instead of being silently truncated or corrupted.
  */
 
-import { execFileSync } from "node:child_process";
 import { UniPtyError } from "unipty";
+import {
+  discoverSpawnedChildPidSafe as discoverSpawnedChildPid,
+  listDirectChildPids,
+} from "./pid-discovery.ts";
 import type {
   BackendEndpoint,
   BackendExitResult,
@@ -392,70 +395,6 @@ class DenoSigmaPtyFfiBackendImpl implements DenoSigmaPtyFfiBackend {
 }
 
 // ---------------------------------------------------------------------------
-// Child-pid discovery (terminate-without-close support)
-// ---------------------------------------------------------------------------
-
-/**
- * Pids of this process's direct children (synchronous: spawn() must stay
- * synchronous, so the OS listing runs through node:child_process, which
- * Deno provides). `undefined` means discovery is unavailable (missing
- * pgrep); an empty set means the listing worked and no children exist.
- */
-function listDirectChildPids(): Set<number> | undefined {
-  const self = (globalThis as { Deno?: { pid?: number } }).Deno?.pid;
-  if (self === undefined) return undefined;
-  try {
-    const out = execFileSync("pgrep", ["-P", String(self)], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const pids = new Set<number>();
-    for (const line of out.split("\n")) {
-      const pid = Number.parseInt(line, 10);
-      if (Number.isInteger(pid) && pid > 0) pids.add(pid);
-    }
-    return pids;
-  } catch (cause) {
-    // pgrep exits 1 for "no children" — a valid empty listing; anything
-    // else (tool missing on non-POSIX hosts) disables discovery.
-    if (
-      cause instanceof Error &&
-      "status" in cause &&
-      (cause as { status?: number }).status === 1
-    ) {
-      return new Set<number>();
-    }
-    return undefined;
-  }
-}
-
-/**
- * The substrate forks the child internally without exposing its pid. The
- * synchronous spawn wraps a synchronous fork, so diffing this process's
- * direct children across it identifies the new pid; ambiguity or an
- * unavailable listing yields `undefined` and terminate() falls back to the
- * substrate teardown primitive.
- */
-/** Test-only discovery override (see endpoint tests); production is null. */
-let discoveryOverride: ((before: Set<number> | undefined) => number | undefined) | null = null;
-
-/** @internal Test seam: replace pid discovery to exercise degraded hosts. */
-export function __setPidDiscoveryForTests(
-  override: ((before: Set<number> | undefined) => number | undefined) | null,
-): void {
-  discoveryOverride = override;
-}
-
-function discoverSpawnedChildPid(before: Set<number> | undefined): number | undefined {
-  if (discoveryOverride !== null) return discoveryOverride(before);
-  if (before === undefined) return undefined;
-  const after = listDirectChildPids();
-  if (after === undefined) return undefined;
-  const candidates = [...after].filter((pid) => !before.has(pid));
-  return candidates.length === 1 ? candidates[0] : undefined;
-}
-
-// ---------------------------------------------------------------------------
 // Endpoint
 // ---------------------------------------------------------------------------
 
@@ -720,10 +659,12 @@ class DenoSigmaPtyEndpoint implements BackendEndpoint {
     try {
       kill(pid, "SIGTERM");
     } catch (cause) {
-      // Only "process not found" means the child already exited (ESRCH):
-      // the pump's own observation settles exited and there is nothing left
-      // to signal. Any other failure (permissions revoked at runtime, invalid
-      // pid) must surface — a swallowed error would masquerade as acceptance.
+      // Only "process not found" means the target is already gone (the
+      // production discovery yields live child pids, so this is the benign
+      // already-exited case): the pump's own observation settles exited and
+      // there is nothing left to signal. Any other failure — for example
+      // permissions revoked at runtime — must surface, because a swallowed
+      // error would masquerade as acceptance.
       const name = (cause as { name?: string }).name;
       const code = (cause as { code?: string }).code;
       if (name !== "NotFound" && code !== "NotFound") {
