@@ -1,0 +1,410 @@
+/* -------------------------------------------------------------------------
+ * UniPty site identity — jixoai website law (see ~/.agents/skills/jixoai-website).
+ * shadcn-style HSL tokens against ONE per-project variable: --brand-hue: 160
+ * (幽绿 phosphor green). Functional colors stay fixed across jixoai sites.
+ * ---------------------------------------------------------------------- */
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/share-tech-mono";
+@import "tailwindcss";
+@plugin '@tailwindcss/typography';
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* ── per-project identity: the ONLY thing that changes across jixoai sites ── */
+  --brand-hue: 165;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --terminal: oklch(0.2 0 0);
+  --terminal-foreground: oklch(1 0 0);
+  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
+  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0.6489 0.237 var(--brand-hue));
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.968 0.211 109.7692);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.9551 0 0);
+  --muted-foreground: oklch(0.3211 0 0);
+  --accent: oklch(0.5635 0.2408 260.8178);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0 0 0);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0 0 0);
+  --input: oklch(0 0 0);
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--accent);
+  --chart-4: oklch(0.7323 0.2492 142.4953);
+  --chart-5: oklch(0.5931 0.2726 328.3634);
+
+  /* typography: mono is the site voice, not an afterthought */
+  --font-sans:
+    "JetBrains Mono Variable", "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --font-mono: var(--font-sans);
+  --font-nav: "Share Tech Mono", "JetBrains Mono Variable", monospace;
+
+  /* sharp corners; bevel upgrade only where CSS supports it */
+  --radius: 0px;
+  @supports (corner-shape: bevel) {
+    --radius: 8px;
+  }
+
+  /* hard offset shadows — no blur, no softness */
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 1px 1px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-xs: 2px 2px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-sm: 2px 2px 0px 0px hsl(0 0% 0% / 1), 1px 1px 0px 1px hsl(0 0% 100% / 0.5);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 1px 2px -1px hsl(0 0% 100% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 2px 4px -1px hsl(0 0% 100% / 1);
+  --shadow-lg: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 4px 6px -1px hsl(0 0% 100% / 1);
+
+  /* readonly code surfaces */
+  --readonly-code-bg: color-mix(in oklab, var(--muted) 42%, var(--background));
+  --readonly-code-border: color-mix(in oklab, var(--border) 18%, transparent);
+  --readonly-code-meta-bg: color-mix(in oklab, var(--accent) 12%, var(--background));
+  --readonly-code-meta-fg: color-mix(in oklab, var(--accent) 58%, var(--foreground));
+
+  /* tiny build-time tokenizer palette */
+  --tok-comment: color-mix(in oklab, var(--foreground) 44%, transparent);
+  --tok-string: var(--accent);
+  --tok-keyword: var(--primary);
+  --tok-number: color-mix(in oklab, var(--secondary) 78%, var(--foreground));
+}
+
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --terminal: oklch(0.2 0 0);
+  --terminal-foreground: oklch(1 0 0);
+  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
+  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
+  --card: oklch(0.3211 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.3211 0 0);
+  --popover-foreground: oklch(1 0 0);
+  /* openspecui drifts the primary hue -4° toward dark for perceptual parity */
+  --primary: oklch(0.7044 0.1872 calc(var(--brand-hue) - 4));
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.9691 0.2005 109.6228);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2178 0 0);
+  --muted-foreground: oklch(0.8452 0 0);
+  --accent: oklch(0.6755 0.1765 252.2592);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(1 0 0);
+  --destructive-foreground: oklch(0 0 0);
+  --border: oklch(1 0 0);
+  --input: oklch(1 0 0);
+  --ring: var(--primary);
+  --chart-1: var(--primary);
+  --chart-2: var(--secondary);
+  --chart-3: var(--accent);
+  --chart-4: oklch(0.7395 0.2268 142.8504);
+  --chart-5: oklch(0.6131 0.2458 328.0714);
+
+  /* dark mode inverts the shadow color */
+  --shadow-color: hsl(0 0% 100%);
+  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
+  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
+  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 2px 4px -1px hsl(0 0% 0% / 1);
+  --shadow-lg: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 4px 6px -1px hsl(0 0% 0% / 1);
+
+  --readonly-code-bg: color-mix(in oklab, var(--muted) 78%, var(--background));
+  --readonly-code-border: color-mix(in oklab, var(--border) 18%, transparent);
+  --readonly-code-meta-bg: color-mix(in oklab, var(--accent) 18%, var(--background));
+  --readonly-code-meta-fg: color-mix(in oklab, var(--accent) 60%, oklch(1 0 0));
+
+  --tok-comment: color-mix(in oklab, var(--foreground) 55%, transparent);
+  --tok-string: var(--accent);
+  --tok-keyword: var(--primary);
+  --tok-number: var(--secondary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-terminal: var(--terminal);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-hover: var(--terminal-hover);
+  --color-terminal-muted: var(--terminal-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-nav: var(--font-nav);
+
+  --radius-*: initial;
+  --radius: var(--radius);
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    corner-shape: bevel;
+    scrollbar-width: thin;
+    accent-color: var(--primary);
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-mono);
+  }
+  .font-nav {
+    font-family: var(--font-nav);
+  }
+  button {
+    cursor: pointer;
+  }
+  :where(a, button):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 30%, transparent);
+  }
+}
+
+/* -------------------------------------------------------------------------
+ * Motion law (jixoai motion.md): exactly two patterns — scroll reveal and
+ * press physics. Reduced motion disables both; no other animation exists.
+ * ---------------------------------------------------------------------- */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--reveal-rise, 10px));
+}
+html.js [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 260ms ease-out var(--reveal-delay, 0ms),
+    transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
+}
+html.js [data-reveal="rule"] {
+  opacity: 1;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+html.js [data-reveal="rule"].is-revealed {
+  transform: scaleX(1);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+
+/* -------------------------------------------------------------------------
+ * Data tables (route matrices, substrate tables).
+ * ---------------------------------------------------------------------- */
+.table-scroll {
+  overflow-x: auto;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.data-table th {
+  background: var(--muted);
+  border: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+  white-space: nowrap;
+}
+.data-table td {
+  border: 1px solid color-mix(in oklab, var(--border) 32%, transparent);
+  padding: 0.45rem 0.6rem;
+  vertical-align: top;
+}
+.data-table td.dim {
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+.data-table tbody tr {
+  transition: background-color 150ms ease-out;
+}
+.data-table tbody tr:hover {
+  background: color-mix(in oklab, var(--muted) 26%, transparent);
+}
+
+/* State chips — the only rounded-full elements on the site. */
+.badge {
+  align-items: center;
+  border: 1px solid color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  border-radius: 9999px;
+  color: var(--muted-foreground);
+  display: inline-flex;
+  font-size: 11px;
+  gap: 0.4em;
+  line-height: 1.7;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+}
+.badge-verified {
+  background: color-mix(in oklab, var(--primary) 13%, transparent);
+  border-color: color-mix(in oklab, var(--primary) 58%, transparent);
+  color: var(--primary);
+}
+.badge-declared-unverified {
+  background: color-mix(in oklab, var(--secondary) 14%, transparent);
+  border-color: color-mix(in oklab, var(--secondary) 58%, transparent);
+  color: color-mix(in oklab, var(--secondary) 72%, var(--foreground));
+}
+.badge-not-targeted {
+  background: color-mix(in oklab, var(--muted-foreground) 10%, transparent);
+  border-color: color-mix(in oklab, var(--muted-foreground) 48%, transparent);
+  color: var(--muted-foreground);
+}
+
+/* Compatibility matrix evidence cells. */
+.evidence-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.evidence-line {
+  color: var(--muted-foreground);
+  font-size: 11.5px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.evidence-line strong {
+  color: var(--foreground);
+  font-weight: 600;
+}
+.route-sub {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 78ch;
+}
+.route-sub code,
+.evidence-line code,
+.data-table code {
+  color: var(--accent);
+}
+.version {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  margin-left: 0.4rem;
+}
+
+/* -------------------------------------------------------------------------
+ * Readonly code surfaces (quick-start samples, metadata schema).
+ * ---------------------------------------------------------------------- */
+.readonly-code {
+  background: var(--readonly-code-bg);
+  border: 1px solid var(--readonly-code-border);
+}
+.readonly-code pre {
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.875rem;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.readonly-code-meta {
+  background: var(--readonly-code-meta-bg);
+  border-bottom: 1px solid var(--readonly-code-border);
+  color: var(--readonly-code-meta-fg);
+  display: flex;
+  font-size: 11px;
+  gap: 0.5rem;
+  letter-spacing: 0.08em;
+  padding: 0.32rem 0.75rem;
+}
+.readonly-code-meta .prompt {
+  color: var(--primary);
+}
+.tok-comment {
+  color: var(--tok-comment);
+}
+.tok-string {
+  color: var(--tok-string);
+}
+.tok-keyword {
+  color: var(--tok-keyword);
+}
+.tok-number {
+  color: var(--tok-number);
+}
+
+/* Skip link (a11y) — visible only on keyboard focus. */
+.skip-link {
+  clip-path: inset(50%);
+  height: 1px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+  width: 1px;
+}
+.skip-link:focus-visible {
+  background: var(--background);
+  border: 1px solid var(--border);
+  clip-path: none;
+  height: auto;
+  padding: 0.5rem 0.75rem;
+  width: auto;
+  z-index: 50;
+}
+
+/* Anchor targets clear the sticky-free header comfortably. */
+[id] {
+  scroll-margin-top: 1.5rem;
+}
+
+/* -------------------------------------------------------------------------
+ * Reduced-motion law: reveal renders immediately, press transitions drop.
+ * ---------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  html.js [data-reveal],
+  html.js [data-reveal="rule"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .data-table tbody tr,
+  .terminal-output {
+    transition: none;
+  }
+}

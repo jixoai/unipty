@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
       - name: Download the release catalog artifact
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,6 +39,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22.20.0"
+          cache: pnpm
+      - name: Install the site build toolchain (devDependencies only)
+        run: pnpm install --frozen-lockfile --filter @unipty/www...
       - name: Build the static site from the exact artifact (production CNAME)
         run: >-
           WWW_CNAME=1 WWW_CATALOG=catalog-download/catalog.json

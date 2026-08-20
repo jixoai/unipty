@@ -11,6 +11,7 @@
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
 | Trigger       | `workflow_dispatch` with a required `release_tag` input (e.g. `v0.1.0`)                                                                  |
 | Catalog input | The catalog JSON artifact attached to that release (exact asset name is owned by the release track, task 7.4)                            |
+| Toolchain     | `pnpm/action-setup` + filtered `pnpm install --frozen-lockfile` (site devDependencies only; no runtime packages)                         |
 | Build         | `WWW_CNAME=1 WWW_CATALOG=<downloaded artifact path> node packages/www/scripts/build.mjs`                                                 |
 | Deploy        | `packages/www/dist` uploaded with `actions/upload-pages-artifact`, deployed with `actions/deploy-pages`                                  |
 | Custom domain | `unipty.jixoai.com`; DNS CNAME mapping is **Owner-managed external configuration**                                                       |
@@ -76,8 +77,9 @@ artifact name fixed by the release track; adjust it in one place.)
 
 ## Why this satisfies the spec
 
-- **Static isolation** — the build is `node scripts/build.mjs`: zero npm
-  dependencies, no install step, no Backend import. A browser visitor
+- **Static isolation** — the build is `node scripts/build.mjs`: the site
+  toolchain is devDependencies-only (SvelteKit/Vite/Tailwind/fonts), no
+  runtime package dependency, no Backend import. A browser visitor
   receives static documentation only.
 - **Immutable catalog presentation** — the downloaded artifact is validated
   and copied **byte-identical** into `dist/catalog/catalog.json` (sha256 in
@@ -102,15 +104,18 @@ artifact name fixed by the release track; adjust it in one place.)
 3. Do not cache or mutate the catalog between download and build; the site
    build log must be able to attribute the sha256 of the exact bytes it
    copied.
-4. Do not add runtime or dev dependencies to `@unipty/www`; the workspace
-   architecture check rejects `@unipty/backend-*`, `unipty`,
-   `@unipty/backend`, and `@unipty/helper-backend` edges from this package.
+4. Do not add runtime dependencies to `@unipty/www`, and never add
+   `@unipty/backend-*`, `unipty`, `@unipty/backend`, or
+   `@unipty/helper-backend` edges (any dependency kind); the workspace
+   architecture check rejects them. Site toolchain lives in
+   devDependencies.
 
 ## Local preview
 
 ```sh
+pnpm install                       # once, from the repository root
 cd packages/www
-node scripts/build.mjs                       # dev fixture, no CNAME
+node scripts/build.mjs             # dev fixture, no CNAME
 node scripts/build.mjs path/to/catalog.json  # explicit artifact
 python3 -m http.server -d dist 4173          # open http://127.0.0.1:4173
 ```

@@ -1,180 +1,116 @@
 #!/usr/bin/env node
 /**
- * UniPty website build — zero-dependency static site assembler.
+ * UniPty website build — SvelteKit static site orchestrator.
  *
- * Pipeline (task 8.3):
+ * Pipeline:
  *  1. Read the explicitly selected release catalog artifact
  *     (CLI arg > WWW_CATALOG env > committed development fixture).
  *  2. Validate its shape against the release catalog contract; reject
- *     malformed input with a non-zero exit.
- *  3. Copy the artifact UNCHANGED (byte-identical buffer write) into
+ *     malformed input with a non-zero exit (BuildError).
+ *  3. Write the build-time page data consumed by prerendering
+ *     (src/lib/generated/ — gitignored; the compatibility page is fully
+ *     pre-rendered from it and never recomputed in the browser).
+ *  4. Run `vite build` (SvelteKit + @sveltejs/adapter-static) synchronously
+ *     into dist/. The adapter empties dist, so every artifact copy below
+ *     happens AFTER the static build.
+ *  5. Copy the catalog artifact UNCHANGED (byte-identical buffer write) into
  *     dist/catalog/catalog.json; log its sha256. Never re-serialize.
- *  4. Render pages from templates with {{TOKEN}} substitution and a tiny
- *     build-time syntax highlighter. The compatibility matrix is fully
- *     pre-rendered here — never computed in the browser.
- *  5. Write dist/CNAME ("unipty.jixoai.com") only when WWW_CNAME=1, so
+ *  6. Publish the emitted CSS bundle as dist/assets/styles.css and rewrite
+ *     the page stylesheet links to it (the static checks expect that path).
+ *  7. Write dist/CNAME ("unipty.jixoai.com") only when WWW_CNAME=1, so
  *     preview builds stay CNAME-free.
  */
 
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { derivePresentation, validateCatalog } from "./lib/catalog.mjs";
 
+const nodeRequire = createRequire(import.meta.url);
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = path.join(packageRoot, "dist");
 const defaultCatalog = path.join(packageRoot, "fixtures", "catalog.dev.json");
-const siteDir = path.join(packageRoot, "site");
-const pages = [
-  { template: "index.html", out: "index.html", nav: "INDEX" },
-  { template: "docs.html", out: "docs.html", nav: "DOCS" },
-  { template: "compatibility.html", out: "compatibility.html", nav: "COMPAT" },
-];
+const generatedDir = path.join(packageRoot, "src", "lib", "generated");
+const pages = ["index.html", "docs.html", "compatibility.html"];
 
 export class BuildError extends Error {}
 
-const escapeHtml = (value) =>
-  String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-
-const unescapeHtml = (value) =>
-  String(value)
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, "&");
-
-/* Code content lives in element text, not attributes: keep quotes literal
- * so the highlighter can match string tokens. */
-const escapeCode = (value) =>
-  String(value).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-/* --------------------------------------------------------------------- */
-/* Build-time syntax highlighting (no shiki dependency)                   */
-/* --------------------------------------------------------------------- */
-
-const KEYWORDS = {
-  ts: "import|from|export|const|let|var|await|async|for|of|in|if|else|break|continue|new|return|function|type|interface|true|false|null|undefined|void",
-  js: "import|from|export|const|let|var|await|async|function|return|true|false|null|undefined",
-  json: "true|false|null",
-  sh: "",
-};
-
-function highlight(code, lang) {
-  const escaped = escapeCode(unescapeHtml(code));
-  const keywords = KEYWORDS[lang] ?? KEYWORDS.ts;
-  const parts = [
-    "(\\/\\/[^\\n]*|#[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)", // 1: comments
-    "(\"(?:[^\"\\\\\\n]|\\\\.)*\"|'(?:[^'\\\\\\n]|\\\\.)*'|`(?:[^`\\\\]|\\\\.)*`)", // 2: strings
-  ];
-  if (keywords) parts.push(`\\b(${keywords})\\b`); // 3: keywords
-  parts.push("\\b(\\d[\\d_]*(?:\\.\\d+)?)\\b"); // 4: numbers
-  const re = new RegExp(parts.join("|"), "g");
-  return escaped.replace(re, (match, comment, str, kw, num) => {
-    if (comment !== undefined) return `<span class="tok-comment">${match}</span>`;
-    if (str !== undefined) return `<span class="tok-string">${match}</span>`;
-    if (kw !== undefined) return `<span class="tok-keyword">${match}</span>`;
-    if (num !== undefined) return `<span class="tok-number">${match}</span>`;
-    return match;
+const walkFiles = (dir) =>
+  readdirSync(dir).flatMap((entry) => {
+    const full = path.join(dir, entry);
+    return statSync(full).isDirectory() ? walkFiles(full) : [full];
   });
+
+/** Locate the vite CLI entry inside this workspace's node_modules.
+ * vite's exports map hides ./bin/vite.js, so resolve the package root
+ * through the exported ./package.json and join the bin path explicitly. */
+function resolveViteBin() {
+  const packageDir = path.dirname(nodeRequire.resolve("vite/package.json"));
+  const bin = path.join(packageDir, "bin", "vite.js");
+  if (existsSync(bin)) return bin;
+  throw new BuildError(
+    "cannot locate the vite binary; run `pnpm install` in the repository root first",
+  );
 }
 
-const transformCodeBlocks = (html) =>
-  html.replace(
-    /<pre class="code" data-lang="(\w+)"><code>([\s\S]*?)<\/code><\/pre>/g,
-    (_m, lang, code) =>
-      `<pre class="code" data-lang="${lang}"><code>${highlight(code, lang)}</code></pre>`,
-  );
+function runViteBuild({ quiet }) {
+  const viteBin = resolveViteBin();
+  const result = spawnSync(process.execPath, [viteBin, "build"], {
+    cwd: packageRoot,
+    stdio: quiet ? ["ignore", "pipe", "pipe"] : "inherit",
+    env: process.env,
+  });
+  if (result.error) {
+    throw new BuildError(`cannot start vite: ${result.error.message}`);
+  }
+  if (result.status !== 0) {
+    const details = `${result.stderr?.toString() ?? ""}\n${result.stdout?.toString() ?? ""}`.trim();
+    throw new BuildError(`vite build failed (exit ${result.status}):\n${details.slice(-6000)}`);
+  }
+}
 
-/* --------------------------------------------------------------------- */
-/* Compatibility matrix rendering (build time only)                       */
-/* --------------------------------------------------------------------- */
-
-const slug = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-function renderEvidenceCell(row) {
-  if (row.state !== "verified" || row.evidence.length === 0) {
-    return (
-      `<td><ul class="evidence-list">` +
-      `<li><span class="evidence-line">No exact evidence record in this catalog.</span></li>` +
-      `</ul></td>`
+/**
+ * Publish the emitted stylesheet at the path the static checks read
+ * (dist/assets/styles.css) and point every page at it. One combined file is
+ * a superset of any per-page chunk split, so it stays correct either way.
+ * Font/asset references are relative to the chunk's own directory, so they
+ * are rewritten to the absolute /_app location before the copy moves.
+ */
+function publishStylesheet() {
+  const assetsDir = path.join(distDir, "_app", "immutable", "assets");
+  const cssFiles = walkFiles(path.join(distDir, "_app"))
+    .filter((file) => file.endsWith(".css"))
+    .sort();
+  if (cssFiles.length === 0) {
+    throw new BuildError("vite build emitted no stylesheet to publish");
+  }
+  const bundle = cssFiles
+    .map((file) =>
+      readFileSync(file, "utf8").replace(/url\(\.\/(?!\/)/g, `url(/_app/immutable/assets/`),
+    )
+    .join("\n");
+  mkdirSync(path.join(distDir, "assets"), { recursive: true });
+  writeFileSync(path.join(distDir, "assets", "styles.css"), bundle);
+  for (const page of pages) {
+    const file = path.join(distDir, page);
+    const html = readFileSync(file, "utf8");
+    writeFileSync(
+      file,
+      html.replace(/href="(?:\.\/|\/)_app\/[^"]+\.css"/g, 'href="/assets/styles.css"'),
     );
   }
-  const items = row.evidence
-    .map((ev) => {
-      const report = ev.reportRef ? ` · report <code>${escapeHtml(ev.reportRef)}</code>` : "";
-      return (
-        `<li><span class="evidence-line">` +
-        `<strong>${escapeHtml(ev.runtimeName)} ${escapeHtml(ev.runtimeVersion)}</strong>` +
-        ` · suite ${escapeHtml(ev.suiteId)}@${escapeHtml(ev.suiteVersion)}` +
-        ` · commit ${escapeHtml(ev.commit)}` +
-        ` · verified ${escapeHtml(ev.verifiedAt)}${report}` +
-        `</span></li>`
-      );
-    })
-    .join("");
-  return `<td><ul class="evidence-list">${items}</ul></td>`;
 }
-
-function renderMatrix(presentation) {
-  return presentation.routes
-    .map((route) => {
-      const provenance = route.provenance
-        ? ` · substrate <code>${escapeHtml(route.provenance.substrate)}</code> (${escapeHtml(route.provenance.kind)})`
-        : "";
-      const rows = route.rows
-        .map((row) => {
-          const libc = row.tuple.libc ?? "—";
-          return (
-            `<tr data-state="${row.state}">` +
-            `<td class="dim">${row.runtime ? escapeHtml(row.runtime) : "—"}</td>` +
-            `<td class="dim">${escapeHtml(row.tuple.os)}</td>` +
-            `<td class="dim">${escapeHtml(row.tuple.arch)}</td>` +
-            `<td class="dim">${escapeHtml(libc)}</td>` +
-            `<td class="state-cell"><span class="badge badge-${row.state}">${row.state}</span></td>` +
-            renderEvidenceCell(row) +
-            `</tr>`
-          );
-        })
-        .join("\n");
-      return (
-        `<section class="route" id="route-${slug(route.packageName)}">` +
-        `<div class="route-header">` +
-        `<h3><code>${escapeHtml(route.packageName)}</code> <span class="version">v${escapeHtml(route.packageVersion)}</span></h3>` +
-        `<p class="route-sub">backend <code>${escapeHtml(route.backendId)}</code>` +
-        ` · factory <code>${escapeHtml(route.factoryExport)}</code>` +
-        ` · Core protocol ${route.protocolCore.map((n) => escapeHtml(String(n))).join(", ")}${provenance}</p>` +
-        `</div>` +
-        `<div class="table-scroll"><table class="matrix">` +
-        `<thead><tr><th>Runtime</th><th>OS</th><th>Arch</th><th>libc</th><th>State</th><th>Evidence (exact records)</th></tr></thead>` +
-        `<tbody>\n${rows}\n</tbody>` +
-        `</table></div>` +
-        `</section>`
-      );
-    })
-    .join("\n");
-}
-
-/* --------------------------------------------------------------------- */
-/* Template substitution                                                  */
-/* --------------------------------------------------------------------- */
-
-const substitute = (template, vars) => {
-  const out = template.replace(/\{\{([A-Z][A-Z0-9_]*)\}\}/g, (match, name) => {
-    if (!(name in vars)) {
-      throw new BuildError(`template references unknown token ${match}`);
-    }
-    return vars[name];
-  });
-  const leftover = out.match(/\{\{[A-Z][A-Z0-9_]*\}\}/);
-  if (leftover) throw new BuildError(`unsubstituted token ${leftover[0]}`);
-  return out;
-};
 
 /* --------------------------------------------------------------------- */
 /* Build                                                                  */
@@ -192,7 +128,7 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
     if (!quiet) console.log("[www-build]", ...args);
   };
 
-  // 1-2. Read + validate the catalog artifact.
+  // 1-2. Read + validate the catalog artifact (before any build work).
   let bytes;
   try {
     bytes = readFileSync(catalogPath);
@@ -212,66 +148,37 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
   const presentation = derivePresentation(validated.catalog);
   const sha256 = createHash("sha256").update(bytes).digest("hex");
 
-  // 3. Clean output, then byte-identical catalog copy (never re-serialized).
+  // 3. Build-time page data for prerendering (recreated on every build; a
+  // fresh checkout runs this script, or `pnpm dev`, before vite needs it).
+  rmSync(generatedDir, { recursive: true, force: true });
+  mkdirSync(generatedDir, { recursive: true });
+  writeFileSync(
+    path.join(generatedDir, "catalog.json"),
+    `${JSON.stringify(presentation, null, 2)}\n`,
+  );
+  writeFileSync(
+    path.join(generatedDir, "release.json"),
+    `${JSON.stringify({ sha256, catalogBytes: bytes.length }, null, 2)}\n`,
+  );
+
+  // 4. Static site build. adapter-static empties dist itself.
   rmSync(distDir, { recursive: true, force: true });
+  runViteBuild({ quiet });
+  for (const page of pages) {
+    if (!existsSync(path.join(distDir, page))) {
+      throw new BuildError(`vite build did not emit ${page} into dist`);
+    }
+  }
+
+  // 5. Byte-identical catalog copy (never re-serialized) — after the adapter
+  // has written dist, so nothing can clean it away.
   mkdirSync(path.join(distDir, "catalog"), { recursive: true });
-  mkdirSync(path.join(distDir, "assets"), { recursive: true });
   writeFileSync(path.join(distDir, "catalog", "catalog.json"), bytes);
 
-  // 4. Render pages.
-  const layout = readFileSync(path.join(siteDir, "templates", "layout.html"), "utf8");
-  const commonVars = {
-    CATALOG_SHA256: sha256,
-    CATALOG_SHA256_SHORT: sha256.slice(0, 12),
-  };
-  const titles = {
-    "index.html": {
-      TITLE: "Runtime-neutral PTY contract",
-      DESCRIPTION:
-        "UniPty is the runtime-neutral PTY contract for Node, Bun, and Deno with developer-selectable Backends.",
-    },
-    "docs.html": {
-      TITLE: "Documentation",
-      DESCRIPTION:
-        "UniPty Core usage, Backend acquisition, official routes, the metadata protocol, and browser-local PTY limits.",
-    },
-    "compatibility.html": {
-      TITLE: "Compatibility",
-      DESCRIPTION:
-        "Verified, declared-unverified, and not-targeted tuples for the current UniPty release, derived from one immutable catalog artifact.",
-    },
-  };
-  for (const page of pages) {
-    const content = readFileSync(path.join(siteDir, "templates", page.template), "utf8");
-    const vars = {
-      ...commonVars,
-      ...titles[page.template],
-      NAV_INDEX: page.nav === "INDEX" ? ' class="active"' : "",
-      NAV_DOCS: page.nav === "DOCS" ? ' class="active"' : "",
-      NAV_COMPAT: page.nav === "COMPAT" ? ' class="active"' : "",
-    };
-    if (page.template === "compatibility.html") {
-      vars.CATALOG_COMMIT = escapeHtml(presentation.release.commit);
-      vars.CATALOG_TAG = escapeHtml(presentation.release.tag);
-      vars.CATALOG_GENERATED_AT = presentation.release.generatedAt
-        ? escapeHtml(presentation.release.generatedAt)
-        : "no evidence in this catalog";
-      vars.COMPAT_MATRIX = renderMatrix(presentation);
-    }
-    let html = substitute(layout, { ...vars, CONTENT: substitute(content, vars) });
-    html = transformCodeBlocks(html);
-    writeFileSync(path.join(distDir, page.out), html);
-  }
+  // 6. Stylesheet at the checked path.
+  publishStylesheet();
 
-  // Static assets.
-  for (const asset of ["styles.css", "site.js", "icon.svg"]) {
-    writeFileSync(
-      path.join(distDir, "assets", asset),
-      readFileSync(path.join(siteDir, "assets", asset)),
-    );
-  }
-
-  // 5. CNAME only for production (GitHub Pages custom domain) builds.
+  // 7. CNAME only for production (GitHub Pages custom domain) builds.
   if (cname) {
     writeFileSync(path.join(distDir, "CNAME"), "unipty.jixoai.com\n");
   }
@@ -281,7 +188,7 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
   log(
     `routes: ${presentation.routes.length} packages, ${validated.catalog.evidence.length} evidence records`,
   );
-  log(`pages: ${pages.map((p) => p.out).join(", ")}`);
+  log(`pages: ${pages.join(", ")}`);
   log(`cname: ${cname ? "written (unipty.jixoai.com)" : "skipped (preview build)"}`);
 
   return { distDir, sha256, presentation, catalog: validated.catalog };

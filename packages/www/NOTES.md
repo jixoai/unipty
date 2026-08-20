@@ -17,50 +17,72 @@ deployed to GitHub Pages at `unipty.jixoai.com` (Owner-managed CNAME).
   `src/routes/+page.svelte`, and the repository workflow directory
   (`.github/workflows/`).
 
-### Findings from the reference
+## Restyle (2026-08-20) — jixoai unified website style
 
-- **Framework**: SvelteKit 2 + Vite 8 with `@sveltejs/adapter-static`,
-  mdsvex for markdown, shiki for syntax highlighting (all devDependencies).
-- **Styling**: Tailwind CSS v4 via `@tailwindcss/vite` with a shadcn-style
-  CSS custom-property token sheet in `oklch()`; `.dark` class theming plus a
-  no-flash theme bootstrap; `theme-color` `#09090b`.
-- **Typography**: mono-first identity — `--font-sans` and `--font-mono` are
-  both JetBrains Mono (locally hosted font assets), with Share Tech Mono for
-  nav accents; monospace is the site voice, not an afterthought.
-- **Look**: terminal/neo-brutalist — 1px solid borders, hard offset shadows
-  (`4px 4px 0px`), radius `0` upgraded to `8px` only where
-  `corner-shape: bevel` is supported, orange-red primary
-  (`oklch(0.6489 0.237 26.9728)` light / `oklch(0.7044 0.1872 23.1858)`
-  dark), blue accent (`oklch(0.5635 0.2408 260.8178)` light).
-- **Deployment**: the reference deploys through **Cloudflare Pages**
-  (`wrangler pages deploy`), not GitHub Pages; no GitHub Pages workflow
-  exists in that repository to copy.
+The site was restyled to the jixoai unified identity defined by the
+`jixoai-website` skill (`~/.agents/skills/jixoai-website`), whose reference
+implementation is the OpenSpecUI site inspected above. The original
+zero-dependency, hand-authored HTML/CSS build was replaced by the shared
+stack; the content seams (catalog selection order, byte-identical copy,
+CNAME gate, static checks) are unchanged.
 
-### Chosen approach for packages/www
+### Stack
 
-**Zero-dependency, hand-authored static site**: plain HTML templates +
-one `styles.css` + one small `site.js`, assembled by a Node build script
-(`scripts/build.mjs`). No framework, no package install.
+- **Framework**: SvelteKit 2 + Svelte 5 runes, static-prerendered
+  (`prerender`, `trailingSlash: 'never'`) through
+  `@sveltejs/adapter-static` (`dist/`, `strict`). Pages are flat files:
+  `index.html`, `docs.html`, `compatibility.html`.
+- **Build**: Vite 8 + `@sveltejs/vite-plugin-svelte`; `scripts/build.mjs`
+  remains the single orchestration entry and runs `vite build`
+  synchronously (`spawnSync`) so `runBuild` keeps its synchronous,
+  `BuildError`-throwing contract for `check-site.mjs`.
+- **CSS**: Tailwind CSS v4 via `@tailwindcss/vite` (CSS-first, no
+  tailwind.config) with the jixoai HSL token sheet in `src/app.css`.
+  `--brand-hue: 160` (phosphor green) is the only per-project color
+  variable; functional colors (yellow secondary, blue accent, neutrals,
+  hard black shadows) are fixed across jixoai sites.
+- **Fonts**: `@fontsource-variable/jetbrains-mono` +
+  `@fontsource/share-tech-mono`, bundled locally — zero font network
+  requests.
+- **Icons**: `lucide-svelte` deep imports (theme switcher, external-link
+  arrows).
+- **Motion**: the skill's two-pattern law — `reveal` action +
+  IntersectionObserver entrance (rule-draw variant included) and press
+  physics on interactive elements; `prefers-reduced-motion: reduce`
+  disables both.
 
-Rationale:
+### Deliberate divergences from the reference (documented per skill law)
 
-1. The site is three pages with build-time-rendered content. A framework
-   would add an install step and a dependency graph the architecture check
-   polices, for no capability this site needs. The prompt's environment
-   constraint (no `pnpm install` from this track) makes a zero-dependency
-   path strictly safer.
-2. The reference's SvelteKit stack was evaluated and **not** adopted; its
-   _visual_ language (token sheet structure, mono typography, hard-shadow
-   terminal aesthetic, dark-mode-first with `.dark` class and no-flash
-   bootstrap) was transcribed into a hand-written token sheet instead.
-   Visual cues taken: oklch token naming, mono-first typography scale,
-   orange primary / blue accent pair, 1px borders with hard offset shadows,
-   bevel-corner upgrade, `#09090b` dark canvas.
-3. Fonts: the system monospace stack (`ui-monospace, SF Mono, Menlo,
-Consolas, ...`). The reference's JetBrains Mono webfont files are local
-   assets of that project and were deliberately **not** copied.
-4. Syntax highlighting: hand-authored `<span>` classes in a tiny highlight
-   helper at build time; no shiki dependency.
+- **No mdsvex/shiki.** The site ships three short pages, not a prose
+  corpus; a ~30-line build-stable tokenizer (`src/lib/highlight.ts`)
+  tints comments/strings/keywords/numbers through the same theme tokens
+  the reference achieves with dual-theme shiki. Deterministic output
+  keeps `{@html}` hydration-safe.
+- **Terminal cursor does not blink.** The reference hero terminal blinks
+  its cursor forever; the skill's motion law forbids looping/ambient
+  animation, so the cursor is a static block and the typing story is a
+  one-shot entrance that degrades to the settled terminal under reduced
+  motion or without JS.
+- **`theme-color` is `#000000`**, matching the token sheet's pure-black
+  dark canvas (the reference's `#09090b` matches its own zinc-tinted
+  canvas).
+- **MPA navigation.** `<body data-sveltekit-reload>` makes every internal
+  link a full page load so the flat `docs.html`/`compatibility.html`
+  artifact keeps working without client-route resolution; prerendering
+  crawls nothing (`crawl: false` + explicit entries).
+- **Published stylesheet path.** The emitted CSS bundle is republished as
+  `dist/assets/styles.css` (font URLs rewritten to absolute `/_app`
+  paths) because `check-site.mjs` reads that exact path; page links are
+  rewritten to it.
+- **`PressButton` internal links.** The reference component always opens
+  `target="_blank"`; UniPty CTAs navigate site pages, so the component
+  auto-detects external hrefs and reserves `_blank`/`noreferrer` for
+  them.
+- **Deploy workflow installs devDependencies.** The restyle replaced the
+  zero-dependency assembler, so `deploy-www.yml` gained
+  `pnpm/action-setup` + a filtered `pnpm install --frozen-lockfile`
+  before `node packages/www/scripts/build.mjs`. The build entry, catalog
+  contract, and CNAME gate are unchanged.
 
 ### No source dependency (task 8.1 requirement)
 
@@ -68,32 +90,38 @@ Consolas, ...`). The reference's JetBrains Mono webfont files are local
 of this package. Nothing under `packages/www` imports, resolves, vendors,
 or references `../openspecui` at build or runtime. The UniPty site builds
 from its own workspace assets plus exactly one release catalog artifact.
-`@unipty/www` declares zero dependencies and zero devDependencies, so the
-workspace dependency graph is unchanged by this package.
+`@unipty/www` declares zero runtime dependencies; its devDependencies are
+the site toolchain only (no `@unipty/*`, `unipty`, or `@unipty/backend-*`
+edges — the workspace architecture check scans devDependencies too).
+
+## Build-time data seam
+
+`scripts/build.mjs` writes `src/lib/generated/catalog.json` (the derived
+presentation) and `src/lib/generated/release.json` (sha256 + byte count)
+before each `vite build`; the directory is gitignored and regenerated on
+every build. The compatibility page imports it at module scope, so the
+evidence derivation never ships as inline hydration data and never runs in
+the browser.
 
 ## Task 8.4 — GitHub Pages workflow summary
 
-The repository `.github/workflows/` directory is owned by the CI track; this
-package deliberately contains **no workflow files**. The intended deployment
-contract is documented in [`deploy/README.md`](deploy/README.md):
-
-- Trigger: `workflow_dispatch` with a release tag input; the job downloads
-  the catalog artifact attached to that release.
-- Build: `pnpm --filter @unipty/www build` with `WWW_CATALOG` pointing at
-  the downloaded artifact and `WWW_CNAME=1` so `dist/CNAME` is written.
-- Deploy: `dist/` to GitHub Pages; `unipty.jixoai.com` DNS is Owner-managed
-  external configuration.
-- Retryable: re-running the workflow re-consumes the same immutable release
-  artifact; it never republishes Core or Backend packages.
+The deployment contract lives in [`deploy/README.md`](deploy/README.md)
+and `.github/workflows/deploy-www.yml`: `workflow_dispatch` with a release
+tag; download that release's catalog artifact; install site
+devDependencies; build with `WWW_CATALOG` + `WWW_CNAME=1`; run static
+checks; deploy `dist/` to Pages. Retries re-consume the same immutable
+artifact and never republish packages.
 
 ## Build and check entry points
 
-- `pnpm --filter @unipty/www build` — validate catalog, byte-identical copy
-  to `dist/catalog/catalog.json` (sha256 logged), render pages, write
-  `dist/CNAME` only when `WWW_CNAME=1`.
-- `pnpm --filter @unipty/www test` — clean-build from both committed
-  fixtures and run the static checks (links, catalog byte-identity,
-  three-state rendering, no browser backend imports, responsive smoke).
+- `node scripts/build.mjs` (or `pnpm --filter @unipty/www run build`) —
+  validate catalog, run the static build, byte-identical copy to
+  `dist/catalog/catalog.json` (sha256 logged), publish the stylesheet,
+  write `dist/CNAME` only when `WWW_CNAME=1`.
+- `node scripts/check-site.mjs` (or `pnpm --filter @unipty/www run test`) —
+  clean-build from both committed fixtures and run the static checks
+  (links, catalog byte-identity, three-state rendering, no browser backend
+  imports, responsive smoke, CNAME gate).
 
 Catalog input selection: CLI arg > `WWW_CATALOG` env > committed
 development fixture `fixtures/catalog.dev.json`.
