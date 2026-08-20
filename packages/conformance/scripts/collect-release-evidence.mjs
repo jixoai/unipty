@@ -12,7 +12,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { closeSync, copySync, mkdirSync, openSync, readdirSync, writeFileSync } from "node:fs";
+import { closeSync, cpSync, mkdirSync, openSync, readdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 const commit = process.argv[2];
@@ -92,7 +92,7 @@ for (const artifact of wanted) {
     // Prefix with the artifact id: same-commit reruns and duplicate
     // artifacts must never overwrite each other — the aggregator receives
     // every record and applies the duplicate/contradiction rules itself.
-    copySync(join(evidenceDir, file), join(outEvidence, `${artifact.id}-${file}`));
+    cpSync(join(evidenceDir, file), join(outEvidence, `${artifact.id}-${file}`));
     console.log(`[collect-release-evidence] evidence ${artifact.id}-${file}`);
   }
 }
