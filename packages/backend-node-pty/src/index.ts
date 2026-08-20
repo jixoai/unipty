@@ -219,6 +219,7 @@ class NodePtyEndpoint implements BackendEndpoint {
   private streamFinished = false;
   private closed = false;
   private terminated = false;
+  private transportReleased = false;
 
   private readonly hardBytes: number;
   private readonly softBytes: number;
@@ -449,12 +450,6 @@ class NodePtyEndpoint implements BackendEndpoint {
     // readable, then the stream ends — matching "an active stream completes
     // normally on explicit close" without waiting for socket teardown.
     this.finishStream();
-    // Release the transport without signaling the child. On unix this closes
-    // the master fd (verified: the child survives and `exited` stays pending
-    // until true child death). `_writeStream` is unix-only; Windows declares
-    // this tuple unverified but exposes the same `_socket`.
-    this.pty._socket.destroy();
-    this.pty._writeStream?.dispose();
     // Release decoder state; a trailing partial multibyte sequence has no
     // remaining write destination after transport close and is discarded.
     try {
@@ -463,6 +458,26 @@ class NodePtyEndpoint implements BackendEndpoint {
       // A caller-owned fatal decoder surfaces nothing here: flushing after
       // close has nowhere to deliver output.
     }
+    // Physical teardown is DEFERRED until the child exits: on Linux the
+    // kernel SIGHUPs the session leader as soon as the last master fd
+    // closes, which would turn a transport close into child termination.
+    // The spec allows physical cleanup to finish asynchronously; the exit
+    // observation (or a transport error) releases the fds.
+    void this.exited.then(
+      () => this.releaseTransport(),
+      () => this.releaseTransport(),
+    );
+  }
+
+  private releaseTransport(): void {
+    if (this.transportReleased) return;
+    this.transportReleased = true;
+    try {
+      this.pty._socket.destroy();
+    } catch {
+      // Substrate idempotency guard.
+    }
+    this.pty._writeStream?.dispose();
   }
 
   terminate(): void {

@@ -85,12 +85,16 @@ has no completion signal.
 
 Verified against the installed `@lydell/node-pty` 1.2.0-beta.15 sources:
 
-- **`close()` = transport release, no signal.** The substrate's public
-  `destroy()` explicitly sends `SIGHUP` after closing the socket (unix) or
-  calls `kill()` (Windows), so it would cascade close into termination. This
-  adapter instead destroys the master-side socket and disposes the substrate's
-  custom write stream directly: the fd closes, the child is not signaled, and
-  the exit observation stays pending until true child death.
+- **`close()` = logical transport release, no signal, deferred physical
+  teardown.** The substrate's public `destroy()` explicitly sends `SIGHUP`
+  after closing the socket (unix) or calls `kill()` (Windows), so it would
+  cascade close into termination. And on Linux the kernel itself SIGHUPs the
+  session leader as soon as the last master fd closes — so this adapter
+  releases the master socket and the substrate's write stream only after the
+  child has exited (or the transport errored): the closed state, stream
+  completion, and I/O rejection are immediate, while the child is never
+  signaled by the close and the exit observation stays pending until true
+  child death.
 - **`terminate()` = `kill()` with the substrate default signal** (`SIGHUP` on
   unix; agent shutdown on Windows). The substrate swallows `ESRCH`, keeping it
   idempotent. Transport stays open.

@@ -62,7 +62,7 @@ encoding/fatal/BOM 配置到**每个 PTY 独立**的有状态解码器——解�
 
 依据已安装的 `@lydell/node-pty` 1.2.0-beta.15 源码验证：
 
-- **`close()` = 传输释放，不发送信号。** 底层的公开 `destroy()` 会在关闭 socket 后显式发送 `SIGHUP`（unix）或调用 `kill()`（Windows），那会把 close 级联成终止。本适配器改为直接销毁主侧 socket 并释放底层自带的写流：fd 关闭、子进程不被信号、退出观察保持待定直到子进程真正死亡。
+- **`close()` = 逻辑传输释放，不发送信号，物理拆除延迟。** 底层的公开 `destroy()` 会在关闭 socket 后显式发送 `SIGHUP`（unix）或调用 `kill()`（Windows），那会把 close 级联成终止；而在 Linux 上，最后一个 master fd 关闭时内核本身就会向会话首进程发送 SIGHUP。因此本适配器只在子进程退出（或传输出错）之后才释放主侧 socket 与底层写流：closed 状态、流完成与 I/O 拒绝立即生效，子进程绝不被 close 信号，退出观察保持待定直到子进程真正死亡。
 - **`terminate()` = 以底层默认信号 `kill()`**（unix 为 `SIGHUP`；Windows 为 agent 关闭）。底层吞掉 `ESRCH`，因此幂等。传输保持打开。
 - **`exited`** 只包装一次 `onExit`。unix 把 `signal` 报告为数字（`0` = 无信号）；非零数字映射为观测到的字符串形式（`"SIGTERM"`）。底层只在 socket 关闭后才发出 exit（带 200 ms 兜底超时），因此退出观察可能滞后子进程死亡零点几秒。
 - **exec 失败是退出观察，不是 spawn 异常。** 底层先 fork 再 exec；可执行文件缺失会立即产出 `{ exitCode: 1, signal: null }` 而不是抛错。只有参数形状的错误才表现为类型化的同步 spawn 失败（`invalid-argument` / `unsupported`，原始错误作为 `cause`）。
