@@ -10,11 +10,13 @@ export default defineConfig({
     alias: {
       unipty: fileURLToPath(new URL("../unipty/src/index.ts", import.meta.url)),
       "@unipty/backend": fileURLToPath(new URL("../backend/src/index.ts", import.meta.url)),
+      "@unipty/helper-backend": fileURLToPath(
+        new URL("../helper-backend/src/index.ts", import.meta.url),
+      ),
     },
   },
   test: {
     include: ["test/**/*.spec.ts"],
     environment: "node",
-    globalSetup: ["./test/global-setup.ts"],
   },
 });
