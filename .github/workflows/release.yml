@@ -30,6 +30,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22.20.0"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.9.4"
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - name: Collect evidence records for the tested commit
@@ -81,6 +84,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22.20.0"
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: "v2.9.4"
       - name: Ensure an npm CLI with Trusted Publishing support (>= 11.5)
         run: npm install -g npm@11
       - run: corepack enable
