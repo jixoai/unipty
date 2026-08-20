@@ -3,8 +3,11 @@ name: Release
 # Task 7.4 release gate: package publication requires at least one native
 # passing tuple for EVERY official route, proven by uploaded conformance
 # artifacts from the same tested commit; the aggregated catalog attaches to
-# the same tagged release. Site deployment stays independently retryable
-# (deploy-www.yml) and never blocks publication.
+# the same tagged release. Publication uses npm Trusted Publishing (the
+# packages' trusted publishers are bound to release.yml + the npm-publish
+# environment; no registry token is stored in the repository). Site
+# deployment stays independently retryable (deploy-www.yml) and never blocks
+# publication.
 
 on:
   push:
@@ -62,6 +65,11 @@ jobs:
     name: Publish packages from the tested commit
     needs: verify-route-coverage
     runs-on: ubuntu-latest
+    # npm Trusted Publishing: each package's npm-side trusted publisher is
+    # bound to this repository + this workflow file (release.yml) + this
+    # environment. npm >= 11.5 exchanges the job's OIDC token for a
+    # short-lived registry credential — no NODE_AUTH_TOKEN involved.
+    environment: npm-publish
     permissions:
       contents: write
       id-token: write
@@ -73,7 +81,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22.20.0"
-          registry-url: https://registry.npmjs.org
+      - name: Ensure an npm CLI with Trusted Publishing support (>= 11.5)
+        run: npm install -g npm@11
       - run: corepack enable
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
@@ -88,13 +97,30 @@ jobs:
           corepack pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend
           --filter @unipty/backend-node-pty --filter @unipty/backend-bun
           --filter @unipty/backend-deno-sigma__pty-ffi pack
+          --pack-destination dist-release/packs
+      - name: Publish via npm Trusted Publishing (dependency order)
+        run: |
+          set -euo pipefail
+          packs="dist-release/packs"
+          # npm pack names a tarball "<name-without-scope>-<version>.tgz";
+          # resolve each package's exact version from its manifest so the
+          # filename is unambiguous (a plain "unipty-backend-*" glob would
+          # also match the longer route tarballs).
+          publish() {
+            name="$1"
+            dir="$2"
+            version="$(node -p "require('./${dir}/package.json').version")"
+            tarball="${packs}/${name##*/}-${version}.tgz"
+            echo "publishing ${tarball}"
+            npm publish "${tarball}" --access public --provenance
+          }
+          publish unipty packages/unipty
+          publish @unipty/backend packages/backend
+          publish @unipty/backend-node-pty packages/backend-node-pty
+          publish @unipty/backend-bun packages/backend-bun
+          publish @unipty/backend-deno-sigma__pty-ffi packages/backend-deno-sigma__pty-ffi
+          publish @unipty/helper-backend packages/helper-backend
       - name: Attach the catalog to the tagged release
         uses: softprops/action-gh-release@v2
         with:
           files: dist-release/catalog.json
-      # npm publication itself is Owner-gated (task 9.3): the workflow is
-      # wired but remains a manual decision until the Owner accepts the
-      # release artifact. Uncomment after acceptance.
-      # - run: corepack pnpm -r --filter './packages/*' --filter '!@unipty/conformance' --filter '!@unipty/www' publish --access public --no-git-checks
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
