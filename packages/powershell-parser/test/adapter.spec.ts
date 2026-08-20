@@ -147,22 +147,30 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
   }
 
   for (const source of incompleteCases) {
-    it(`classifies ${JSON.stringify(source)} as incomplete with official diagnostics`, { timeout: 20_000 }, async () => {
-      const result = await parsePowershell(source);
-      expect(result.kind).toBe("incomplete");
-      if (result.kind !== "incomplete") return;
-      expect(result.diagnostics.length).toBeGreaterThan(0);
-      expect(result.diagnostics[0]?.incomplete).toBe(true);
-      expect(typeof result.diagnostics[0]?.message).toBe("string");
-    });
+    it(
+      `classifies ${JSON.stringify(source)} as incomplete with official diagnostics`,
+      { timeout: 20_000 },
+      async () => {
+        const result = await parsePowershell(source);
+        expect(result.kind).toBe("incomplete");
+        if (result.kind !== "incomplete") return;
+        expect(result.diagnostics.length).toBeGreaterThan(0);
+        expect(result.diagnostics[0]?.incomplete).toBe(true);
+        expect(typeof result.diagnostics[0]?.message).toBe("string");
+      },
+    );
   }
 
   for (const source of invalidCases) {
-    it(`classifies ${JSON.stringify(source)} as invalid with diagnostics`, { timeout: 20_000 }, async () => {
-      const result = await parsePowershell(source);
-      expect(result.kind).toBe("invalid");
-      if (result.kind !== "invalid") return;
-      expect(result.diagnostics.length).toBeGreaterThan(0);
-    });
+    it(
+      `classifies ${JSON.stringify(source)} as invalid with diagnostics`,
+      { timeout: 20_000 },
+      async () => {
+        const result = await parsePowershell(source);
+        expect(result.kind).toBe("invalid");
+        if (result.kind !== "invalid") return;
+        expect(result.diagnostics.length).toBeGreaterThan(0);
+      },
+    );
   }
 });
