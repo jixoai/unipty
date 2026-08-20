@@ -1,0 +1,27 @@
+{
+  "name": "@unipty/shell-parser",
+  "version": "0.2.0",
+  "description": "Official Bash shell parser for UniPty: classifies command text into a structured argv, an explicit shell-script request, or diagnostics, without executing anything.",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "README-zh.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "unbash": "4.0.10"
+  }
+}

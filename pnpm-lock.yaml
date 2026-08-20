@@ -163,6 +163,14 @@ importers:
         specifier: workspace:*
         version: link:../unipty
 
+  packages/powershell-parser: {}
+
+  packages/shell-parser:
+    dependencies:
+      unbash:
+        specifier: 4.0.10
+        version: 4.0.10
+
   packages/unipty: {}
 
   packages/www: {}
@@ -1493,6 +1501,10 @@ packages:
     engines: {node: '>=14.17'}
     hasBin: true
 
+  unbash@4.0.10:
+    resolution: {integrity: sha512-b7zoBQvpWp0vuN5q2vK2RRBR2SvuruQAs50DApdDveBSn3eSYd84IaHodFqQIMlvY9K2VnyBUEXgwOBuGU9GBg==}
+    engines: {node: '>=14'}
+
   unconfig-core@7.5.0:
     resolution: {integrity: sha512-Su3FauozOGP44ZmKdHy2oE6LPjk51M/TRRjHv2HNCWiDvfvCoxC2lno6jevMA91MYAdCdwP05QnWdWpSbncX/w==}
 
@@ -2649,6 +2661,8 @@ snapshots:
   tslib@2.8.1: {}
 
   typescript@5.9.3: {}
+
+  unbash@4.0.10: {}
 
   unconfig-core@7.5.0:
     dependencies:
