@@ -116,7 +116,14 @@ jobs:
             name="$1"
             dir="$2"
             version="$(node -p "require('./${dir}/package.json').version")"
-            tarball="${packs}/${name##*/}-${version}.tgz"
+            # pnpm pack names a scoped tarball with the scope fused on:
+            # "@unipty/backend" -> "unipty-backend-<version>.tgz".
+            prefix="$(printf '%s' "${name}" | sed -e 's/^@//' -e 's|/|-|g')"
+            tarball="${packs}/${prefix}-${version}.tgz"
+            if npm view "${name}@${version}" version >/dev/null 2>&1; then
+              echo "skipping ${name}@${version} (already published)"
+              return 0
+            fi
             echo "publishing ${tarball}"
             npm publish "${tarball}" --access public --provenance
           }
