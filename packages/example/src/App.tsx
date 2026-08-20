@@ -96,7 +96,11 @@ export default function App() {
           </TabsList>
 
           {tabs.map((tab) => (
-            <TabsContent key={tab.id} value={tab.id} className="min-h-0 flex-1">
+            // forceMount keeps every terminal (WebSocket + xterm + shell)
+            // alive across tab switches: Radix unmounts inactive content by
+            // default, which would kill the PTY session on every switch.
+            // Inactive panes are hidden by Radix's `hidden` attribute instead.
+            <TabsContent key={tab.id} value={tab.id} forceMount className="min-h-0 flex-1">
               <div className="h-full overflow-hidden rounded-lg border border-border">
                 <TerminalPane
                   backend={tab.backend}

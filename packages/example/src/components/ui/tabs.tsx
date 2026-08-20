@@ -31,7 +31,17 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
 }
 
 function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
-  return <TabsPrimitive.Content className={cn("flex-1 outline-none", className)} {...props} />;
+  return (
+    <TabsPrimitive.Content
+      className={cn(
+        // With forceMount consumers (persisted terminal panes), Radix keeps
+        // inactive content in the DOM; hide it from layout explicitly.
+        "flex-1 outline-none data-[state=inactive]:hidden",
+        className,
+      )}
+      {...props}
+    />
+  );
 }
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };
