@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "Runtime-neutral PTY Core: structured launch, terminal streams, lifecycle, and the ready Backend seam for Node, Bun, and Deno.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jixoai/unipty",
+    "directory": "packages/unipty"
+  },
   "files": [
     "dist",
     "README.md",

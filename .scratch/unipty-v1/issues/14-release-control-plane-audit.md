@@ -12,7 +12,8 @@
 - Snapshot commit: `cb18c9b` (`chore(release): bump publishable packages to
 0.1.1`), observed 2026-08-20 Asia/Shanghai.
 - No source, workflow, package, or configuration file was modified by this
-  audit. This file is the sole research artifact.
+  audit. This file is the sole research artifact; the pre-existing worktree
+  changes were left untouched.
 
 ## Findings
 
@@ -25,7 +26,7 @@ The npm registry reports version `0.1.0` for all six publishable packages:
 seven package manifests (including private conformance tooling).
 
 At the audit snapshot, `git tag --list`, `git ls-remote --tags origin`, and
-`gh release list` produced no tag or GitHub Release. Therefore `0.1.0` is an
+`gh release list` produced no tag or GitHub Release. Therefore `0.1.0` was an
 already-public registry release without the architecture's required immutable
 release catalog attachment, and cannot be treated as a completed v1 release
 chain.

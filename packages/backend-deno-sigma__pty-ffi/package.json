@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "Official UniPty Backend adapting the third-party @sigma/pty-ffi (Rust portable-pty) substrate for Deno; self-contained npm package with vendored noinit closure and target dynamic libraries.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jixoai/unipty",
+    "directory": "packages/backend-deno-sigma__pty-ffi"
+  },
   "files": [
     "dist",
     "vendor",

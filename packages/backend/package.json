@@ -3,6 +3,11 @@
   "version": "0.1.1",
   "description": "UniPty Backend acquisition convenience: caller-rooted resolution, metadata inspection, deterministic AutoResolve, and the explicit bundle manifest constructor.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jixoai/unipty",
+    "directory": "packages/backend"
+  },
   "files": [
     "dist",
     "README.md",
