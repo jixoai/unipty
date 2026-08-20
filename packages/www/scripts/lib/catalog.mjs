@@ -65,15 +65,15 @@ export function validateCatalog(raw) {
       errors.push("catalog.release.commit: expected a non-empty string");
     if (!isNonEmptyString(raw.release.tag))
       errors.push("catalog.release.tag: expected a non-empty string");
-    if (raw.release.suite !== undefined) {
-      if (!checkObject(raw.release.suite, errors, "catalog.release.suite")) {
-        // shape error already recorded
-      } else {
-        if (!isNonEmptyString(raw.release.suite.id))
-          errors.push("catalog.release.suite.id: expected a non-empty string");
-        if (!isNonEmptyString(raw.release.suite.version))
-          errors.push("catalog.release.suite.version: expected a non-empty string");
-      }
+    // The aggregator always stamps the producing suite; a catalog without it
+    // did not come from the release chain.
+    if (!checkObject(raw.release.suite, errors, "catalog.release.suite")) {
+      // shape error already recorded
+    } else {
+      if (!isNonEmptyString(raw.release.suite.id))
+        errors.push("catalog.release.suite.id: expected a non-empty string");
+      if (!isNonEmptyString(raw.release.suite.version))
+        errors.push("catalog.release.suite.version: expected a non-empty string");
     }
   }
   // The aggregator emits released metadata snapshots under `metadata`; the
