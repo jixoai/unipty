@@ -1,0 +1,158 @@
+/**
+ * jixoai design-language token sheet (registry/files/theme/jixoai.css).
+ *
+ * Law (Owner decisions, 2026-08-20):
+ * - OKLCH mirrors the openspecui configuration; the ONLY per-project value
+ *   is --brand-hue (oklch hue degrees; dark mode drifts it -4°).
+ * - Non-primary colors keep FIXED hues across jixoai sites.
+ * - Neutrals are pure achromatic; shadows are hard offsets, radius 0 with a
+ *   bevel upgrade where supported; the terminal bar is always dark.
+ */
+
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/share-tech-mono';
+
+:root {
+  --brand-hue: 165; /* default: 0 (jixoai red). per-project: unipty=165 幽绿, openspecui=27 */
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0 0 0);
+  --terminal: oklch(0.2 0 0);
+  --terminal-foreground: oklch(1 0 0);
+  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
+  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --primary: oklch(0.6489 0.237 var(--brand-hue));
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.968 0.211 109.7692);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.9551 0 0);
+  --muted-foreground: oklch(0.3211 0 0);
+  --accent: oklch(0.5635 0.2408 260.8178);
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0 0 0);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0 0 0);
+  --input: oklch(0 0 0);
+  --ring: var(--primary);
+
+  --font-sans: 'JetBrains Mono Variable', 'JetBrains Mono', SFMono-Regular, Menlo,
+    Consolas, 'Liberation Mono', monospace;
+  --font-mono: var(--font-sans);
+  --font-nav: 'Share Tech Mono', 'JetBrains Mono Variable', monospace;
+
+  --radius: 0px;
+  @supports (corner-shape: bevel) {
+    --radius: 8px;
+  }
+
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 1px 1px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-xs: 2px 2px 0px 0px hsl(0 0% 0% / 0.5);
+  --shadow-sm: 2px 2px 0px 0px hsl(0 0% 0% / 1), 1px 1px 0px 1px hsl(0 0% 100% / 0.5);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 2px 4px -1px hsl(0 0% 100% / 1);
+}
+
+.dark {
+  --background: oklch(0 0 0);
+  --foreground: oklch(1 0 0);
+  --terminal: oklch(0.2 0 0);
+  --terminal-foreground: oklch(1 0 0);
+  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
+  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
+  --card: oklch(0.3211 0 0);
+  --card-foreground: oklch(1 0 0);
+  --popover: oklch(0.3211 0 0);
+  --popover-foreground: oklch(1 0 0);
+  /* the primary hue drifts -4° toward dark, mirroring the reference */
+  --primary: oklch(0.7044 0.1872 calc(var(--brand-hue) - 4));
+  --primary-foreground: oklch(0 0 0);
+  --secondary: oklch(0.9691 0.2005 109.6228);
+  --secondary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2178 0 0);
+  --muted-foreground: oklch(0.8452 0 0);
+  --accent: oklch(0.6755 0.1765 252.2592);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(1 0 0);
+  --destructive-foreground: oklch(0 0 0);
+  --border: oklch(1 0 0);
+  --input: oklch(1 0 0);
+  --ring: var(--primary);
+
+  --shadow-color: hsl(0 0% 100%);
+  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
+  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
+  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 100% / 1);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 2px 4px -1px hsl(0 0% 0% / 1);
+}
+
+/* Glass material: translucent surface + real backdrop blur. Outline (not
+   border) so the box line never affects layout and stays crisp over the
+   blurred backdrop; identical outline law as the ToC toggle. */
+.jx-glass {
+  background: color-mix(in oklab, var(--background) 68%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.35);
+  backdrop-filter: blur(14px) saturate(1.35);
+}
+
+/* Tailwind v4 token → utility mapping (map EVERY token; unmapped tokens
+   silently yield dead utilities) and the dark variant. */
+@custom-variant dark (&:where(.dark, .dark *));
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-terminal: var(--terminal);
+  --color-terminal-foreground: var(--terminal-foreground);
+  --color-terminal-hover: var(--terminal-hover);
+  --color-terminal-muted: var(--terminal-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-nav: var(--font-nav);
+}
+
+/* Reveal hooks: hidden only while JS is live (html.js added by the inline
+   bootstrap in <head>); static data-reveal attributes in markup. */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(var(--reveal-rise, 10px));
+}
+html.js [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 260ms ease-out var(--reveal-delay, 0ms),
+    transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
+}
+html.js [data-reveal='rule'] {
+  opacity: 1;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+html.js [data-reveal='rule'].is-revealed {
+  transform: scaleX(1);
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal],
+  html.js [data-reveal='rule'] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

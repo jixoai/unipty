@@ -9,12 +9,18 @@
     eyebrow?: string
     title: string
     summary?: string
-    children: Snippet
+    children?: Snippet
     id?: string
     class?: string
     contentClass?: string
     headingLevel?: 1 | 2
     tone?: 'default' | 'hero'
+    /** Combo ToC contract: parent section extent id (data-family on the card). */
+    family?: string
+    /** Combo ToC contract: whole-card leaf region id (data-family + data-region). */
+    region?: string
+    /** Combo ToC contract: leaf region id for the header block (data-region). */
+    headerRegion?: string
   }
 
   let {
@@ -27,6 +33,9 @@
     contentClass = '',
     headingLevel = 2,
     tone = 'default',
+    family,
+    region,
+    headerRegion,
   }: Props = $props()
 
   const titleClassName = $derived(
@@ -42,8 +51,8 @@
   )
 </script>
 
-<section id={id} class={`border-border bg-card border shadow-sm ${className}`}>
-  <div class="border-border flex flex-col gap-3 border-b px-4 py-3 sm:px-5 sm:py-4">
+<section id={id} data-family={family} data-region={region} class={`border-border bg-card border shadow-sm ${className}`}>
+  <div data-region={headerRegion} class="border-border flex flex-col gap-3 border-b px-4 py-3 sm:px-5 sm:py-4">
     {#if eyebrow}
       <p class="font-nav text-primary text-[11px] uppercase tracking-[0.24em]">{eyebrow}</p>
     {/if}
@@ -59,6 +68,8 @@
     </div>
   </div>
   <div class={`px-4 py-4 sm:px-5 sm:py-5 ${contentClass}`.trim()}>
-    {@render children()}
+    {#if children}
+      {@render children()}
+    {/if}
   </div>
 </section>

@@ -3,6 +3,39 @@
 Private static official documentation site for UniPty (`@unipty/www`),
 deployed to GitHub Pages at `unipty.jixoai.com` (Owner-managed CNAME).
 
+## Registry consumption (2026-08-20) — first real jixoai registry consumer
+
+The site now consumes the official jixoai design-language registry
+(<https://ui.jixoai.com>) instead of hand-copying the identity:
+
+- `components.json` registers the `@jixoai` namespace (aliases:
+  `ui → src/lib/ui`, `lib → src/lib`, `hooks → src/lib/hooks`,
+  `components → src/lib`; `tsx: true` is required by the shadcn config
+  schema even for this Svelte project).
+- `src/lib/jixoai.css` is the **verbatim registry artifact**
+  (`jixoai-theme` item) with `--brand-hue: 165` applied. `src/app.css`
+  imports it and keeps only site supplements: chart tokens, `--shadow-lg`,
+  readonly-code/tok palettes, the Tailwind token→utility mappings the
+  registry sheet leaves open (popover/destructive/input/ring/radius/
+  shadows — without them Tailwind silently falls back to its soft default
+  scale), and the site surfaces (data tables, badges, evidence,
+  readonly code). Token values are byte-identical to the previous
+  handwritten sheet for every token the registry defines (only cosmetic
+  quote style differs on `--font-nav`; the registry drops the unused
+  second layer of `--shadow` in dark mode).
+- `src/lib/ui/toc.svelte` + `src/lib/toc.css` + `src/lib/toc-engine.ts`
+  are the registry `toc` item (Combo ToC), installed with two import-path
+  corrections for SvelteKit: `@lib/toc-engine` → `$lib/toc-engine` and
+  `'../lib/toc.css'` → `$lib/toc.css` (the shipped paths assume a
+  non-SvelteKit alias layout).
+- The docs page wraps its content in the engine's contract: leaf blocks
+  carry `data-region`, parent sections carry `data-family` (exposed on
+  `SectionCard` via `family` / `region` / `headerRegion` props). The
+  `aside` precedes main content in the DOM; the page grid places it as
+  the sticky right column on desktop and the sticky `height: 0` glass
+  rail on mobile (68px main-content top clearance, 76px anchor
+  scroll-margin matching the engine's mobile pick line).
+
 ## Task 8.1 — Visual reference inspection record
 
 - **Inspected project**: sibling `../openspecui` official site, package
@@ -37,10 +70,11 @@ CNAME gate, static checks) are unchanged.
   synchronously (`spawnSync`) so `runBuild` keeps its synchronous,
   `BuildError`-throwing contract for `check-site.mjs`.
 - **CSS**: Tailwind CSS v4 via `@tailwindcss/vite` (CSS-first, no
-  tailwind.config) with the jixoai HSL token sheet in `src/app.css`.
-  `--brand-hue: 160` (phosphor green) is the only per-project color
-  variable; functional colors (yellow secondary, blue accent, neutrals,
-  hard black shadows) are fixed across jixoai sites.
+  tailwind.config). The jixoai OKLCH token sheet is consumed from the
+  registry (`src/lib/jixoai.css`, see above). `--brand-hue: 165`
+  (phosphor green) is the only per-project color variable; functional
+  colors (yellow secondary, blue accent, neutrals, hard black shadows)
+  are fixed across jixoai sites.
 - **Fonts**: `@fontsource-variable/jetbrains-mono` +
   `@fontsource/share-tech-mono`, bundled locally — zero font network
   requests.

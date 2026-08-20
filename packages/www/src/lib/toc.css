@@ -1,0 +1,197 @@
+/**
+ * jixoai Combo ToC styles (registry/files/ui/toc.css).
+ * Import once per site alongside the toc component.
+ *
+ * Architecture (Owner decisions, 2026-08-20):
+ * - Desktop (≥900px): Rule Tracker — 2px scroll-progress spine, square nodes
+ *   on LEVEL-1 entries (weight-driven fill), level-2 entries flat with
+ *   weight-driven text only; pick + parent get the active marker; the
+ *   spine sits left: 2px on the node axis.
+ * - Mobile (<900px): Terminal Rail — the SAME vertical list, its height
+ *   clipped to one 44px row; expanding changes ONLY the height (scroll
+ *   position persists); the glass bar spans the full viewport width
+ *   (layout has no inline padding; children pad themselves) with a real
+ *   backdrop blur; page scroll → line pick → the row scrolls to the pick.
+ * - The aside is sticky with height: 0 on mobile (zero flow impact —
+ *   expanding never reflows the document, so anchor jumps always land) and
+ *   a normal sticky grid item on desktop (align-self: start).
+ * - Weight-driven properties carry NO css transition: the engine updates
+ *   them per frame; transitions would ripple.
+ */
+
+.jx-toc {
+  min-width: 0;
+}
+
+/* ── desktop ── */
+.jx-toc .jx-toc-desktop {
+  display: none;
+}
+@media (min-width: 900px) {
+  .jx-toc .jx-toc-mobile {
+    display: none;
+  }
+  .jx-toc .jx-toc-desktop {
+    display: block;
+    position: relative;
+    padding-left: 18px;
+    font-size: 12.5px;
+  }
+  .jx-toc .jx-spine {
+    position: absolute;
+    left: 2px;
+    top: 6px;
+    bottom: 6px;
+    width: 2px;
+    background: color-mix(in oklab, var(--border) 18%, transparent);
+  }
+  .jx-toc .jx-spine-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: var(--primary);
+    transform-origin: top center;
+    transform: scaleY(var(--jx-progress, 0));
+    transition: transform 90ms linear;
+  }
+  .jx-toc .jx-toc-title {
+    font-family: var(--font-nav);
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.24em;
+    font-size: 11px;
+    margin: 0 0 12px;
+  }
+  .jx-toc .jx-toc-desktop ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .jx-toc .jx-toc-desktop li {
+    position: relative;
+    margin: 6px 0;
+  }
+  .jx-toc .jx-toc-desktop li::before {
+    /* square node on level-1 only; level-2 drops it (Owner) */
+    content: '';
+    position: absolute;
+    left: -21px;
+    top: 50%;
+    width: 8px;
+    height: 8px;
+    transform: translateY(-50%);
+    background: color-mix(in oklab, var(--background), var(--primary) calc(var(--w, 0) * 100%));
+    border: 2px solid
+      color-mix(
+        in oklab,
+        color-mix(in oklab, var(--border) 30%, transparent),
+        var(--primary) calc(var(--w, 0) * 100%)
+      );
+  }
+  .jx-toc .jx-toc-desktop li.lvl-2::before {
+    display: none;
+  }
+  .jx-toc .jx-toc-desktop li.active::before {
+    border-color: var(--primary);
+    background: var(--primary);
+  }
+  .jx-toc .jx-toc-desktop a {
+    color: color-mix(in oklab, var(--muted-foreground), var(--primary) calc(var(--w, 0) * 100%));
+    opacity: calc(0.62 + 0.38 * var(--w, 0));
+    text-decoration: none;
+    font-size: 12.5px;
+  }
+  .jx-toc .jx-toc-desktop a:hover {
+    color: var(--foreground);
+  }
+  .jx-toc .jx-toc-desktop li.active > a {
+    color: var(--primary);
+    font-weight: 700;
+  }
+  .jx-toc .jx-toc-desktop li.lvl-2 a {
+    font-size: 11.5px;
+  }
+}
+
+/* ── mobile: the single-row ToC (same list, height clipped to one row) ── */
+.jx-toc .jx-toc-mobile {
+  position: relative;
+  outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
+  outline-offset: -1px;
+}
+.jx-toc .jx-viewport {
+  position: relative;
+  height: 44px;
+  overflow: hidden;
+  transition: height 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.jx-toc .jx-toc-mobile[data-open] .jx-viewport {
+  height: 56vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+}
+.jx-toc .jx-viewport ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.jx-toc .jx-viewport li {
+  scroll-snap-align: start;
+}
+.jx-toc .jx-viewport li + li {
+  border-top: 1px solid color-mix(in oklab, var(--border) 12%, transparent);
+}
+.jx-toc .jx-viewport a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding-inline: 16px 52px;
+  font-family: var(--font-nav);
+  font-size: 12.5px;
+  color: color-mix(in oklab, var(--muted-foreground), var(--primary) calc(var(--w, 0) * 100%));
+  opacity: calc(0.62 + 0.38 * var(--w, 0));
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 2px solid
+    color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
+}
+.jx-toc .jx-viewport a .jx-cursor {
+  color: var(--primary);
+  opacity: var(--jx-cur, 0);
+  width: 12px;
+  flex: none;
+}
+.jx-toc .jx-viewport a.lvl-2 {
+  font-size: 11.5px;
+}
+.jx-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
+  outline-offset: -1px;
+  background: color-mix(in oklab, var(--background) 68%, transparent);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.jx-toc .jx-toc-mobile[data-open] .jx-toggle {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jx-toc .jx-viewport,
+  .jx-toggle,
+  .jx-toc .jx-spine-fill {
+    transition: none;
+  }
+}

@@ -1,67 +1,28 @@
 /* -------------------------------------------------------------------------
- * UniPty site identity — jixoai website law (see ~/.agents/skills/jixoai-website).
- * shadcn-style HSL tokens against ONE per-project variable: --brand-hue: 160
- * (幽绿 phosphor green). Functional colors stay fixed across jixoai sites.
+ * UniPty site identity — consumed from the official jixoai registry.
+ *
+ * The shared design-language token sheet (OKLCH one-hue law, dark -4° drift,
+ * hard offset shadows, radius/bevel law, mono-first fonts, terminal surfaces,
+ * reveal hook styles) is installed verbatim by `npx jixoai-ui init --hue 165`
+ * as src/lib/jixoai.css (registry item `jixoai-theme`, https://ui.jixoai.com).
+ * This file now carries ONLY site-specific supplements:
+ *   - tokens the registry sheet does not define (charts, shadow-lg,
+ *     readonly-code surfaces, the build-time tokenizer palette);
+ *   - the Tailwind token→utility mappings the registry sheet leaves open;
+ *   - site surfaces: data tables, state chips, evidence, readonly code.
  * ---------------------------------------------------------------------- */
-@import "@fontsource-variable/jetbrains-mono";
-@import "@fontsource/share-tech-mono";
-@import "tailwindcss";
+@import 'tailwindcss';
+@import './lib/jixoai.css';
 @plugin '@tailwindcss/typography';
-@custom-variant dark (&:where(.dark, .dark *));
 
+/* Site token supplements — everything here has no registry equivalent yet.
+ * Semantics identical to the pre-registry handwritten sheet. */
 :root {
-  /* ── per-project identity: the ONLY thing that changes across jixoai sites ── */
-  --brand-hue: 165;
-
-  --background: oklch(1 0 0);
-  --foreground: oklch(0 0 0);
-  --terminal: oklch(0.2 0 0);
-  --terminal-foreground: oklch(1 0 0);
-  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
-  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0 0 0);
-  --primary: oklch(0.6489 0.237 var(--brand-hue));
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.968 0.211 109.7692);
-  --secondary-foreground: oklch(0 0 0);
-  --muted: oklch(0.9551 0 0);
-  --muted-foreground: oklch(0.3211 0 0);
-  --accent: oklch(0.5635 0.2408 260.8178);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0 0 0);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0 0 0);
-  --input: oklch(0 0 0);
-  --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
   --chart-3: var(--accent);
   --chart-4: oklch(0.7323 0.2492 142.4953);
   --chart-5: oklch(0.5931 0.2726 328.3634);
-
-  /* typography: mono is the site voice, not an afterthought */
-  --font-sans:
-    "JetBrains Mono Variable", "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
-    monospace;
-  --font-mono: var(--font-sans);
-  --font-nav: "Share Tech Mono", "JetBrains Mono Variable", monospace;
-
-  /* sharp corners; bevel upgrade only where CSS supports it */
-  --radius: 0px;
-  @supports (corner-shape: bevel) {
-    --radius: 8px;
-  }
-
-  /* hard offset shadows — no blur, no softness */
-  --shadow-color: hsl(0 0% 0%);
-  --shadow-2xs: 1px 1px 0px 0px hsl(0 0% 0% / 0.5);
-  --shadow-xs: 2px 2px 0px 0px hsl(0 0% 0% / 0.5);
-  --shadow-sm: 2px 2px 0px 0px hsl(0 0% 0% / 1), 1px 1px 0px 1px hsl(0 0% 100% / 0.5);
-  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 1px 2px -1px hsl(0 0% 100% / 1);
-  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 2px 4px -1px hsl(0 0% 100% / 1);
   --shadow-lg: 4px 4px 0px 0px hsl(0 0% 0% / 1), 4px 4px 6px -1px hsl(0 0% 100% / 1);
 
   /* readonly code surfaces */
@@ -76,45 +37,12 @@
   --tok-keyword: var(--primary);
   --tok-number: color-mix(in oklab, var(--secondary) 78%, var(--foreground));
 }
-
 .dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(1 0 0);
-  --terminal: oklch(0.2 0 0);
-  --terminal-foreground: oklch(1 0 0);
-  --terminal-hover: color-mix(in oklab, var(--terminal-foreground) 14%, var(--terminal));
-  --terminal-muted: color-mix(in oklab, var(--terminal-foreground) 8%, var(--terminal));
-  --card: oklch(0.3211 0 0);
-  --card-foreground: oklch(1 0 0);
-  --popover: oklch(0.3211 0 0);
-  --popover-foreground: oklch(1 0 0);
-  /* openspecui drifts the primary hue -4° toward dark for perceptual parity */
-  --primary: oklch(0.7044 0.1872 calc(var(--brand-hue) - 4));
-  --primary-foreground: oklch(0 0 0);
-  --secondary: oklch(0.9691 0.2005 109.6228);
-  --secondary-foreground: oklch(0 0 0);
-  --muted: oklch(0.2178 0 0);
-  --muted-foreground: oklch(0.8452 0 0);
-  --accent: oklch(0.6755 0.1765 252.2592);
-  --accent-foreground: oklch(0 0 0);
-  --destructive: oklch(1 0 0);
-  --destructive-foreground: oklch(0 0 0);
-  --border: oklch(1 0 0);
-  --input: oklch(1 0 0);
-  --ring: var(--primary);
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
   --chart-3: var(--accent);
   --chart-4: oklch(0.7395 0.2268 142.8504);
   --chart-5: oklch(0.6131 0.2458 328.0714);
-
-  /* dark mode inverts the shadow color */
-  --shadow-color: hsl(0 0% 100%);
-  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
-  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 100% / 0.5);
-  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
-  --shadow: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 1px 2px -1px hsl(0 0% 0% / 1);
-  --shadow-md: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 2px 4px -1px hsl(0 0% 0% / 1);
   --shadow-lg: 4px 4px 0px 0px hsl(0 0% 100% / 1), 4px 4px 6px -1px hsl(0 0% 0% / 1);
 
   --readonly-code-bg: color-mix(in oklab, var(--muted) 78%, var(--background));
@@ -128,34 +56,17 @@
   --tok-number: var(--secondary);
 }
 
+/* Tailwind token→utility mapping supplements. jixoai.css maps the colors and
+ * fonts it owns; these tokens stay site-mapped so the utilities keep the
+ * exact registry values (unmapped tokens would fall back to Tailwind's
+ * default soft-shadow/rounded scale and silently break the design law). */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-terminal: var(--terminal);
-  --color-terminal-foreground: var(--terminal-foreground);
-  --color-terminal-hover: var(--terminal-hover);
-  --color-terminal-muted: var(--terminal-muted);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-mono);
-  --font-nav: var(--font-nav);
 
   --radius-*: initial;
   --radius: var(--radius);
@@ -195,31 +106,6 @@
   ::selection {
     background: color-mix(in oklab, var(--primary) 30%, transparent);
   }
-}
-
-/* -------------------------------------------------------------------------
- * Motion law (jixoai motion.md): exactly two patterns — scroll reveal and
- * press physics. Reduced motion disables both; no other animation exists.
- * ---------------------------------------------------------------------- */
-html.js [data-reveal] {
-  opacity: 0;
-  transform: translateY(var(--reveal-rise, 10px));
-}
-html.js [data-reveal].is-revealed {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 260ms ease-out var(--reveal-delay, 0ms),
-    transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
-}
-html.js [data-reveal="rule"] {
-  opacity: 1;
-  transform: scaleX(0);
-  transform-origin: left center;
-}
-html.js [data-reveal="rule"].is-revealed {
-  transform: scaleX(1);
-  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
 }
 
 /* -------------------------------------------------------------------------
@@ -385,23 +271,19 @@ html.js [data-reveal="rule"].is-revealed {
   z-index: 50;
 }
 
-/* Anchor targets clear the sticky-free header comfortably. */
+/* Anchor targets clear the Combo ToC mobile rail exactly at its pick line:
+ * sticky bar bottom (44px) + 2em = 76px, matching the toc-engine line law. */
 [id] {
-  scroll-margin-top: 1.5rem;
+  scroll-margin-top: 76px;
 }
 
 /* -------------------------------------------------------------------------
- * Reduced-motion law: reveal renders immediately, press transitions drop.
+ * Reduced-motion law: the registry sheet already neutralizes reveal motion;
+ * these cover the site's own transitions.
  * ---------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-  html.js [data-reveal],
-  html.js [data-reveal="rule"] {
-    opacity: 1;
-    transform: none;
-    transition: none;
   }
   .data-table tbody tr,
   .terminal-output {
