@@ -6,15 +6,15 @@ redeployed from that release's catalog artifact.
 
 ## Review loop
 
-| Round | Reviewer | Model | Result |
-| ----- | -------- | ----- | ------ |
-| 1 | Codex (Herdr) | gpt-5.6-terra / xhigh | 4.5/10 — 3×P0: Bash argv semantic claim, PowerShell stdin contract violation, partial-release risk |
-| 2 | Codex (Herdr) | gpt-5.6-terra / xhigh | 8.3/10 — all P0s verified closed; 1 governance P1 resolved by spec adjudication (`22929b9`) |
+| Round | Reviewer      | Model                 | Result                                                                                             |
+| ----- | ------------- | --------------------- | -------------------------------------------------------------------------------------------------- |
+| 1     | Codex (Herdr) | gpt-5.6-terra / xhigh | 4.5/10 — 3×P0: Bash argv semantic claim, PowerShell stdin contract violation, partial-release risk |
+| 2     | Codex (Herdr) | gpt-5.6-terra / xhigh | 8.3/10 — all P0s verified closed; 1 governance P1 resolved by spec adjudication (`22929b9`)        |
 
 ## Local gate (tested commit `2e6c90d` → spec-only follow-up `22929b9`)
 
 - `pnpm build`, `pnpm typecheck`, `pnpm check:arch` (11 packages), `pnpm
-  fmt:check` — pass.
+fmt:check` — pass.
 - `@unipty/shell-parser` — 67/67, including round-1 corpus additions
   (`$"..."` locale strings, NUL-bearing `$'...'`, `exec`/`cd` lexical argv).
 - `@unipty/powershell-parser` — 36/36 against a portable pwsh 7.6.5 host,
