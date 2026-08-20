@@ -1,6 +1,6 @@
 {
   "name": "@unipty/helper-backend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Build/development helper that generates explicit UniPty Backend manifest modules from ordered candidate inputs; not a runtime dependency.",
   "license": "MIT",
   "bin": {
