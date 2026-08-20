@@ -252,7 +252,10 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
     };
     if (page.template === "compatibility.html") {
       vars.CATALOG_COMMIT = escapeHtml(presentation.release.commit);
-      vars.CATALOG_GENERATED_AT = escapeHtml(presentation.release.generatedAt);
+      vars.CATALOG_TAG = escapeHtml(presentation.release.tag);
+      vars.CATALOG_GENERATED_AT = presentation.release.generatedAt
+        ? escapeHtml(presentation.release.generatedAt)
+        : "no evidence in this catalog";
       vars.COMPAT_MATRIX = renderMatrix(presentation);
     }
     let html = substitute(layout, { ...vars, CONTENT: substitute(content, vars) });

@@ -63,11 +63,24 @@ export function validateCatalog(raw) {
   } else {
     if (!isNonEmptyString(raw.release.commit))
       errors.push("catalog.release.commit: expected a non-empty string");
-    if (!isIso8601(raw.release.generatedAt))
-      errors.push("catalog.release.generatedAt: expected an ISO-8601 string");
+    if (!isNonEmptyString(raw.release.tag))
+      errors.push("catalog.release.tag: expected a non-empty string");
+    if (raw.release.suite !== undefined) {
+      if (!checkObject(raw.release.suite, errors, "catalog.release.suite")) {
+        // shape error already recorded
+      } else {
+        if (!isNonEmptyString(raw.release.suite.id))
+          errors.push("catalog.release.suite.id: expected a non-empty string");
+        if (!isNonEmptyString(raw.release.suite.version))
+          errors.push("catalog.release.suite.version: expected a non-empty string");
+      }
+    }
   }
-  if (!Array.isArray(raw.packages) || raw.packages.length === 0) {
-    errors.push("catalog.packages: expected a non-empty array");
+  // The aggregator emits released metadata snapshots under `metadata`; the
+  // site normalizes them to a `packages` view for derivation without
+  // touching the artifact bytes it copies unchanged.
+  if (!Array.isArray(raw.metadata) || raw.metadata.length === 0) {
+    errors.push("catalog.metadata: expected a non-empty array of released metadata snapshots");
   }
   if (!Array.isArray(raw.evidence)) {
     errors.push("catalog.evidence: expected an array");
@@ -75,9 +88,16 @@ export function validateCatalog(raw) {
   if (errors.length > 0) return { ok: false, errors };
 
   const packageIdentities = new Set();
-  raw.packages.forEach((pkg, i) => {
-    const at = `catalog.packages[${i}]`;
-    if (!checkObject(pkg, errors, at)) return;
+  const packages = [];
+  raw.metadata.forEach((entry, i) => {
+    const at = `catalog.metadata[${i}]`;
+    if (!checkObject(entry, errors, at)) return;
+    if (!isNonEmptyString(entry.packageName))
+      errors.push(`${at}.packageName: expected a non-empty string`);
+    if (!isNonEmptyString(entry.packageVersion))
+      errors.push(`${at}.packageVersion: expected a non-empty string`);
+    const pkg = entry.metadata;
+    if (!checkObject(pkg, errors, `${at}.metadata`)) return;
     if (pkg.schema !== 1) errors.push(`${at}.schema: expected 1`);
     if (!checkObject(pkg.package, errors, `${at}.package`)) {
       // shape error already recorded
@@ -135,7 +155,19 @@ export function validateCatalog(raw) {
       isNonEmptyString(pkg.package?.version) &&
       isNonEmptyString(pkg.backend?.id)
     ) {
-      packageIdentities.add(identityKey(pkg.package.name, pkg.package.version, pkg.backend.id));
+      const key = identityKey(pkg.package.name, pkg.package.version, pkg.backend.id);
+      if (isNonEmptyString(entry.packageName) && entry.packageName !== pkg.package.name) {
+        errors.push(
+          `${at}: packageName ${entry.packageName} contradicts snapshot ${pkg.package.name}`,
+        );
+      }
+      if (isNonEmptyString(entry.packageVersion) && entry.packageVersion !== pkg.package.version) {
+        errors.push(
+          `${at}: packageVersion ${entry.packageVersion} contradicts snapshot ${pkg.package.version}`,
+        );
+      }
+      packageIdentities.add(key);
+      packages.push(pkg);
     }
   });
   if (errors.length > 0) return { ok: false, errors };
@@ -209,7 +241,7 @@ export function validateCatalog(raw) {
   });
 
   if (errors.length > 0) return { ok: false, errors };
-  return { ok: true, catalog: raw };
+  return { ok: true, catalog: { ...raw, packages } };
 }
 
 const identityKey = (name, version, backendId) => `${name}@${version}#${backendId}`;
@@ -351,10 +383,18 @@ export function derivePresentation(catalog) {
     };
   });
 
+  // The artifact carries no catalog-level timestamp; the latest evidence
+  // verification time is derived deterministically from its contents.
+  const latestVerification = catalog.evidence.reduce(
+    (max, ev) => (ev.verifiedAt > max ? ev.verifiedAt : max),
+    "",
+  );
+
   return {
     release: {
       commit: catalog.release.commit,
-      generatedAt: catalog.release.generatedAt,
+      tag: catalog.release.tag,
+      generatedAt: latestVerification !== "" ? latestVerification : null,
     },
     routes,
   };
