@@ -23,6 +23,11 @@ export function TerminalPane({
 }) {
   const holderRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
+  // xterm v6 virtualizes scrolling (no DOM scroll area), and its internal
+  // viewport state resets to bottom when the element is re-shown after being
+  // display:none. The buffer API is pure JS state: record viewportY on
+  // deactivation, restore it on reactivation.
+  const savedViewportYRef = useRef<number | null>(null);
 
   useEffect(() => {
     const holder = holderRef.current;
@@ -120,15 +125,28 @@ export function TerminalPane({
   }, [tabId]);
 
   useEffect(() => {
-    // Re-fit when this tab becomes visible again (xterm needs a relayout).
-    if (active && holderRef.current !== null && holderRef.current.clientWidth > 0) {
+    const terminal = terminalRef.current;
+    if (terminal === null) return;
+    if (active) {
+      // Reactivation: restore the viewport line the user left. A null record
+      // means the pane was never deactivated — leave xterm untouched.
+      const restore = savedViewportYRef.current;
+      if (restore === null) return;
+      savedViewportYRef.current = null;
       requestAnimationFrame(() => {
         try {
-          terminalRef.current?.scrollToBottom();
+          terminal.scrollToLine(restore);
         } catch {
-          // already disposed
+          // pane already disposed
         }
       });
+    } else {
+      // Deactivation: buffer state is plain JS, readable even while hidden.
+      try {
+        savedViewportYRef.current = terminal.buffer.active.viewportY;
+      } catch {
+        // pane already disposed
+      }
     }
   }, [active]);
 
