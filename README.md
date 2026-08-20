@@ -60,6 +60,49 @@ const { exitCode, signal } = await pty.exited; // independent observation
   artifact. Everything else is honestly `declared-unverified` or
   `not-targeted`.
 
+## Project goal & design
+
+Node, Bun, and Deno each ship a different PTY story — installation models,
+I/O representations, lifecycle semantics, native deployment constraints.
+UniPty's goal is a **small, honest contract** that application code can rely
+on across all three, with every substrate difference absorbed behind one
+seam:
+
+```text
+application code
+   │  public contract (spawn / stream / write / resize / lifecycle / exited)
+   ▼
+UniPty Core ──── owns every observable behaviour: views, conversion,
+   │             bootstrap buffering, backpressure, errors, lifecycle state
+   ▼
+Ready Backend ── one injected, already-ready object per UniPty instance
+   │             (native loading / connection / negotiation finished first)
+   ▼
+Backend Endpoint (Core-private) ── ordered tagged native chunks, write
+   │             readiness/drain, resize, non-cascading close/terminate,
+   ▼             repeatably-awaitable exit observation
+real PTY on node-pty / Bun.Terminal / @sigma/pty-ffi
+```
+
+Design principles worth knowing before reading the code:
+
+- **One contract, three runtimes.** The public API never references a
+  runtime; the first-phase deliverable is all three official routes
+  together — implementation, CI coverage, and release acceptance.
+- **Substrate honesty.** Every adapter documents its substrate's real
+  behaviour (kill-and-close primitives, unbounded internal buffers, signal
+  opacity) instead of papering over it; support claims are evidence-gated.
+- **No hidden policy.** No implicit shell, no silent fallback to pipes, no
+  second plugin registry, no capability/asset protocol. Extension points
+  are explicit: Backend wrappers and opaque capability tokens.
+- **Evidence over labels.** A runtime/platform tuple is `verified` only
+  with a full public-contract pass against the installed artifact; the
+  release catalog is the sole source of that truth.
+
+Deep dives: [架构设计.md](架构设计.md) (architecture) ·
+[贡献规范.md](贡献规范.md) (contributing) ·
+[capability specs](openspec/specs) (authoritative requirements).
+
 ## Official first-phase routes
 
 | Package                                                                       | Runtime | Substrate (stated honestly)                                                                        |
@@ -74,15 +117,17 @@ last route, not its implementation identity.
 
 ## Packages
 
-| Package                                             | What it is                                                                                                                |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| [`unipty`](packages/unipty)                         | The public Core: `UniPty`, `Pty`, the Backend/Endpoint seam, common errors                                                |
-| [`@unipty/backend`](packages/backend)               | Acquisition convenience: `resolveUniPtyBackend`, `inspectUniPtyBackend`, `autoResolveUniPtyBackend`, manifest constructor |
-| [`@unipty/helper-backend`](packages/helper-backend) | Build-time manifest generator (`unipty-helper-backend manifest`)                                                          |
-| `@unipty/backend-*`                                 | The three official Backends above                                                                                         |
-| [`@unipty/conformance`](packages/conformance)       | Private installed-package conformance harness, evidence writer, release catalog aggregator                                |
-| [`@unipty/www`](packages/www)                       | Private static documentation site → [unipty.jixoai.com](https://unipty.jixoai.com)                                        |
-| [`@unipty/example`](packages/example)               | Local demo: shadcn/ui tabbed xterm terminals over WebSocket, one runtime per backend                                      |
+| Package                                                                       | npm                                                                      | What it is                                                                                                                |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| [`unipty`](packages/unipty)                                                   | [npm](https://www.npmjs.com/package/unipty)                              | The public Core: `UniPty`, `Pty`, the Backend/Endpoint seam, common errors                                                |
+| [`@unipty/backend`](packages/backend)                                         | [npm](https://www.npmjs.com/package/@unipty/backend)                     | Acquisition convenience: `resolveUniPtyBackend`, `inspectUniPtyBackend`, `autoResolveUniPtyBackend`, manifest constructor |
+| [`@unipty/helper-backend`](packages/helper-backend)                           | [npm](https://www.npmjs.com/package/@unipty/helper-backend)              | Build-time manifest generator (`unipty-helper-backend manifest`)                                                          |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | [npm](https://www.npmjs.com/package/@unipty/backend-node-pty)            | Official Node route over third-party `node-pty`                                                                           |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | [npm](https://www.npmjs.com/package/@unipty/backend-bun)                 | Official Bun route over runtime-native `Bun.Terminal`                                                                     |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | [npm](https://www.npmjs.com/package/@unipty/backend-deno-sigma__pty-ffi) | Official Deno route over vendored `@sigma/pty-ffi` (self-contained npm artifact)                                          |
+| [`@unipty/conformance`](packages/conformance)                                 | — (private)                                                              | Installed-package conformance harness, evidence writer, release catalog aggregator                                        |
+| [`@unipty/www`](packages/www)                                                 | — (private)                                                              | Static documentation site → [unipty.jixoai.com](https://unipty.jixoai.com)                                                |
+| [`@unipty/example`](packages/example)                                         | — (private)                                                              | Local demo: shadcn/ui tabbed xterm terminals over WebSocket, one runtime per backend                                      |
 
 ## Acquiring a Backend
 
@@ -144,6 +189,7 @@ pnpm --filter @unipty/conformance run conformance --backend node-pty --emit-evid
 ## Documentation & community
 
 - **Site**: <https://unipty.jixoai.com> (GitHub Pages, consumes the release catalog)
+- **Docs**: [架构设计](架构设计.md) (architecture) · [贡献规范](贡献规范.md) (contributing) · [capability specs](openspec/specs)
 - **Specs**: the six capability specifications under [`openspec/specs/`](openspec/specs)
 - **Issues / discussions**: <https://github.com/jixoai/unipty/issues>
 - **Roadmap**: v1 is PTY-focused; persistence, reconnect, and remote hosts

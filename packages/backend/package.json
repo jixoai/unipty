@@ -4,7 +4,9 @@
   "description": "UniPty Backend acquisition convenience: caller-rooted resolution, metadata inspection, deterministic AutoResolve, and the explicit bundle manifest constructor.",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "README-zh.md"
   ],
   "type": "module",
   "sideEffects": false,

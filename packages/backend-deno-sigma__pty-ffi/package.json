@@ -5,7 +5,9 @@
   "license": "MIT",
   "files": [
     "dist",
-    "vendor"
+    "vendor",
+    "README.md",
+    "README-zh.md"
   ],
   "type": "module",
   "sideEffects": false,

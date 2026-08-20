@@ -41,6 +41,36 @@ const { exitCode, signal } = await pty.exited; // 独立观察
 - **类型化能力扩展** —— 不透明 token 查找（`pty.capability(token)`）按对象身份匹配；没有字符串注册表。
 - **证据门控的支持声明** —— 仅当公共一致性套件针对**已安装的包制品**全部通过时，一个运行时/平台元组才是 `verified`。其余一律诚实地标为 `declared-unverified` 或 `not-targeted`。
 
+## 项目目标与设计
+
+Node、Bun、Deno 各有一套互不相同的 PTY 故事——安装模型、I/O 表示、生命周期语义、原生部署约束。
+UniPty 的目标是**一套小而诚实的契约**，让应用代码在三者之上获得统一依赖，所有底层差异都被吸收进一个接缝：
+
+```text
+应用代码
+   │  公共契约（spawn / stream / write / resize / 生命周期 / exited）
+   ▼
+UniPty Core ──── 独占全部可观测行为：视图、转换、bootstrap 缓冲、
+   │             背压、错误、生命周期状态
+   ▼
+就绪 Backend ─── 每个 UniPty 实例注入一个已就绪对象
+   │             （原生加载 / 连接 / 协商已在此前完成）
+   ▼
+Backend Endpoint（Core 私有）── 有序带标签原生分块、写入就绪/drain、
+   │             resize、非级联 close/terminate、可重复 await 的退出观察
+   ▼
+node-pty / Bun.Terminal / @sigma/pty-ffi 之上的真实 PTY
+```
+
+读代码前值得了解的设计原则：
+
+- **一套契约，三个运行时。** 公共 API 绝不引用运行时；第一阶段交付就是三条官方路由一起上——实现、CI 覆盖、发布验收同步到位。
+- **底层诚实。** 每个适配器如实记录底层真实行为（kill-and-close 原语、无界内部缓冲、信号不可辨），绝不掩盖；支持声明以证据门控。
+- **没有隐藏策略。** 无隐式 shell、无管道静默回退、无第二插件注册表、无能力/资产协议。扩展点显式：Backend wrapper 与不透明能力 token。
+- **证据高于标签。** 运行时/平台元组只有在对已安装制品的完整公共契约通过时才是 `verified`；发布目录是这一事实的唯一来源。
+
+深入阅读：[架构设计.md](架构设计.md) · [贡献规范.md](贡献规范.md) · [能力规格（权威需求）](openspec/specs)。
+
 ## 官方第一阶段路由
 
 | 包                                                                            | 运行时 | 底层实现（如实声明）                                                      |
@@ -53,15 +83,17 @@ Node 路由适配的是第三方库——不是 Node 运行时原生 API，文�
 
 ## 包一览
 
-| 包                                                  | 说明                                                                                                    |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| [`unipty`](packages/unipty)                         | 公共 Core：`UniPty`、`Pty`、Backend/Endpoint 接缝、公共错误                                             |
-| [`@unipty/backend`](packages/backend)               | 获取便利层：`resolveUniPtyBackend`、`inspectUniPtyBackend`、`autoResolveUniPtyBackend`、manifest 构造器 |
-| [`@unipty/helper-backend`](packages/helper-backend) | 构建期 manifest 生成器（`unipty-helper-backend manifest`）                                              |
-| `@unipty/backend-*`                                 | 上述三条官方 Backend                                                                                    |
-| [`@unipty/conformance`](packages/conformance)       | 私有已安装包一致性测试装置、证据写出器、发布目录聚合器                                                  |
-| [`@unipty/www`](packages/www)                       | 私有静态文档站点 → [unipty.jixoai.com](https://unipty.jixoai.com)                                       |
-| [`@unipty/example`](packages/example)               | 本地演示：shadcn/ui 多标签 xterm 终端，经 WebSocket 一 backend 一运行时                                 |
+| 包                                                                            | npm                                                                      | 说明                                                                                                    |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| [`unipty`](packages/unipty)                                                   | [npm](https://www.npmjs.com/package/unipty)                              | 公共 Core：`UniPty`、`Pty`、Backend/Endpoint 接缝、公共错误                                             |
+| [`@unipty/backend`](packages/backend)                                         | [npm](https://www.npmjs.com/package/@unipty/backend)                     | 获取便利层：`resolveUniPtyBackend`、`inspectUniPtyBackend`、`autoResolveUniPtyBackend`、manifest 构造器 |
+| [`@unipty/helper-backend`](packages/helper-backend)                           | [npm](https://www.npmjs.com/package/@unipty/helper-backend)              | 构建期 manifest 生成器（`unipty-helper-backend manifest`）                                              |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | [npm](https://www.npmjs.com/package/@unipty/backend-node-pty)            | 官方 Node 路由（第三方 `node-pty`）                                                                     |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | [npm](https://www.npmjs.com/package/@unipty/backend-bun)                 | 官方 Bun 路由（运行时原生 `Bun.Terminal`）                                                              |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | [npm](https://www.npmjs.com/package/@unipty/backend-deno-sigma__pty-ffi) | 官方 Deno 路由（vendored `@sigma/pty-ffi`，自包含 npm 制品）                                            |
+| [`@unipty/conformance`](packages/conformance)                                 | —（私有）                                                                | 已安装包一致性装置、证据写出器、发布目录聚合器                                                          |
+| [`@unipty/www`](packages/www)                                                 | —（私有）                                                                | 静态文档站点 → [unipty.jixoai.com](https://unipty.jixoai.com)                                           |
+| [`@unipty/example`](packages/example)                                         | —（私有）                                                                | 本地演示：shadcn/ui 多标签 xterm 终端，一 backend 一运行时                                              |
 
 ## 获取 Backend
 
@@ -112,6 +144,7 @@ pnpm --filter @unipty/conformance run conformance --backend node-pty --emit-evid
 ## 文档与社区
 
 - **站点**：<https://unipty.jixoai.com>（GitHub Pages，消费发布目录）
+- **文档**：[架构设计](架构设计.md) · [贡献规范](贡献规范.md) · [能力规格](openspec/specs)
 - **规格**：[`openspec/specs/`](openspec/specs) 下的六份能力规格
 - **Issue / 讨论**：<https://github.com/jixoai/unipty/issues>
 - **路线**：v1 聚焦 PTY；持久化、重连、远程主机属于可替换 Backend 与 wrapper，而不是第二套插件生命周期。

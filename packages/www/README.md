@@ -4,7 +4,7 @@ Private static documentation site for [unipty.jixoai.com](https://unipty.jixoai.
 zero-dependency, hand-authored HTML/CSS built by a small Node script, deployed
 to GitHub Pages. It consumes **exactly one release catalog artifact, unchanged**.
 
-English | [简体中文](../../README-zh.md#包一览) · [Workspace root](../../README.md)
+Internal workspace package · [GitHub](https://github.com/jixoai/unipty) · [Workspace README](../../README.md)
 
 ## Law
 

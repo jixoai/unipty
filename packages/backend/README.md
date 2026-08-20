@@ -5,7 +5,7 @@ metadata inspection, deterministic AutoResolve, and the explicit bundle-manifest
 constructor. This is a convenience layer — never Core fallback and never a
 second plugin registry.
 
-English | [简体中文](../../README-zh.md#包一览) · [Workspace root](../../README.md)
+[English](./README.md) | [简体中文](./README-zh.md) · [GitHub](https://github.com/jixoai/unipty) · [Docs](https://unipty.jixoai.com)
 
 ## The staged contract
 

@@ -4,7 +4,7 @@ Build/development helper that generates **explicit Backend manifest modules**
 from ordered candidate inputs. Not a runtime dependency: applications never
 install it for production behaviour — it only writes source files.
 
-English | [简体中文](../../README-zh.md#包一览) · [Workspace root](../../README.md)
+[English](./README.md) | [简体中文](./README-zh.md) · [GitHub](https://github.com/jixoai/unipty) · [Docs](https://unipty.jixoai.com)
 
 ## Why
 

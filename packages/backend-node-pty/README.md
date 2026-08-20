@@ -1,5 +1,7 @@
 # @unipty/backend-node-pty
 
+[English](./README.md) | [简体中文](./README-zh.md) · [GitHub](https://github.com/jixoai/unipty) · [Docs](https://unipty.jixoai.com)
+
 Official UniPty Backend for Node runtimes, adapting the third-party
 **node-pty** substrate — never a native Node runtime PTY API.
 

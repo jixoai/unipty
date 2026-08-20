@@ -5,7 +5,7 @@ harness**, the positive Verification Evidence writer, and the deterministic
 release catalog aggregator. Not published; the sole acceptance seam for any
 native PTY support claim.
 
-English | [简体中文](../../README-zh.md#包一览) · [Workspace root](../../README.md)
+Internal workspace package · [GitHub](https://github.com/jixoai/unipty) · [Workspace README](../../README.md)
 
 ## Law
 

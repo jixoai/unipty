@@ -1,6 +1,8 @@
 # @unipty/backend-bun
 
-Official [UniPty](../../unipty) Backend adapting the **runtime-native
+[English](./README.md) | [简体中文](./README-zh.md) · [GitHub](https://github.com/jixoai/unipty) · [Docs](https://unipty.jixoai.com)
+
+Official [UniPty](https://www.npmjs.com/package/unipty) Backend adapting the **runtime-native
 `Bun.Terminal`** substrate. It runs only inside the Bun runtime:
 `Bun.Terminal` ships with Bun itself (>= 1.3.13 on Linux/macOS, >= 1.3.14 on
 Windows via ConPTY), so this package has no native dependency of its own.

@@ -4,7 +4,7 @@ Local example app: a shadcn/ui tabbed terminal where every tab is a **real
 PTY** hosted by the backend you pick — and each backend runs under its own
 runtime (node / bun / deno). One WebSocket per tab; xterm.js in the browser.
 
-English | [简体中文](../../README-zh.md#包一览) · [Workspace root](../../README.md)
+Internal workspace package · [GitHub](https://github.com/jixoai/unipty) · [Workspace README](../../README.md)
 
 ## Run
 

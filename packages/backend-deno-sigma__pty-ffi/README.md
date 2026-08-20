@@ -1,5 +1,7 @@
 # @unipty/backend-deno-sigma__pty-ffi
 
+[English](./README.md) | [简体中文](./README-zh.md) · [GitHub](https://github.com/jixoai/unipty) · [Docs](https://unipty.jixoai.com)
+
 Official UniPty Backend for the Deno runtime, adapting the third-party
 [`@sigma/pty-ffi`](https://jsr.io/@sigma/pty-ffi) substrate — a Deno FFI
 wrapper over the Rust [`portable-pty`](https://docs.rs/portable-pty) crate.
