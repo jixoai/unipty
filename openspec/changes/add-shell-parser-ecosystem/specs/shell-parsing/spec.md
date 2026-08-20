@@ -3,13 +3,17 @@
 ### Requirement: Parser result classification contract
 
 The system SHALL expose parser packages whose top-level result is exactly one
-of: a direct structured launch (`argv`), an explicit Shell Script Request
-(`script` with language and original source), or `incomplete`, `unsupported`,
-or `invalid` with serializable diagnostics. A parser SHALL NOT execute a
-process, SHALL NOT implicitly select or invoke a shell, and SHALL NOT expose
-the wrapped parser's AST types in its public result. The caller SHALL be
-required to explicitly accept a `script` result's shell semantics before
-constructing any launch.
+of: a direct structured launch candidate (`argv`), an explicit Shell Script
+Request (`script` with language and original source), or `incomplete`,
+`unsupported`, or `invalid` with serializable diagnostics. `argv` is a
+**lexical** classification — one simple command whose words are literal after
+static quote processing — and the caller owns executable resolution (PATH,
+builtins, shell functions, aliases); the parser never proves process-launch
+equivalence for a command name. A parser SHALL NOT execute a process, SHALL
+NOT implicitly select or invoke a shell, and SHALL NOT expose the wrapped
+parser's AST types in its public result. The caller SHALL be required to
+explicitly accept a `script` result's shell semantics before constructing
+any launch.
 
 #### Scenario: Direct invocation classifies as argv
 
@@ -17,6 +21,13 @@ constructing any launch.
   are entirely literal after quote processing
 - **THEN** the result is `argv` with the executable first and the literal
   words in order, and no shell is selected or invoked
+
+#### Scenario: Builtin-named commands stay lexical argv candidates
+
+- **WHEN** the single literal command names a shell builtin such as `cd` or
+  `exec`
+- **THEN** the result is still `argv` (dispatch is the caller's decision);
+  the parser neither denies nor proves builtin resolution
 
 #### Scenario: Shell constructs classify as an explicit script request
 
@@ -38,11 +49,13 @@ root script and every nested script it visits for diagnostics before claiming
 `argv`. It SHALL claim `argv` only when the input is one simple command whose
 name and arguments are literal (quoted or unquoted) with no expansion,
 substitution, variable, tilde, brace, or glob metacharacter semantics, no
-redirection, no environment-assignment prefix, no control or compound
-statement, and no background or sequential operators. Everything else that
-parses cleanly SHALL become `script`; recognized-but-unprovable constructs
-SHALL become `unsupported`; parse errors SHALL become `invalid`, except
-end-of-input errors which SHALL become `incomplete`.
+locale-string expansion (`$"..."`), no ANSI-C string containing a NUL
+character (which cannot become an argv element), no redirection, no
+environment-assignment prefix, no control or compound statement, and no
+background or sequential operators. Everything else that parses cleanly SHALL
+become `script`; recognized-but-unprovable constructs SHALL become
+`unsupported`; parse errors SHALL become `invalid`, except end-of-input
+errors which SHALL become `incomplete`.
 
 #### Scenario: Quoting and empty arguments survive to argv
 
@@ -62,11 +75,14 @@ end-of-input errors which SHALL become `incomplete`.
 The `@unipty/powershell-parser` package SHALL treat the official PowerShell
 `Parser.ParseInput` API as its only semantic authority, invoked through an
 explicitly selected host executable (`pwsh` by default). User text SHALL
-travel to the host over stdin, never on the command line, and the adapter
-SHALL never execute the user text. When the host is missing or fails to
-start, the package SHALL report a typed `capability-unavailable` (or host)
-failure and SHALL NOT fall back to Bash-like or POSIX parsing. PowerShell
-fixtures SHALL be judged only by the official parser.
+travel to the host over stdin as base64-encoded UTF-8 (transport-safe under
+any console code page), never on the command line, and the adapter SHALL
+never execute the user text. When the host is missing, exits non-zero
+without a valid adapter result, or returns an unknown result kind, the
+package SHALL report a typed `capability-unavailable` or `host-failure`
+error and SHALL NOT fall back to Bash-like or POSIX parsing and SHALL NOT
+silently degrade an unusable response to `script`. PowerShell fixtures SHALL
+be judged only by the official parser.
 
 #### Scenario: Missing host is explicit
 

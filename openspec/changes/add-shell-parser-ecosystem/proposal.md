@@ -46,9 +46,12 @@ incomplete | unsupported | invalid`) as the only stable boundary; one
 ## Impact
 
 - New packages `packages/shell-parser` and `packages/powershell-parser`;
-  no change to Core, Backend, acquisition, helper, conformance, or www code.
+  no change to Core, Backend, acquisition, helper, or conformance code.
 - `scripts/check-architecture.sh.ts` gains parser ownership rules (standalone;
   nothing depends on them at runtime).
-- `.github/workflows/release.yml` publishable set grows by the two names.
+- `.github/workflows/release.yml` publishable set grows by the two names,
+  published first for atomicity.
 - The first release carrying these packages requires Owner-configured npm
   trusted publishers for the new package names.
+- Out of scope: the www release-catalog schema fix (landed separately in
+  `586e24c`); this change only references the real catalog schema.

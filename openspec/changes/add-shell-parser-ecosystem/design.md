@@ -24,25 +24,33 @@ thin-wrapper candidate and rejected inventing a PowerShell JS grammar.
    exactly one simple command where every word reduces to concatenated
    literal segments. Anything the walker cannot prove literal — variables,
    command/arithmetic/process substitutions, globs, tilde, brace expansion,
-   redirects, assignment prefixes, pipelines/lists/compounds, background
-   operators, heredocs, multiple statements, comments without a command — is
-   `script` (shell semantics exist) or `unsupported` (walker cannot judge).
-   unbash errors are `invalid`, except end-of-input-shaped errors which are
-   `incomplete`. Root and all visited nested scripts' diagnostics are checked
-   first; the unbash AST never appears in public types.
+   locale strings (`$"..."` undergoes runtime localization), ANSI-C strings
+   containing NUL (NUL cannot become an argv element), redirects, assignment
+   prefixes, pipelines/lists/compounds, background operators, heredocs,
+   multiple statements, comments without a command — is `script` (shell
+   semantics exist) or `unsupported` (walker cannot judge). `argv` is a
+   **lexical** candidate: the caller owns executable resolution (PATH,
+   builtins, functions, aliases); the parser never fabricates a dispatch
+   proof via a builtin denylist. unbash errors are `invalid`, except
+   end-of-input-shaped errors which are `incomplete`. Root and all visited
+   nested scripts' diagnostics are checked first; the unbash AST never
+   appears in public types.
 
 3. **PowerShell adapter mechanics.** Spawn the host with
    `-NoProfile -NonInteractive -NoLogo -EncodedCommand <base64(UTF-16LE
-adapter)>`; the adapter is static package code, the user text travels on
-   stdin, and the adapter prints one JSON object. Classification happens in
-   PowerShell where the official AST object model lives: errors map by
-   `IncompleteInput`; otherwise `argv` requires exactly one statement that is
-   a one-element pipeline whose `CommandAst` has no redirections and only
-   literal command elements (`StringConstantExpressionAst` values,
-   `ParameterAst`/`ConstantExpressionAst` extent text); everything else is
-   `script`. Host executable is caller-selectable (`pwsh` default). Missing
-   host or failed start → typed error code `capability-unavailable`; host
-   misbehaviour → `host-failure`; a bounded default timeout guards hangs.
+adapter)>`; the adapter is static package code, and the user text travels on
+   **stdin as base64-encoded UTF-8** — transport-safe under any Windows
+   console code page and free of environment-variable length limits. The
+   adapter decodes, classifies where the official AST object model lives,
+   and prints one JSON object: errors map by `IncompleteInput`; otherwise
+   `argv` requires exactly one statement that is a one-element pipeline
+   whose `CommandAst` has no redirections and only literal command elements
+   (`StringConstantExpressionAst` values, `CommandParameterAst` /
+   `ConstantExpressionAst` extent text); everything else is `script`. Host
+   executable is caller-selectable (`pwsh` default). Missing host or failed
+   start → typed error code `capability-unavailable`; non-zero exit, unknown
+   result kind, or malformed output → `host-failure` (never a silent
+   `script` downgrade); a bounded default timeout guards hangs.
 
 4. **Shared edge policy.** Empty/whitespace-only input is `invalid` with a
    diagnostic; comment-only or statement-free input is `script` (a shell
@@ -54,6 +62,12 @@ adapter)>`; the adapter is static package code, the user text travels on
    not join the PTY conformance matrix or the release catalog.
 
 6. **Publication.** Both packages join the release.yml publishable set at
-   version 0.2.0. npm trusted publishers for the two new names are
-   Owner-side prerequisites; until they exist, a tagged release must not
-   include them.
+   version 0.2.0, published **before** the core/backend/helper set so a
+   missing Trusted Publisher fails the job before any published package
+   creates an irreversible partial release. npm trusted publishers for the
+   two new names are Owner-side prerequisites; until they exist, a tagged
+   release must not include them. The www catalog-schema fix landed
+   separately (`586e24c`) outside this change's scope; `release.suite` is
+   required by the aggregator and validated as such, and the committed dev
+   fixture is a semantic (format-normalized) copy of a real catalog because
+   the repo formatter rewrites JSON byte layout.
