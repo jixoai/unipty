@@ -19,6 +19,11 @@
       split. (depends: 1.2; verify: corpus covers quoting, empty args, globs,
       tilde, variables, substitutions, redirects, pipelines, lists, compounds,
       background, assignments, heredocs, comments, unterminated quotes)
+- [x] 2.2 Enforce the lexical-argv edge rules from review round 1: locale
+      strings (`$"..."`) and ANSI-C strings containing NUL never claim argv;
+      builtin-named commands stay lexical argv with caller-owned dispatch.
+      (depends: 2.1; verify: corpus covers `echo $"x"`, NUL `$'..'` variants,
+      `exec ls`, `cd /tmp`)
 
 ## 3. PowerShell adapter
 
@@ -27,6 +32,11 @@
       `capability-unavailable`/`host-failure`/timeout errors, selectable host.
       (depends: 1.2; verify: host-dependent tests skip without `pwsh`;
       missing-host and bogus-host paths always run)
+- [x] 3.2 Enforce the round-1 transport and response contract: user text
+      moves over stdin as base64 UTF-8 (no environment variable), and
+      non-zero exit or unknown result kind is a typed host failure, never a
+      `script` downgrade. (depends: 3.1; verify: stdin round-trip corpus plus
+      a hostile-kind fixture via a stub host)
 
 ## 4. Workspace wiring
 
@@ -35,6 +45,10 @@
 check:arch` passes with the new packages)
 - [x] 4.2 Add both names to the release publishable set. (depends: 1.1;
       verify: pack produces tarballs for both names)
+- [x] 4.4 Make the publish order parser-first so a missing npm Trusted
+      Publisher fails before any published package creates an irreversible
+      partial release. (depends: 4.2; verify: the publish step lists parser
+      packages before the core/backend/helper set)
 - [x] 4.3 Full local gate: build, typecheck, test, `check:arch`, `fmt:check`.
       (depends: 2.1, 3.1, 4.1, 4.2; verify: all green on one command run)
 

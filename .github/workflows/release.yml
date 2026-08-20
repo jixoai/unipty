@@ -129,14 +129,18 @@ jobs:
             echo "publishing ${tarball}"
             npm publish "${tarball}" --access public --provenance
           }
+          # Publish the parser packages first: they are the newest names and
+          # the most likely to lack a configured Trusted Publisher, so any
+          # authentication failure must happen before an already-published
+          # core/backend package creates an irreversible partial release.
+          publish @unipty/shell-parser packages/shell-parser
+          publish @unipty/powershell-parser packages/powershell-parser
           publish unipty packages/unipty
           publish @unipty/backend packages/backend
           publish @unipty/backend-node-pty packages/backend-node-pty
           publish @unipty/backend-bun packages/backend-bun
           publish @unipty/backend-deno-sigma__pty-ffi packages/backend-deno-sigma__pty-ffi
           publish @unipty/helper-backend packages/helper-backend
-          publish @unipty/shell-parser packages/shell-parser
-          publish @unipty/powershell-parser packages/powershell-parser
       - name: Attach the catalog to the tagged release
         uses: softprops/action-gh-release@v2
         with:
