@@ -474,11 +474,20 @@ class BunTerminalEndpoint implements BackendEndpoint {
       return;
     }
     if (exitCode === 0) {
-      try {
-        controller.close();
-      } catch {
-        // Already closed or errored.
-      }
+      // A slow first allocation can make Bun deliver the final data
+      // callback after the exit callback within the same event-loop turn;
+      // defer the clean close by one macrotask so those chunks still
+      // enqueue before EOF instead of being discarded as post-close noise.
+      setTimeout(() => {
+        if (this.outputDetached) {
+          return;
+        }
+        try {
+          controller.close();
+        } catch {
+          // Already closed or errored.
+        }
+      }, 0);
       return;
     }
     try {
