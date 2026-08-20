@@ -22,7 +22,10 @@ const argvCases: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['echo "*.txt"', ["echo", "*.txt"]],
   ["git log --oneline -5", ["git", "log", "--oneline", "-5"]],
   ["echo a#b", ["echo", "a#b"]],
+  // Builtin-named commands stay lexical argv candidates; dispatch is the
+  // caller's decision, never a parser-side builtin denylist.
   ["exec ls", ["exec", "ls"]],
+  ["cd /tmp", ["cd", "/tmp"]],
 ];
 
 const scriptCases: readonly string[] = [
@@ -50,6 +53,11 @@ const scriptCases: readonly string[] = [
   "echo {a,b}.txt",
   "echo ?(a|b)",
   "echo \\*",
+  // Locale strings perform runtime localization; ANSI-C strings containing
+  // NUL cannot become argv elements.
+  'echo $"localized"',
+  "echo $'\\0'",
+  "echo $'a\\x00b'",
   "(cd /tmp)",
   "{ echo hi; }",
   "f() { echo hi; }",

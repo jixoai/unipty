@@ -16,8 +16,10 @@ export interface ShellParseDiagnostic {
 /**
  * Top-level classification of shell command text.
  *
- * - `argv`: the text is provably one simple command of literal words and can
- *   become a structured launch without any shell.
+ * - `argv`: a **lexical** direct-launch candidate — the text is one simple
+ *   command whose words are literal after static quote processing. The
+ *   caller owns executable resolution (PATH, builtins, functions, aliases);
+ *   the parser never proves process-launch equivalence for a command name.
  * - `script`: the text carries shell semantics; the caller must explicitly
  *   accept the named shell policy before launching anything.
  * - `incomplete` / `unsupported` / `invalid`: the text is not classifiable as

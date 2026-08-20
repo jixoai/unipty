@@ -67,14 +67,20 @@ function partIsLiteral(part: WordPart): boolean {
   switch (part.type) {
     case "Literal":
     case "SingleQuoted":
-    case "AnsiCQuoted":
       // Static escape processing only; no runtime expansion semantics.
       return true;
+    case "AnsiCQuoted":
+      // ANSI-C strings are static after escape processing, but a NUL in the
+      // value cannot become an argv element.
+      return !part.value.includes("\0");
     case "DoubleQuoted":
-    case "LocaleString":
       // Quoted strings are literal only when every nested child is literal;
       // any expansion child keeps shell semantics.
       return part.parts.every((child) => child.type === "Literal");
+    case "LocaleString":
+      // $"..." performs a runtime localization lookup; never statically
+      // literal.
+      return false;
     default:
       // Expansions, substitutions, globs, and brace expansions are never
       // provably literal.

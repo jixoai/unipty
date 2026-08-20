@@ -26,17 +26,21 @@ parse("echo 'unterminated");
 // → { kind: "incomplete", diagnostics: [...] }
 ```
 
-When the result is `argv`, the text was provably one simple command of
-literal words (quoting and empty arguments preserved) and can become
-`unipty.spawn(argv)` directly. When the result is `script`, the text carries
-shell semantics (pipelines, redirection, expansions, substitutions, globs,
-tilde, background, assignments, compound statements, …) and **you** must
-explicitly accept the named shell policy before launching anything.
+When the result is `argv`, the text was **lexically** one simple command of
+literal words (quoting and empty arguments preserved) — a direct-launch
+candidate you can feed to `unipty.spawn(argv)`. Executable resolution (PATH,
+builtins, functions, aliases) stays **your** decision; the parser never
+claims process-launch equivalence for a command name. When the result is
+`script`, the text carries shell semantics (pipelines, redirection,
+expansions, substitutions, globs, tilde, background, assignments, locale
+strings, compound statements, …) and **you** must explicitly accept the
+named shell policy before launching anything.
 
 ## Classification policy
 
-- `argv` — exactly one simple command; every word is literal after quote
-  processing; no expansions, substitutions, globs, tilde, escapes, redirects,
+- `argv` — exactly one simple command; every word is literal after static
+  quote processing; no expansions, substitutions, globs, tilde, escapes,
+  locale strings (`$"..."`), ANSI-C strings containing NUL, redirects,
   assignment prefixes, operators, or compound constructs.
 - `script` — parses cleanly and has shell semantics (or is comment-only /
   carries a shebang); returned with the original source unchanged.

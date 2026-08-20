@@ -3,6 +3,11 @@
   "version": "0.2.0",
   "description": "Official Bash shell parser for UniPty: classifies command text into a structured argv, an explicit shell-script request, or diagnostics, without executing anything.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jixoai/unipty",
+    "directory": "packages/shell-parser"
+  },
   "files": [
     "dist",
     "README.md",
