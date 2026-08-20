@@ -102,8 +102,13 @@ Parser packages SHALL be standalone: they SHALL NOT depend on `unipty`, on
 any `@unipty/backend-*` package, on the acquisition/helper layers, or on each
 other at runtime, and no runtime package SHALL depend on them. Their
 verification SHALL be ordinary per-package unit corpora, not the PTY
-conformance/evidence matrix, and their publication SHALL NOT block or gate
-Core or Backend releases.
+conformance/evidence matrix. Their publication shares the one release chain
+under a deliberate atomicity decision: the new names publish **before** the
+established packages so a missing Trusted Publisher fails before any
+already-published package creates an irreversible partial release; the
+residual partiality between the two parser names themselves is closed by the
+Owner-side gate that configures both Trusted Publishers before the first
+tag carrying them.
 
 #### Scenario: Ownership rules hold
 
