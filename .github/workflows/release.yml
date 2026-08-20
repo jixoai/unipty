@@ -102,7 +102,9 @@ jobs:
         run: >-
           corepack pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend
           --filter @unipty/backend-node-pty --filter @unipty/backend-bun
-          --filter @unipty/backend-deno-sigma__pty-ffi pack
+          --filter @unipty/backend-deno-sigma__pty-ffi
+          --filter @unipty/shell-parser --filter @unipty/powershell-parser
+          pack
           --pack-destination dist-release/packs
       - name: Publish via npm Trusted Publishing (dependency order)
         run: |
@@ -133,6 +135,8 @@ jobs:
           publish @unipty/backend-bun packages/backend-bun
           publish @unipty/backend-deno-sigma__pty-ffi packages/backend-deno-sigma__pty-ffi
           publish @unipty/helper-backend packages/helper-backend
+          publish @unipty/shell-parser packages/shell-parser
+          publish @unipty/powershell-parser packages/powershell-parser
       - name: Attach the catalog to the tagged release
         uses: softprops/action-gh-release@v2
         with:

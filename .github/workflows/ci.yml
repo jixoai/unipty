@@ -33,7 +33,8 @@ jobs:
       - name: Unit suites (vitest packages)
         run: >-
           pnpm --filter unipty --filter @unipty/backend --filter @unipty/helper-backend
-          --filter @unipty/backend-node-pty --filter @unipty/conformance run test
+          --filter @unipty/backend-node-pty --filter @unipty/shell-parser
+          --filter @unipty/powershell-parser --filter @unipty/conformance run test
 
   bun-suite:
     name: Bun runtime suite

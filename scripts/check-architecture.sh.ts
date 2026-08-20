@@ -85,6 +85,8 @@ const acquisition = "@unipty/backend";
 const helper = "@unipty/helper-backend";
 const conformance = "@unipty/conformance";
 const www = "@unipty/www";
+const shellParser = "@unipty/shell-parser";
+const powershellParser = "@unipty/powershell-parser";
 
 // Required packages exist.
 for (const required of [
@@ -94,6 +96,8 @@ for (const required of [
   "@unipty/backend-node-pty",
   "@unipty/backend-bun",
   "@unipty/backend-deno-sigma__pty-ffi",
+  shellParser,
+  powershellParser,
   conformance,
   www,
 ]) {
@@ -134,6 +138,33 @@ for (const [name, allowlist] of Object.entries(substrateAllowlist)) {
     rule(
       dep === core || allowlist.has(dep),
       `${name} may depend only on ${core} + [${[...allowlist].join(", ")}], found ${dep}`,
+    );
+  }
+}
+
+// Parser ecosystem packages are standalone: their only allowed substrate is
+// the wrapped parser itself, never a UniPty runtime package.
+const parserSubstrates: Record<string, Set<string>> = {
+  [shellParser]: new Set(["unbash"]),
+  [powershellParser]: new Set([]),
+};
+for (const [name, allowlist] of Object.entries(parserSubstrates)) {
+  for (const dep of depsOf(name)) {
+    rule(
+      allowlist.has(dep),
+      `${name} may depend only on [${[...allowlist].join(", ")}], found ${dep}`,
+    );
+  }
+}
+
+// Nothing gains a runtime dependency on a parser package; parsing is an
+// optional ecosystem concern callers adopt explicitly.
+for (const [name] of packages) {
+  if (name === shellParser || name === powershellParser) continue;
+  for (const dep of depsOf(name)) {
+    rule(
+      dep !== shellParser && dep !== powershellParser,
+      `${name} must not depend on parser package ${dep}`,
     );
   }
 }
