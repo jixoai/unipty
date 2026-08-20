@@ -1,6 +1,6 @@
 {
   "name": "@unipty/backend-node-pty",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Official UniPty Backend adapting the third-party node-pty substrate for Node runtimes.",
   "license": "MIT",
   "repository": {

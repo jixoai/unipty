@@ -1,6 +1,6 @@
 {
   "name": "@unipty/backend",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "UniPty Backend acquisition convenience: caller-rooted resolution, metadata inspection, deterministic AutoResolve, and the explicit bundle manifest constructor.",
   "license": "MIT",
   "repository": {

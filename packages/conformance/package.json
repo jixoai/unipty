@@ -1,6 +1,6 @@
 {
   "name": "@unipty/conformance",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Private installed-public-package conformance harness, verification evidence writer, and release catalog aggregator for UniPty v1.",
   "license": "MIT",
