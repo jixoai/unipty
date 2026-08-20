@@ -7,7 +7,10 @@
  * official parser; one language's grammar is never the other's oracle.
  */
 
-import { describe, expect, it } from "vitest";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterAll, describe, expect, it } from "vitest";
 import { isPowershellHostAvailable, parsePowershell, PowershellParseError } from "../src/index.ts";
 
 const BOGUS_HOST = "unipty-definitely-not-a-real-powershell-host";
@@ -46,6 +49,50 @@ describe("parsePowershell: typed capability failures", () => {
   });
 });
 
+describe.skipIf(process.platform === "win32")("parsePowershell: hostile host responses", () => {
+  // Stub hosts prove the response contract without a real pwsh: an unknown
+  // result kind, malformed output, and the adapter's own error report are
+  // typed host failures — never a silent `script` downgrade.
+  const stubDir = mkdtempSync(join(tmpdir(), "unipty-ps-stub-"));
+  afterAll(() => rmSync(stubDir, { recursive: true, force: true }));
+
+  const stubHost = (name: string, body: string): string => {
+    const path = join(stubDir, name);
+    writeFileSync(path, `#!/usr/bin/env node\n${body}\n`);
+    chmodSync(path, 0o755);
+    return path;
+  };
+
+  it("rejects an unknown result kind as host-failure", async () => {
+    const host = stubHost(
+      "weird-kind.mjs",
+      'process.stdout.write(JSON.stringify({ kind: "totally-weird" }));',
+    );
+    await expect(parsePowershell("git status", { host })).rejects.toMatchObject({
+      code: "host-failure",
+    });
+  });
+
+  it("rejects malformed output with a non-zero exit as host-failure", async () => {
+    const host = stubHost("garbage.mjs", "process.stdout.write('oops'); process.exitCode = 1;");
+    await expect(parsePowershell("git status", { host })).rejects.toMatchObject({
+      code: "host-failure",
+    });
+  });
+
+  it("surfaces the adapter's structured error report as host-failure", async () => {
+    const host = stubHost(
+      "adapter-error.mjs",
+      'process.stdout.write(JSON.stringify({ kind: "adapter-error", message: "boom" })); process.exitCode = 1;',
+    );
+    const failure = parsePowershell("git status", { host });
+    await expect(failure).rejects.toMatchObject({ code: "host-failure" });
+    await failure.catch((error: unknown) => {
+      expect((error as PowershellParseError).message).toContain("boom");
+    });
+  });
+});
+
 describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () => {
   const argvCases: ReadonlyArray<readonly [string, readonly string[]]> = [
     ["git status", ["git", "status"]],
@@ -56,6 +103,7 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
     ["Write-Output value", ["Write-Output", "value"]],
     ["dotnet build -c Release", ["dotnet", "build", "-c", "Release"]],
     ["echo ]", ["echo", "]"]],
+    ["echo 'héllo wörld ✓ 中文'", ["echo", "héllo wörld ✓ 中文"]],
   ];
 
   const scriptCases: readonly string[] = [

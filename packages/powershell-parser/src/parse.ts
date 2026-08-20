@@ -79,14 +79,16 @@ function runAdapter(host: string, timeoutMs: number, source: string): Promise<Ad
         encodeCommand(ADAPTER_SCRIPT),
       ],
       {
-        stdio: ["ignore", "pipe", "pipe"],
-        env: {
-          ...process.env,
-          UNIPTY_PARSER_SOURCE_B64: Buffer.from(source, "utf8").toString("base64"),
-        },
+        stdio: ["pipe", "pipe", "pipe"],
         windowsHide: true,
       },
     );
+    // The user text travels on stdin as base64 UTF-8: transport-safe under
+    // any console code page and free of command-line or env length limits.
+    child.stdin.on("error", () => {
+      // A closed stdin (host exited early) surfaces through "close" below.
+    });
+    child.stdin.end(Buffer.from(source, "utf8").toString("base64"));
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
     let settled = false;
@@ -133,25 +135,37 @@ function runAdapter(host: string, timeoutMs: number, source: string): Promise<Ad
     child.on("close", (code, signal) =>
       finish(() => {
         const text = Buffer.concat(stdout).toString("utf8").trim();
-        if (text === "") {
-          const detail = Buffer.concat(stderr).toString("utf8").trim();
+        const detail = Buffer.concat(stderr).toString("utf8").trim();
+        let payload: AdapterPayload | undefined;
+        if (text !== "") {
+          try {
+            payload = JSON.parse(text) as AdapterPayload;
+          } catch {
+            payload = undefined;
+          }
+        }
+        // A non-zero exit is a host failure unless it is the adapter's own
+        // structured error report, whose message the caller layer surfaces.
+        const adapterError = code === 1 && isRecord(payload) && payload.kind === "adapter-error";
+        if (code !== 0 && !adapterError) {
           reject(
             new PowershellParseError(
               "host-failure",
-              `host "${host}" produced no result (exit ${code ?? "null"}${signal ? `, signal ${signal}` : ""})${detail ? `: ${detail.slice(0, 500)}` : ""}`,
+              `host "${host}" exited with ${signal ? `signal ${signal}` : `code ${code ?? "null"}`}${detail ? `: ${detail.slice(0, 500)}` : ""}`,
             ),
           );
           return;
         }
-        try {
-          resolve(JSON.parse(text) as AdapterPayload);
-        } catch (cause) {
+        if (payload === undefined) {
           reject(
-            new PowershellParseError("host-failure", `host "${host}" produced a malformed result`, {
-              cause,
-            }),
+            new PowershellParseError(
+              "host-failure",
+              `host "${host}" produced ${text === "" ? "no result" : "a malformed result"}${detail ? `: ${detail.slice(0, 500)}` : ""}`,
+            ),
           );
+          return;
         }
+        resolve(payload);
       }),
     );
   });
@@ -196,9 +210,15 @@ export async function parsePowershell(
   if (payload.kind === "incomplete" || payload.kind === "invalid") {
     return { kind: payload.kind, diagnostics: normalizeDiagnostics(payload.diagnostics) };
   }
-  // `script` and any unexpected kind keep the explicit-shell-request reading;
-  // the caller must accept PowerShell semantics before launching anything.
-  return { kind: "script", language: "powershell", source };
+  if (payload.kind === "script") {
+    return { kind: "script", language: "powershell", source };
+  }
+  // An unexpected kind means the host no longer speaks the adapter contract;
+  // that is a host failure, never a silent `script` downgrade.
+  throw new PowershellParseError(
+    "host-failure",
+    `host "${host}" returned an unknown result kind: ${JSON.stringify(payload.kind)}`,
+  );
 }
 
 /** Probe whether a usable PowerShell host exists, without parsing anything. */

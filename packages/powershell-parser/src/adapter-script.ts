@@ -9,9 +9,9 @@
 
 /**
  * The script is static package code delivered via `-EncodedCommand`; user
- * text travels separately as a base64 UTF-8 environment variable
- * (UNIPTY_PARSER_SOURCE_B64), so no caller text is ever interpolated into a
- * command line and no Windows stdin code-page ambiguity applies.
+ * text travels separately as base64-encoded UTF-8 on stdin, so no caller
+ * text is ever interpolated into a command line and no Windows stdin
+ * code-page ambiguity applies (the base64 payload is pure ASCII).
  *
  * Classification rules mirror the package design: errors map by their
  * IncompleteInput flag; otherwise `argv` requires exactly one statement that
@@ -23,8 +23,9 @@
 export const ADAPTER_SCRIPT = String.raw`
 $ErrorActionPreference = 'Stop'
 try {
+  $b64 = [System.Console]::In.ReadToEnd().Trim()
   $raw = [System.Text.Encoding]::UTF8.GetString(
-    [System.Convert]::FromBase64String($env:UNIPTY_PARSER_SOURCE_B64))
+    [System.Convert]::FromBase64String($b64))
   $tokens = $null
   $parseErrors = $null
   $ast = [System.Management.Automation.Language.Parser]::ParseInput(

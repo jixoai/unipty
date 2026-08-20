@@ -7,8 +7,8 @@ UniPty 官方 PowerShell 解析适配器：把 PowerShell 命令**文本**分类
 也绝不回退成“像 Bash 一样解析”。
 
 适配器运行在显式选择的 PowerShell 宿主里（默认 `pwsh`）。静态适配脚本经
-`-EncodedCommand` 传入；你的文本以 base64 UTF-8 环境变量单独传输，绝不拼接
-进命令行（也规避了 Windows stdin 代码页歧义——实际输入上限约 31 KB）。
+`-EncodedCommand` 传入；你的文本以 base64 UTF-8 编码**经 stdin** 单独传输，
+绝不拼接进命令行，也规避了 Windows 控制台代码页歧义。
 
 ## 用法
 
@@ -42,7 +42,8 @@ await parsePowershell("x", { host: "pwsh-preview" }); // 显式选择宿主
 
 - 缺宿主 → 以 `PowershellParseError`、code `capability-unavailable` 拒绝
   （绝不产生 Bash 解释的结果）。
-- 宿主启动但失败 → `host-failure`；超时（默认 15 秒，`timeoutMs` 可配）→
+- 宿主启动但非零退出、返回未知结果类型或输出畸形内容 → `host-failure`
+  （绝不静默降级为 `script`）；超时（默认 15 秒，`timeoutMs` 可配）→
   `host-timeout`。
 - 默认目标为 PowerShell 7+（`pwsh`）；可用 `options.host` 指定其它可执行
   文件（例如 Windows PowerShell 5.1 的 `powershell`，它同样拥有

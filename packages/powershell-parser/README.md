@@ -10,9 +10,9 @@ parsing.
 
 The adapter runs inside an explicitly selected PowerShell host (`pwsh` by
 default). The static adapter script travels as an `-EncodedCommand`; your
-text travels separately as a base64 UTF-8 environment variable, so no caller
-text is ever interpolated into a command line (and no Windows stdin code-page
-ambiguity applies — practical input limit ≈ 31 KB).
+text travels separately as base64-encoded UTF-8 **on stdin**, so no caller
+text is ever interpolated into a command line and no Windows console
+code-page ambiguity applies.
 
 ## Usage
 
@@ -47,8 +47,10 @@ await parsePowershell("x", { host: "pwsh-preview" }); // explicit host choice
 
 - Missing host → rejects with `PowershellParseError` code
   `capability-unavailable` (never a Bash-interpreted result).
-- Host starts but fails → `host-failure`; exceeded budget (default 15 s,
-  configurable via `timeoutMs`) → `host-timeout`.
+- Host starts but exits non-zero, returns an unknown result kind, or emits
+  malformed output → `host-failure` (never a silent `script` downgrade);
+  exceeded budget (default 15 s, configurable via `timeoutMs`) →
+  `host-timeout`.
 - `Powershell 7+` (`pwsh`) is the default target; pass `options.host` for
   another executable (e.g. `powershell` for Windows PowerShell 5.1, which
   also has `Parser.ParseInput`).
