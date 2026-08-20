@@ -90,7 +90,10 @@ partial acceptance), which makes this queue the only backpressure boundary.
 - **Output stream completion** follows the PTY transport only (clean EOF
   completes; a transport read failure errors the stream). It never
   synthesizes the child exit result, and the exit observation never
-  synthesizes stream completion.
+  synthesizes stream completion. The Terminal `exit` callback reports
+  transport teardown — not child completion — so on child exit the adapter
+  synthesizes the master EOF the substrate fails to deliver and the
+  independent exit observation comes from `Subprocess.exited`.
 - The PTY slave starts in canonical mode with kernel echo; child programs
   that need raw input must set it themselves.
 

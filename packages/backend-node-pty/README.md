@@ -65,15 +65,19 @@ createNodePtyBackend({
 | `encoding: "utf8"` + `writeDecode` | `{ input: "both", output: "text" }`  | `{ kind: "text", text }`                                             | text and bytes; bytes flow through one stateful adapter-owned decoder |
 
 `writeDecode: true` installs a non-fatal UTF-8 `TextDecoder`; passing your own
-`TextDecoder` respects its fatal/BOM policy. A fatal decode failure rejects
-the whole value with `invalid-argument` and the original `TypeError` as
-`cause`. `writeDecode` with `encoding: "buffer"` is rejected — byte-native
-input already accepts bytes.
+`TextDecoder` copies its encoding/fatal/BOM configuration into a **per-PTY**
+stateful decoder — decoder state is never shared across PTYs. A fatal decode
+failure rejects the whole value with `invalid-argument` and the original
+`TypeError` as `cause`. `writeDecode` with `encoding: "buffer"` is rejected —
+byte-native input already accepts bytes.
 
-Write readiness: substrate writes are accepted synchronously into its own
-file-descriptor write queue (with internal `EAGAIN` retry), so `write()`
-always returns `true`, `drain()` always resolves, and this Endpoint never
-surfaces saturation.
+Write readiness: each Endpoint owns a bounded admission queue (default 1 MiB,
+soft resume mark at three quarters; tune with `writeQueueBytes`). Values are
+handed to the substrate whole, so `write()` returns `false` past the soft mark
+(pause advice; `drain()` resolves below it) and rejects a whole value with
+`backpressure` at the hard bound — never partial acceptance. `drain()` is
+readiness recovery, not a physical flush: the substrate's own fd write queue
+has no completion signal.
 
 ## Substrate behavior this adapter maps (and documents)
 
@@ -99,6 +103,12 @@ Verified against the installed `@lydell/node-pty` 1.2.0-beta.15 sources:
   failures surface as typed synchronous spawn errors (`invalid-argument` /
   `unsupported` with the original error as `cause`).
 - **Geometry and resize** reach the child as real tty winsize updates.
+- **Output backpressure propagates to the kernel.** The master socket is
+  paused whenever the Core-owned source falls behind and resumed on pull, so
+  a stalled consumer cannot grow an unbounded adapter queue.
+- **Transport EOF and read errors are distinct.** A master-socket read
+  failure errors the output source (`unsupported` with the original error as
+  `cause`); only a clean close completes it normally.
 
 ## Deployment
 
