@@ -75,7 +75,7 @@
   }
   .jx-toc .jx-toc-desktop li::before {
     /* square node on level-1 only; level-2 drops it (Owner) */
-    content: '';
+    content: "";
     position: absolute;
     left: -21px;
     top: 50%;
@@ -158,8 +158,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 2px solid
-    color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
+  border-left: 2px solid color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
 }
 .jx-toc .jx-viewport a .jx-cursor {
   color: var(--primary);

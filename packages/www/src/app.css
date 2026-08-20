@@ -11,8 +11,8 @@
  *   - the Tailwind token→utility mappings the registry sheet leaves open;
  *   - site surfaces: data tables, state chips, evidence, readonly code.
  * ---------------------------------------------------------------------- */
-@import 'tailwindcss';
-@import './lib/jixoai.css';
+@import "tailwindcss";
+@import "./lib/jixoai.css";
 @plugin '@tailwindcss/typography';
 
 /* Site token supplements — everything here has no registry equivalent yet.

@@ -9,8 +9,8 @@
  *   bevel upgrade where supported; the terminal bar is always dark.
  */
 
-@import '@fontsource-variable/jetbrains-mono';
-@import '@fontsource/share-tech-mono';
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource/share-tech-mono";
 
 :root {
   --brand-hue: 165; /* default: 0 (jixoai red). per-project: unipty=165 幽绿, openspecui=27 */
@@ -39,10 +39,11 @@
   --input: oklch(0 0 0);
   --ring: var(--primary);
 
-  --font-sans: 'JetBrains Mono Variable', 'JetBrains Mono', SFMono-Regular, Menlo,
-    Consolas, 'Liberation Mono', monospace;
+  --font-sans:
+    "JetBrains Mono Variable", "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
   --font-mono: var(--font-sans);
-  --font-nav: 'Share Tech Mono', 'JetBrains Mono Variable', monospace;
+  --font-nav: "Share Tech Mono", "JetBrains Mono Variable", monospace;
 
   --radius: 0px;
   @supports (corner-shape: bevel) {
@@ -139,18 +140,18 @@ html.js [data-reveal].is-revealed {
     opacity 260ms ease-out var(--reveal-delay, 0ms),
     transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1) var(--reveal-delay, 0ms);
 }
-html.js [data-reveal='rule'] {
+html.js [data-reveal="rule"] {
   opacity: 1;
   transform: scaleX(0);
   transform-origin: left center;
 }
-html.js [data-reveal='rule'].is-revealed {
+html.js [data-reveal="rule"].is-revealed {
   transform: scaleX(1);
   transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1) var(--reveal-delay, 0ms);
 }
 @media (prefers-reduced-motion: reduce) {
   html.js [data-reveal],
-  html.js [data-reveal='rule'] {
+  html.js [data-reveal="rule"] {
     opacity: 1;
     transform: none;
     transition: none;

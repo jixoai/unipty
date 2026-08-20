@@ -42,10 +42,10 @@ export function createTocEngine(
   options: TocLineOptions = {},
 ): () => void {
   const lineOffset = options.lineOffset ?? 1;
-  const regions = Array.from(document.querySelectorAll<HTMLElement>('[data-region]'));
-  const families = Array.from(document.querySelectorAll<HTMLElement>('[data-family]'));
+  const regions = Array.from(document.querySelectorAll<HTMLElement>("[data-region]"));
+  const families = Array.from(document.querySelectorAll<HTMLElement>("[data-family]"));
   let raf = 0;
-  let lastKey = '';
+  let lastKey = "";
 
   const iomWeight = (rect: DOMRect, vw: number, vh: number): number => {
     const interW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
@@ -87,8 +87,11 @@ export function createTocEngine(
 
     const key =
       pick +
-      '|' +
-      [...weights.entries()].map(([k, v]) => k + v.toFixed(2)).sort().join(',');
+      "|" +
+      [...weights.entries()]
+        .map(([k, v]) => k + v.toFixed(2))
+        .sort()
+        .join(",");
     if (key !== lastKey) {
       lastKey = key;
       onUpdate({ weights, pick, familyWeights });
@@ -98,12 +101,12 @@ export function createTocEngine(
   const schedule = (): void => {
     if (!raf) raf = requestAnimationFrame(compute);
   };
-  addEventListener('scroll', schedule, { passive: true });
-  addEventListener('resize', schedule, { passive: true });
+  addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule, { passive: true });
   compute();
   return () => {
-    removeEventListener('scroll', schedule);
-    removeEventListener('resize', schedule);
+    removeEventListener("scroll", schedule);
+    removeEventListener("resize", schedule);
     if (raf) cancelAnimationFrame(raf);
   };
 }
