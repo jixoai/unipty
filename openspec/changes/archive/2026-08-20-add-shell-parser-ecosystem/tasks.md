@@ -54,7 +54,7 @@ check:arch` passes with the new packages)
 
 ## 5. Release prerequisites (Owner-side)
 
-- [ ] 5.1 Owner configures npm trusted publishers for
+- [x] 5.1 Owner configures npm trusted publishers for
       `@unipty/shell-parser` and `@unipty/powershell-parser` bound to
       release.yml before the first tag carrying them (v0.2.0). (Owner-only;
       verify: publish job authenticates without tokens)
