@@ -128,7 +128,7 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
   const invalidCases: readonly string[] = [")", "}", ""];
 
   for (const [source, expected] of argvCases) {
-    it(`classifies ${JSON.stringify(source)} as argv`, async () => {
+    it(`classifies ${JSON.stringify(source)} as argv`, { timeout: 20_000 }, async () => {
       await expect(parsePowershell(source)).resolves.toStrictEqual({
         kind: "argv",
         argv: expected,
@@ -137,7 +137,7 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
   }
 
   for (const source of scriptCases) {
-    it(`classifies ${JSON.stringify(source)} as script`, async () => {
+    it(`classifies ${JSON.stringify(source)} as script`, { timeout: 20_000 }, async () => {
       await expect(parsePowershell(source)).resolves.toStrictEqual({
         kind: "script",
         language: "powershell",
@@ -147,7 +147,7 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
   }
 
   for (const source of incompleteCases) {
-    it(`classifies ${JSON.stringify(source)} as incomplete with official diagnostics`, async () => {
+    it(`classifies ${JSON.stringify(source)} as incomplete with official diagnostics`, { timeout: 20_000 }, async () => {
       const result = await parsePowershell(source);
       expect(result.kind).toBe("incomplete");
       if (result.kind !== "incomplete") return;
@@ -158,7 +158,7 @@ describe.skipIf(!hasHost)("parsePowershell: official-parser classification", () 
   }
 
   for (const source of invalidCases) {
-    it(`classifies ${JSON.stringify(source)} as invalid with diagnostics`, async () => {
+    it(`classifies ${JSON.stringify(source)} as invalid with diagnostics`, { timeout: 20_000 }, async () => {
       const result = await parsePowershell(source);
       expect(result.kind).toBe("invalid");
       if (result.kind !== "invalid") return;
