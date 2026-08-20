@@ -25,9 +25,9 @@ for await (const text of pty.stream({ encoding: "utf8" })) {
   process.stdout.write(text);
 }
 pty.write("echo hello\n"); // 布尔写入就绪
-pty.resize(80, 24);        // 仅字符单元格
-pty.terminate();           // 终止请求，绝不级联 close
-pty.close();               // 传输关闭，绝不杀死子进程
+pty.resize(80, 24); // 仅字符单元格
+pty.terminate(); // 终止请求，绝不级联 close
+pty.close(); // 传输关闭，绝不杀死子进程
 const { exitCode, signal } = await pty.exited; // 独立观察
 ```
 
@@ -43,24 +43,25 @@ const { exitCode, signal } = await pty.exited; // 独立观察
 
 ## 官方第一阶段路由
 
-| 包 | 运行时 | 底层实现（如实声明） |
-| --- | --- | --- |
-| [`@unipty/backend-node-pty`](packages/backend-node-pty) | Node | 第三方 `node-pty`（经 `@lydell/node-pty` 预构建发行版） |
-| [`@unipty/backend-bun`](packages/backend-bun) | Bun | 运行时原生 `Bun.Terminal`（POSIX ≥ 1.3.13，Windows ≥ 1.3.14） |
-| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno | 第三方 `@sigma/pty-ffi`（Rust `portable-pty`），整体内嵌为自包含 npm 制品 |
+| 包                                                                            | 运行时 | 底层实现（如实声明）                                                      |
+| ----------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node   | 第三方 `node-pty`（经 `@lydell/node-pty` 预构建发行版）                   |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun    | 运行时原生 `Bun.Terminal`（POSIX ≥ 1.3.13，Windows ≥ 1.3.14）             |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno   | 第三方 `@sigma/pty-ffi`（Rust `portable-pty`），整体内嵌为自包含 npm 制品 |
 
 Node 路由适配的是第三方库——不是 Node 运行时原生 API，文档绝不如此宣称。Deno 只是最后一条路由的运行时元数据，不是其实现身份。
 
 ## 包一览
 
-| 包 | 说明 |
-| --- | --- |
-| [`unipty`](packages/unipty) | 公共 Core：`UniPty`、`Pty`、Backend/Endpoint 接缝、公共错误 |
-| [`@unipty/backend`](packages/backend) | 获取便利层：`resolveUniPtyBackend`、`inspectUniPtyBackend`、`autoResolveUniPtyBackend`、manifest 构造器 |
-| [`@unipty/helper-backend`](packages/helper-backend) | 构建期 manifest 生成器（`unipty-helper-backend manifest`） |
-| `@unipty/backend-*` | 上述三条官方 Backend |
-| [`@unipty/conformance`](packages/conformance) | 私有已安装包一致性测试装置、证据写出器、发布目录聚合器 |
-| [`@unipty/www`](packages/www) | 私有静态文档站点 → [unipty.jixoai.com](https://unipty.jixoai.com) |
+| 包                                                  | 说明                                                                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| [`unipty`](packages/unipty)                         | 公共 Core：`UniPty`、`Pty`、Backend/Endpoint 接缝、公共错误                                             |
+| [`@unipty/backend`](packages/backend)               | 获取便利层：`resolveUniPtyBackend`、`inspectUniPtyBackend`、`autoResolveUniPtyBackend`、manifest 构造器 |
+| [`@unipty/helper-backend`](packages/helper-backend) | 构建期 manifest 生成器（`unipty-helper-backend manifest`）                                              |
+| `@unipty/backend-*`                                 | 上述三条官方 Backend                                                                                    |
+| [`@unipty/conformance`](packages/conformance)       | 私有已安装包一致性测试装置、证据写出器、发布目录聚合器                                                  |
+| [`@unipty/www`](packages/www)                       | 私有静态文档站点 → [unipty.jixoai.com](https://unipty.jixoai.com)                                       |
+| [`@unipty/example`](packages/example)               | 本地演示：shadcn/ui 多标签 xterm 终端，经 WebSocket 一 backend 一运行时                                 |
 
 ## 获取 Backend
 
@@ -78,7 +79,7 @@ import { autoResolveUniPtyBackend } from "@unipty/backend";
 
 const backend = await autoResolveUniPtyBackend({
   candidates: ["@unipty/backend-node-pty"], // 有序偏好
-  from: import.meta.url,                     // 调用方为根的基址
+  from: import.meta.url, // 调用方为根的基址
 });
 ```
 
@@ -88,15 +89,15 @@ const backend = await autoResolveUniPtyBackend({
 
 ## 契约速览
 
-| 面 | 语义 |
-| --- | --- |
-| `spawn(argv, options)` | 同步；argv 是结构化数据；几何按维度独立解析（显式 → `COLUMNS`/`LINES` → 宿主 TTY → 80×24） |
-| `stream({ encoding })` | 每 PTY 一个活跃视图（否则 `active-stream`）；取消仅脱离该视图 |
-| `write(data)` / `drain()` | 布尔就绪；整值接受；类型化饱和 |
-| `resize(cols, rows)` | 有限正整数（字符单元格）；不支持时显式失败 |
-| `close()` / `terminate()` | 幂等、同步、非级联 |
-| `exited` | 可重复 await 的 `{ exitCode, signal }`，独立于流完成与 close |
-| 错误 | 稳定 `error.code`：`unsupported`、`closed`、`backpressure`、`invalid-argument`、`active-stream` |
+| 面                        | 语义                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------- |
+| `spawn(argv, options)`    | 同步；argv 是结构化数据；几何按维度独立解析（显式 → `COLUMNS`/`LINES` → 宿主 TTY → 80×24）      |
+| `stream({ encoding })`    | 每 PTY 一个活跃视图（否则 `active-stream`）；取消仅脱离该视图                                   |
+| `write(data)` / `drain()` | 布尔就绪；整值接受；类型化饱和                                                                  |
+| `resize(cols, rows)`      | 有限正整数（字符单元格）；不支持时显式失败                                                      |
+| `close()` / `terminate()` | 幂等、同步、非级联                                                                              |
+| `exited`                  | 可重复 await 的 `{ exitCode, signal }`，独立于流完成与 close                                    |
+| 错误                      | 稳定 `error.code`：`unsupported`、`closed`、`backpressure`、`invalid-argument`、`active-stream` |
 
 ## 一致性与兼容性证据
 

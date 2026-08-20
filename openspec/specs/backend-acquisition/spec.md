@@ -1,6 +1,7 @@
 # backend-acquisition Specification
 
 ## Purpose
+
 Let applications acquire a compatible ready Backend deterministically while
 preserving a manual import path and separating resolution from native effects.
 

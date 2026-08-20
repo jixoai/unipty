@@ -1,6 +1,7 @@
 # runtime-neutral-pty Specification
 
 ## Purpose
+
 Provide one observable PTY contract that application code can use across Node,
 Bun, and Deno without accepting hidden shell execution or runtime substitution.
 

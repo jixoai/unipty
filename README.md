@@ -30,9 +30,9 @@ for await (const text of pty.stream({ encoding: "utf8" })) {
   process.stdout.write(text);
 }
 pty.write("echo hello\n"); // boolean Write Readiness
-pty.resize(80, 24);        // character cells only
-pty.terminate();           // request, never cascades into close
-pty.close();               // transport close, never kills the child
+pty.resize(80, 24); // character cells only
+pty.terminate(); // request, never cascades into close
+pty.close(); // transport close, never kills the child
 const { exitCode, signal } = await pty.exited; // independent observation
 ```
 
@@ -62,11 +62,11 @@ const { exitCode, signal } = await pty.exited; // independent observation
 
 ## Official first-phase routes
 
-| Package | Runtime | Substrate (stated honestly) |
-| --- | --- | --- |
-| [`@unipty/backend-node-pty`](packages/backend-node-pty) | Node | third-party `node-pty` via the `@lydell/node-pty` prebuilt distribution |
-| [`@unipty/backend-bun`](packages/backend-bun) | Bun | runtime-native `Bun.Terminal` (≥ 1.3.13 POSIX, ≥ 1.3.14 Windows) |
-| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno | third-party `@sigma/pty-ffi` over Rust `portable-pty`, vendored into a self-contained npm artifact |
+| Package                                                                       | Runtime | Substrate (stated honestly)                                                                        |
+| ----------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node    | third-party `node-pty` via the `@lydell/node-pty` prebuilt distribution                            |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun     | runtime-native `Bun.Terminal` (≥ 1.3.13 POSIX, ≥ 1.3.14 Windows)                                   |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno    | third-party `@sigma/pty-ffi` over Rust `portable-pty`, vendored into a self-contained npm artifact |
 
 The Node route adapts a third-party library — it is not a native Node runtime
 API, and the docs never claim otherwise. Deno is runtime metadata for the
@@ -74,14 +74,15 @@ last route, not its implementation identity.
 
 ## Packages
 
-| Package | What it is |
-| --- | --- |
-| [`unipty`](packages/unipty) | The public Core: `UniPty`, `Pty`, the Backend/Endpoint seam, common errors |
-| [`@unipty/backend`](packages/backend) | Acquisition convenience: `resolveUniPtyBackend`, `inspectUniPtyBackend`, `autoResolveUniPtyBackend`, manifest constructor |
-| [`@unipty/helper-backend`](packages/helper-backend) | Build-time manifest generator (`unipty-helper-backend manifest`) |
-| `@unipty/backend-*` | The three official Backends above |
-| [`@unipty/conformance`](packages/conformance) | Private installed-package conformance harness, evidence writer, release catalog aggregator |
-| [`@unipty/www`](packages/www) | Private static documentation site → [unipty.jixoai.com](https://unipty.jixoai.com) |
+| Package                                             | What it is                                                                                                                |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [`unipty`](packages/unipty)                         | The public Core: `UniPty`, `Pty`, the Backend/Endpoint seam, common errors                                                |
+| [`@unipty/backend`](packages/backend)               | Acquisition convenience: `resolveUniPtyBackend`, `inspectUniPtyBackend`, `autoResolveUniPtyBackend`, manifest constructor |
+| [`@unipty/helper-backend`](packages/helper-backend) | Build-time manifest generator (`unipty-helper-backend manifest`)                                                          |
+| `@unipty/backend-*`                                 | The three official Backends above                                                                                         |
+| [`@unipty/conformance`](packages/conformance)       | Private installed-package conformance harness, evidence writer, release catalog aggregator                                |
+| [`@unipty/www`](packages/www)                       | Private static documentation site → [unipty.jixoai.com](https://unipty.jixoai.com)                                        |
+| [`@unipty/example`](packages/example)               | Local demo: shadcn/ui tabbed xterm terminals over WebSocket, one runtime per backend                                      |
 
 ## Acquiring a Backend
 
@@ -102,7 +103,7 @@ import { autoResolveUniPtyBackend } from "@unipty/backend";
 
 const backend = await autoResolveUniPtyBackend({
   candidates: ["@unipty/backend-node-pty"], // ordered preference
-  from: import.meta.url,                     // caller-rooted base
+  from: import.meta.url, // caller-rooted base
 });
 ```
 
@@ -114,15 +115,15 @@ contract.
 
 ## Contract at a glance
 
-| Surface | Semantics |
-| --- | --- |
-| `spawn(argv, options)` | synchronous; argv is structured data; geometry resolves per dimension (explicit → `COLUMNS`/`LINES` → host TTY → 80×24) |
-| `stream({ encoding })` | one active view per PTY (`active-stream` otherwise); cancellation detaches the view only |
-| `write(data)` / `drain()` | boolean readiness; whole-value acceptance; typed saturation |
-| `resize(cols, rows)` | finite positive integer character cells; unsupported is explicit |
-| `close()` / `terminate()` | idempotent, synchronous, non-cascading |
-| `exited` | repeatably awaitable `{ exitCode, signal }`, independent of stream completion and close |
-| errors | stable `error.code`: `unsupported`, `closed`, `backpressure`, `invalid-argument`, `active-stream` |
+| Surface                   | Semantics                                                                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `spawn(argv, options)`    | synchronous; argv is structured data; geometry resolves per dimension (explicit → `COLUMNS`/`LINES` → host TTY → 80×24) |
+| `stream({ encoding })`    | one active view per PTY (`active-stream` otherwise); cancellation detaches the view only                                |
+| `write(data)` / `drain()` | boolean readiness; whole-value acceptance; typed saturation                                                             |
+| `resize(cols, rows)`      | finite positive integer character cells; unsupported is explicit                                                        |
+| `close()` / `terminate()` | idempotent, synchronous, non-cascading                                                                                  |
+| `exited`                  | repeatably awaitable `{ exitCode, signal }`, independent of stream completion and close                                 |
+| errors                    | stable `error.code`: `unsupported`, `closed`, `backpressure`, `invalid-argument`, `active-stream`                       |
 
 ## Conformance & compatibility evidence
 

@@ -39,9 +39,9 @@ const reader = pty.stream({ encoding: "utf8" }).getReader();
 const ready = pty.write("ls -la\n");
 if (!ready) await pty.drain(); // pause advice, never a retry instruction
 
-pty.resize(80, 24);   // finite positive integer character cells
-pty.terminate();      // synchronous request; does NOT close the transport
-pty.close();          // publishes `closed`; does NOT terminate the child
+pty.resize(80, 24); // finite positive integer character cells
+pty.terminate(); // synchronous request; does NOT close the transport
+pty.close(); // publishes `closed`; does NOT terminate the child
 
 const { exitCode, signal } = await pty.exited; // independent of streams/close
 
@@ -50,15 +50,15 @@ await unipty.dispose(); // blocks new spawns, waits for PTYs, releases Backend o
 
 ## Public surface
 
-| Export | Role |
-| --- | --- |
-| `UniPty<TBackend>` | Configured Core instance; `backend`, synchronous `spawn()`, graceful `dispose()` |
-| `Pty` | `stream`, `write`, `drain`, `resize`, `close`, `terminate`, `exited`, `closed`, `capability` |
-| `UniPtyError` / `UniPtyErrorCode` | Stable failure discriminants: `unsupported`, `closed`, `backpressure`, `invalid-argument`, `active-stream` |
-| `ReadyPtyBackend`, `BackendEndpoint`, `StructuredLaunch` | The Backend-author seam (below) |
-| `NativeChunk`, `NativeInput`, `NativeRepresentation`, `BackendExitResult` | Tagged native data plane |
-| `CapabilityToken`, `defineCapabilityToken` | Opaque, identity-matched extension tokens |
-| `UNIPTY_CORE_PROTOCOL_MAJOR` | Core protocol identity Backends declare against |
+| Export                                                                    | Role                                                                                                       |
+| ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `UniPty<TBackend>`                                                        | Configured Core instance; `backend`, synchronous `spawn()`, graceful `dispose()`                           |
+| `Pty`                                                                     | `stream`, `write`, `drain`, `resize`, `close`, `terminate`, `exited`, `closed`, `capability`               |
+| `UniPtyError` / `UniPtyErrorCode`                                         | Stable failure discriminants: `unsupported`, `closed`, `backpressure`, `invalid-argument`, `active-stream` |
+| `ReadyPtyBackend`, `BackendEndpoint`, `StructuredLaunch`                  | The Backend-author seam (below)                                                                            |
+| `NativeChunk`, `NativeInput`, `NativeRepresentation`, `BackendExitResult` | Tagged native data plane                                                                                   |
+| `CapabilityToken`, `defineCapabilityToken`                                | Opaque, identity-matched extension tokens                                                                  |
+| `UNIPTY_CORE_PROTOCOL_MAJOR`                                              | Core protocol identity Backends declare against                                                            |
 
 ### Semantics worth knowing
 
@@ -81,7 +81,9 @@ Implement the ready-Backend seam and hand the ready object to Core:
 ```ts
 import type { ReadyPtyBackend, BackendEndpoint, StructuredLaunch } from "unipty";
 
-function createMyBackend(): Promise<MyBackend> { /* one-time readiness */ }
+function createMyBackend(): Promise<MyBackend> {
+  /* one-time readiness */
+}
 
 class MyBackend implements ReadyPtyBackend {
   spawn(launch: StructuredLaunch): BackendEndpoint {

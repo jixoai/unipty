@@ -1,6 +1,7 @@
 # pty-conformance-evidence Specification
 
 ## Purpose
+
 Establish a public, repeatable acceptance seam for every Backend and convert only
 complete native passes into exact, release-attached compatibility evidence.
 

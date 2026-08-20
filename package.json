@@ -14,7 +14,8 @@
     "check:arch": "bun scripts/check-architecture.sh.ts",
     "conformance": "pnpm --filter @unipty/conformance run conformance",
     "evidence": "pnpm --filter @unipty/conformance run evidence",
-    "catalog": "pnpm --filter @unipty/conformance run catalog"
+    "catalog": "pnpm --filter @unipty/conformance run catalog",
+    "example": "pnpm --filter @unipty/example run example"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

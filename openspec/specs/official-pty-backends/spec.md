@@ -1,6 +1,7 @@
 # official-pty-backends Specification
 
 ## Purpose
+
 Deliver the Node, Bun, and Deno PTY routes together as official packages without
 misrepresenting their different substrates, runtime limits, or native assets.
 

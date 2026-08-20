@@ -24,8 +24,8 @@ const report = await resolveUniPtyBackend("@unipty/backend-bun", {
   from: import.meta.url, // caller-owned base; required
 });
 if (report.status === "resolved") {
-  report.packageUrl;     // package entry location
-  report.metadataUrl;    // ./unipty.metadata location (absent → metadata-missing later)
+  report.packageUrl; // package entry location
+  report.metadataUrl; // ./unipty.metadata location (absent → metadata-missing later)
 }
 ```
 
@@ -89,7 +89,10 @@ const manifest = defineUniPtyBackendManifest({
   ],
 });
 
-const backend = await autoResolveUniPtyBackend({ manifest, candidates: ["@unipty/backend-node-pty"] });
+const backend = await autoResolveUniPtyBackend({
+  manifest,
+  candidates: ["@unipty/backend-node-pty"],
+});
 ```
 
 Validation rejects empty sets, duplicates, metadata/package mismatches,
@@ -107,14 +110,17 @@ type UniPtyBackendMetadata = {
   readonly schema: 1;
   readonly package: { readonly name: string; readonly version: string };
   readonly backend: { readonly id: string; readonly factoryExport: string };
-  readonly protocol: { readonly core: readonly number[] };  // e.g. [1]
+  readonly protocol: { readonly core: readonly number[] }; // e.g. [1]
   readonly targets: readonly {
     readonly runtime: "node" | "bun" | "deno";
-    readonly os?: readonly string[]; readonly arch?: readonly string[];
+    readonly os?: readonly string[];
+    readonly arch?: readonly string[];
     readonly libc?: readonly string[];
   }[];
-  readonly provenance?: { readonly kind: "runtime-native" | "third-party" | "external-system";
-                          readonly substrate: string };
+  readonly provenance?: {
+    readonly kind: "runtime-native" | "third-party" | "external-system";
+    readonly substrate: string;
+  };
 };
 ```
 

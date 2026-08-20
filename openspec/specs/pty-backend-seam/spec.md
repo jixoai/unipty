@@ -1,6 +1,7 @@
 # pty-backend-seam Specification
 
 ## Purpose
+
 Define the Backend author interface that absorbs native PTY variation while
 leaving public stream, lifecycle, error, and state semantics owned by Core.
 

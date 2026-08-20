@@ -25,13 +25,13 @@ npx unipty-helper-backend manifest \
   --out src/unipty-backends.ts
 ```
 
-| Rule | Behaviour |
-| --- | --- |
-| `--candidate <pkg>` | repeatable, required, order preserved |
-| `--out <file>` / `--stdout` | exactly one output mode; mutually exclusive |
-| `--force` | required before overwriting an existing `--out` file |
-| `--from <base>` | optional resolution base; defaults to the current directory (CLI only) |
-| diagnostics | standard error only; `--stdout` carries generated source only |
+| Rule                        | Behaviour                                                              |
+| --------------------------- | ---------------------------------------------------------------------- |
+| `--candidate <pkg>`         | repeatable, required, order preserved                                  |
+| `--out <file>` / `--stdout` | exactly one output mode; mutually exclusive                            |
+| `--force`                   | required before overwriting an existing `--out` file                   |
+| `--from <base>`             | optional resolution base; defaults to the current directory (CLI only) |
+| diagnostics                 | standard error only; `--stdout` carries generated source only          |
 
 The CLI never infers candidates from `package.json`, scans `node_modules`,
 installs packages, imports Backend entry modules, or touches native/FFI
@@ -44,7 +44,7 @@ import { generateUniPtyBackendManifestModule } from "@unipty/helper-backend";
 
 const source = await generateUniPtyBackendManifestModule({
   candidates: ["@unipty/backend-node-pty"], // non-empty, ordered
-  from: import.meta.url,                     // required: URL
+  from: import.meta.url, // required: URL
 });
 // `source` is the module text; writing it is the caller's decision.
 ```

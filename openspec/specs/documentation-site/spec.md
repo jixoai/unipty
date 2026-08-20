@@ -1,6 +1,7 @@
 # documentation-site Specification
 
 ## Purpose
+
 Publish static UniPty documentation and exact compatibility evidence without
 creating a browser PTY runtime, a Core dependency, or a second evidence source.
 
