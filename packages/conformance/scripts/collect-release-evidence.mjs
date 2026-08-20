@@ -75,13 +75,20 @@ for (const artifact of wanted) {
   const zip = `/tmp/${artifact.name}.zip`;
   const zipFd = openSync(zip, "w");
   try {
-    gh(["api", artifact.archive_download_url], { stdout: zipFd, maxBuffer: 256 * 1024 * 1024 });
+    // stdio wiring (not a stdout option, which execFileSync ignores): stream
+    // the artifact bytes straight into the file descriptor.
+    gh(["api", artifact.archive_download_url], {
+      stdio: ["ignore", zipFd, "inherit"],
+      maxBuffer: 256 * 1024 * 1024,
+    });
   } finally {
     closeSync(zipFd);
   }
   const dest = `/tmp/${artifact.name}`;
   execFileSync("unzip", ["-o", zip, "-d", dest], { stdio: "ignore" });
-  const evidenceDir = join(dest, "packages/conformance/evidence");
+  // upload-artifact v4 archives the two directories under their least
+  // common ancestor: evidence/ and reports/ at the archive root.
+  const evidenceDir = join(dest, "evidence");
   let files = [];
   try {
     files = readdirSync(evidenceDir).filter((f) => f.endsWith(".json"));
