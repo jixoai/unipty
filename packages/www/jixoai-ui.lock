@@ -29,6 +29,11 @@
       "files": {
         "src/lib/ui/hero-section.svelte": "74a855051d53aaafed226a4a5b72052660fb651d3e5f96befd8229d117320feb"
       }
+    },
+    "card-grid": {
+      "files": {
+        "src/lib/ui/card-grid.svelte": "8d565c865b21e2f12bc20dc683443ca8098bf82871adbac3d6af0c1e413a6eda"
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { reveal } from '$lib/actions/reveal'
+  import CardGrid from '$lib/ui/card-grid.svelte';
   import SectionCard from '$lib/components/section-card.svelte'
   import presentation from '$lib/generated/catalog.json'
   import release from '$lib/generated/release.json'
@@ -95,9 +96,10 @@
   </SectionCard>
 </div>
 
-<div class="mx-auto grid w-full max-w-[90rem] gap-6 px-4 pt-6 sm:px-6 min-[940px]:grid-cols-2 lg:px-8">
+<div class="mx-auto w-full max-w-[90rem] px-4 pt-6 sm:px-6 lg:px-8">
+  <CardGrid>
   <div data-reveal="" use:reveal>
-    <SectionCard eyebrow="States" title="How to read these states">
+    <SectionCard eyebrow="States" title="How to read these states" class="grid grid-rows-subgrid row-span-2">
       <dl class="flex flex-col gap-4">
         {#each states as state (state)}
           <div class="flex flex-col gap-1.5">
@@ -111,7 +113,7 @@
     </SectionCard>
   </div>
   <div data-reveal="" use:reveal={{ delay: 70 }}>
-    <SectionCard eyebrow="Release artifact" title="One immutable input">
+    <SectionCard eyebrow="Release artifact" title="One immutable input" class="grid grid-rows-subgrid row-span-2">
       <dl class="flex flex-col gap-3 text-[13px]">
         <div class="flex flex-wrap gap-x-3 gap-y-1">
           <dt class="text-muted-foreground w-[9.5rem] shrink-0">Release</dt>
@@ -141,6 +143,7 @@
       </dl>
     </SectionCard>
   </div>
+  </CardGrid>
 </div>
 
 <div class="mx-auto flex w-full max-w-[90rem] flex-col gap-6 px-4 pb-4 pt-6 sm:px-6 lg:px-8">

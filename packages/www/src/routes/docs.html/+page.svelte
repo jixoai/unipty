@@ -1,6 +1,7 @@
 <script lang="ts">
   import { reveal } from '$lib/actions/reveal'
   import CodeBlock from '$lib/components/code-block.svelte'
+  import CardGrid from '$lib/ui/card-grid.svelte';
   import SectionCard from '$lib/components/section-card.svelte'
   import ScaffoldFloat from '$lib/ui/scaffold-float.svelte'
   import Toc, { type TocSection } from '$lib/ui/toc.svelte'
@@ -220,18 +221,20 @@ const backend = await autoResolveUniPtyBackend({
         />
       </div>
 
-      <div
-        class="grid gap-6 min-[940px]:grid-cols-3"
-        id="architecture"
-        data-region="architecture"
-      >
-        {#each architecture as card, index (card.title)}
-          <div data-reveal="" use:reveal={{ delay: index * 70, rise: 12 }}>
-            <SectionCard eyebrow={`Layer ${index + 1}`} title={card.title}>
-              <p class="text-muted-foreground text-pretty text-[13px] leading-6">{card.body}</p>
-            </SectionCard>
-          </div>
-        {/each}
+      <div id="architecture" data-region="architecture">
+        <CardGrid class="mt-6">
+          {#each architecture as card, index (card.title)}
+            <div data-reveal="" use:reveal={{ delay: index * 70, rise: 12 }}>
+              <SectionCard
+                eyebrow={`Layer ${index + 1}`}
+                title={card.title}
+                class="grid grid-rows-subgrid row-span-2"
+              >
+                <p class="text-muted-foreground text-pretty text-[13px] leading-6">{card.body}</p>
+              </SectionCard>
+            </div>
+          {/each}
+        </CardGrid>
       </div>
     </div>
 
