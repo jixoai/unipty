@@ -16,7 +16,7 @@
 <script lang="ts">
   import { getContext, onMount } from 'svelte';
   import type { Snippet } from 'svelte';
-  import type { ScaffoldFloatApi } from './app-shell.svelte';
+  import type { ScaffoldFloatApi } from './website-scaffold.svelte';
 
   interface Props {
     children: Snippet;

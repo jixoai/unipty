@@ -1,0 +1,34 @@
+{
+  "items": {
+    "scaffold-float": {
+      "files": {
+        "src/lib/ui/scaffold-float.svelte": "e13f35fac91a6920427f247f02f628d02f9dac8c69b9671bca832de7eba93b81"
+      }
+    },
+    "terminal-header": {
+      "files": {
+        "src/lib/ui/terminal-header.svelte": "36715e58c707956cea81e8cb401c8fbbaff69d503aec42bf1a2098017bee44e5"
+      }
+    },
+    "terminal-footer": {
+      "files": {
+        "src/lib/ui/terminal-footer.svelte": "de2ba8888036a29795ae65598414612b57b3a9365d7ff01ab930fa61ee6cc6f9"
+      }
+    },
+    "theme-toggle": {
+      "files": {
+        "src/lib/ui/theme-toggle.svelte": "33c8bc64a909004af0165e8df38e13e371f1d57fc23c5f975e525eedb9418fc8"
+      }
+    },
+    "terminal-card": {
+      "files": {
+        "src/lib/ui/terminal-card.svelte": "dd8fcaec2122fda809f394b4c391148ed083712cb0d9fd419c9298d45c24d009"
+      }
+    },
+    "hero-section": {
+      "files": {
+        "src/lib/ui/hero-section.svelte": "873ad324cd5017658e3867fe00416c319bcdf0a4a91747c5ab2204b1f8fedbf8"
+      }
+    }
+  }
+}
