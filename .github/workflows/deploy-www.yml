@@ -5,13 +5,23 @@ name: Deploy site
 # and remains independently retryable — a retry re-consumes the immutable
 # artifact and never republishes packages. CNAME/DNS for unipty.jixoai.com
 # is Owner-managed external configuration.
+#
+# Smart deploy (2026-08-21): pushes to main auto-deploy using the LATEST
+# published release's catalog (site code changes no longer need a manual
+# dispatch). Release publishes (tag v*) deploy with that exact tag so the
+# catalog and the site ship together. Manual dispatch keeps the explicit
+# release_tag override for pinning or rollbacks.
 
 on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Release tag whose catalog artifact to deploy"
-        required: true
+        description: "Release tag whose catalog artifact to deploy (empty = latest)"
+        required: false
         type: string
 
 permissions:
@@ -29,11 +39,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
+      - name: Resolve the release tag (explicit > event > latest)
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="${{ inputs.release_tag }}"
+          if [ -z "$tag" ] && [ "${{ github.event_name }}" = "release" ]; then
+            tag="${{ github.event.release.tag_name }}"
+          fi
+          if [ -z "$tag" ]; then
+            tag="$(gh release list --repo "${{ github.repository }}" --limit 1 --json tagName --jq '.[0].tagName')"
+            echo "no explicit tag — deploying latest release: $tag"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
       - name: Download the release catalog artifact
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >-
-          gh release download "${{ inputs.release_tag }}"
+          gh release download "${{ steps.release.outputs.tag }}"
           --repo "${{ github.repository }}"
           --pattern "catalog.json" --output catalog-download/catalog.json
       - uses: actions/setup-node@v4
@@ -48,6 +72,7 @@ jobs:
           node packages/www/scripts/build.mjs
       - name: Run the automated static checks
         run: node packages/www/scripts/check-site.mjs catalog-download/catalog.json
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: packages/www/dist
