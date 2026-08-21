@@ -15,9 +15,11 @@
 
   interface Props {
     variant?: Variant;
+    /** full variant only: hide the text labels, show icons alone. */
+    hideLabels?: boolean;
   }
 
-  let { variant = 'compact' }: Props = $props();
+  let { variant = 'compact', hideLabels = false }: Props = $props();
 
   const ORDER: Theme[] = ['light', 'dark', 'system'];
   const LABEL: Record<Theme, string> = { light: 'light', dark: 'dark', system: 'system' };
@@ -75,11 +77,14 @@
         type="button"
         onclick={() => set(theme)}
         aria-pressed={current === theme}
+        aria-label={hideLabels ? LABEL[theme] : undefined}
         class="jx-theme-seg"
         data-active={current === theme || undefined}
       >
         {@render iconFor(theme)}
-        <span>{LABEL[theme]}</span>
+        {#if !hideLabels}
+          <span>{LABEL[theme]}</span>
+        {/if}
       </button>
     {/each}
   </div>

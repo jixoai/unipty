@@ -17,15 +17,11 @@
     copyLabel    aria affordance ("copy" / language-specific)
     terminal     snippet: the right-column demo (terminal-card)
     secondary?   snippet: extra outline CTAs after the copy button
-
-  UniPty divergence (2026-08-20): the two import paths below were corrected
-  for this site's layout — press-button lives at $lib/components/ and the
-  reveal action at $lib/actions/ (registry assumes $lib/ui + $lib/reveal).
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import PressButton from '$lib/components/press-button.svelte';
-  import { reveal } from '$lib/actions/reveal';
+  import PressButton from '$lib/ui/press-button.svelte';
+  import { reveal } from '$lib/reveal';
 
   interface Props {
     eyebrow: string;
