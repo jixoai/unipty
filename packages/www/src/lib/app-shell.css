@@ -85,7 +85,7 @@
 }
 
 /* ── the nav indicator: morphs between pages, slowest layer ── */
-html[data-vt-kind='page-carousel']::view-transition-group(vt-nav-active) {
+html[data-vt-kind="page-carousel"]::view-transition-group(vt-nav-active) {
   z-index: 5;
   animation-duration: 450ms;
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -98,12 +98,12 @@ html[data-vt-kind='page-carousel']::view-transition-group(vt-nav-active) {
   -webkit-backdrop-filter: brightness(2);
   backdrop-filter: brightness(2);
 }
-html[data-vt-kind='page-carousel'][data-vt-nav='light']::view-transition-group(vt-nav-active) {
+html[data-vt-kind="page-carousel"][data-vt-nav="light"]::view-transition-group(vt-nav-active) {
   -webkit-backdrop-filter: brightness(0.85);
   backdrop-filter: brightness(0.85);
 }
-html[data-vt-kind='page-carousel']::view-transition-old(vt-nav-active),
-html[data-vt-kind='page-carousel']::view-transition-new(vt-nav-active) {
+html[data-vt-kind="page-carousel"]::view-transition-old(vt-nav-active),
+html[data-vt-kind="page-carousel"]::view-transition-new(vt-nav-active) {
   width: 100%;
   height: 100%;
   object-fit: fill;
@@ -112,7 +112,7 @@ html[data-vt-kind='page-carousel']::view-transition-new(vt-nav-active) {
 }
 
 /* ── the page panel: asymmetric slide + scale + blur + reveal mask ── */
-html[data-vt-kind='page-carousel']::view-transition-group(page-main) {
+html[data-vt-kind="page-carousel"]::view-transition-group(page-main) {
   z-index: 1;
   isolation: isolate;
   /* The group never tweens size/position (Owner, 2026-08-21): geometry is
@@ -120,8 +120,8 @@ html[data-vt-kind='page-carousel']::view-transition-group(page-main) {
      so there is nothing to interpolate and no vertical morph, ever. */
   animation: none;
 }
-html[data-vt-kind='page-carousel']::view-transition-old(page-main),
-html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+html[data-vt-kind="page-carousel"]::view-transition-old(page-main),
+html[data-vt-kind="page-carousel"]::view-transition-new(page-main) {
   /* Precise old/new geometry (Owner, 2026-08-21): both snapshots render in
      ONE shared box — absolutely positioned at the group's origin, full
      width, viewport height, pixels undistorted, top-aligned (no center
@@ -143,7 +143,7 @@ html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
   mask-size: 400% 100%;
 }
 
-html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition-old(page-main) {
+html[data-vt-kind="page-carousel"][data-vt-direction="forward"]::view-transition-old(page-main) {
   -webkit-mask-image: linear-gradient(
     to left,
     black 0%,
@@ -156,7 +156,7 @@ html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition
     jx-page-old-forward 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards,
     jx-page-mask-forward-out 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition-new(page-main) {
+html[data-vt-kind="page-carousel"][data-vt-direction="forward"]::view-transition-new(page-main) {
   -webkit-mask-image: linear-gradient(
     to left,
     black 0%,
@@ -169,7 +169,7 @@ html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition
     jx-page-new-forward 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
     jx-page-mask-forward-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
-html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transition-old(page-main) {
+html[data-vt-kind="page-carousel"][data-vt-direction="backward"]::view-transition-old(page-main) {
   -webkit-mask-image: linear-gradient(
     to right,
     black 0%,
@@ -182,7 +182,7 @@ html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transitio
     jx-page-old-backward 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards,
     jx-page-mask-backward-out 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transition-new(page-main) {
+html[data-vt-kind="page-carousel"][data-vt-direction="backward"]::view-transition-new(page-main) {
   -webkit-mask-image: linear-gradient(
     to right,
     black 0%,
@@ -280,18 +280,18 @@ html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transitio
 
 /* Reduced motion: plain crossfade, no travel, no blur, no mask. */
 @media (prefers-reduced-motion: reduce) {
-  html[data-vt-kind='page-carousel']::view-transition-old(page-main),
-  html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+  html[data-vt-kind="page-carousel"]::view-transition-old(page-main),
+  html[data-vt-kind="page-carousel"]::view-transition-new(page-main) {
     animation: 120ms ease-out both;
     mask-image: none;
     -webkit-mask-image: none;
   }
-  html[data-vt-kind='page-carousel']::view-transition-old(page-main) {
+  html[data-vt-kind="page-carousel"]::view-transition-old(page-main) {
     to {
       opacity: 0;
     }
   }
-  html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+  html[data-vt-kind="page-carousel"]::view-transition-new(page-main) {
     from {
       opacity: 0;
     }

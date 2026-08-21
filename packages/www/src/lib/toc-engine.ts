@@ -49,14 +49,14 @@ export function createTocEngine(
 ): () => void {
   const lineOffset = options.lineOffset ?? 1;
   const scrollRootEl =
-    typeof options.scrollRoot === 'string'
+    typeof options.scrollRoot === "string"
       ? document.querySelector<HTMLElement>(options.scrollRoot)
       : (options.scrollRoot ?? null);
   const scrollListenerTarget: HTMLElement | Window = scrollRootEl ?? window;
-  const regions = Array.from(document.querySelectorAll<HTMLElement>('[data-region]'));
-  const families = Array.from(document.querySelectorAll<HTMLElement>('[data-family]'));
+  const regions = Array.from(document.querySelectorAll<HTMLElement>("[data-region]"));
+  const families = Array.from(document.querySelectorAll<HTMLElement>("[data-family]"));
   let raf = 0;
-  let lastKey = '';
+  let lastKey = "";
 
   const iomWeight = (rect: DOMRect, vw: number, vh: number): number => {
     const interW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
@@ -71,7 +71,7 @@ export function createTocEngine(
     raf = 0;
     const vw = innerWidth;
     const vh = innerHeight;
-    const line = typeof lineOffset === 'function' ? lineOffset() : lineOffset;
+    const line = typeof lineOffset === "function" ? lineOffset() : lineOffset;
     const weights = new Map<string, number>();
     const familyWeights = new Map<string, number>();
 
@@ -98,8 +98,11 @@ export function createTocEngine(
 
     const key =
       pick +
-      '|' +
-      [...weights.entries()].map(([k, v]) => k + v.toFixed(2)).sort().join(',');
+      "|" +
+      [...weights.entries()]
+        .map(([k, v]) => k + v.toFixed(2))
+        .sort()
+        .join(",");
     if (key !== lastKey) {
       lastKey = key;
       onUpdate({ weights, pick, familyWeights });
@@ -109,12 +112,12 @@ export function createTocEngine(
   const schedule = (): void => {
     if (!raf) raf = requestAnimationFrame(compute);
   };
-  scrollListenerTarget.addEventListener('scroll', schedule, { passive: true });
-  addEventListener('resize', schedule, { passive: true });
+  scrollListenerTarget.addEventListener("scroll", schedule, { passive: true });
+  addEventListener("resize", schedule, { passive: true });
   compute();
   return () => {
-    scrollListenerTarget.removeEventListener('scroll', schedule);
-    removeEventListener('resize', schedule);
+    scrollListenerTarget.removeEventListener("scroll", schedule);
+    removeEventListener("resize", schedule);
     if (raf) cancelAnimationFrame(raf);
   };
 }
