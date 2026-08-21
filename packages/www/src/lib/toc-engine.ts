@@ -33,8 +33,14 @@ export interface TocEngineUpdate {
 
 export interface TocLineOptions {
   /** Distance from the viewport top to the calculation line, in px.
-   *  Desktop default 1; mobile default 76 (sticky bar 44 + 2em). */
-  lineOffset?: number;
+   *  Static number or a live getter (re-evaluated each compute — for
+   *  overlay shells whose header/float geometry is measured, not
+   *  hardcoded). Desktop default 1; mobile default 76. */
+  lineOffset?: number | (() => number);
+  /** Scroll root for overlay-shell layouts where an internal element
+   *  scrolls instead of the document. Accepts an element or a selector
+   *  resolved at engine creation. Defaults to the window/document. */
+  scrollRoot?: string | HTMLElement | null;
 }
 
 export function createTocEngine(
@@ -42,10 +48,15 @@ export function createTocEngine(
   options: TocLineOptions = {},
 ): () => void {
   const lineOffset = options.lineOffset ?? 1;
-  const regions = Array.from(document.querySelectorAll<HTMLElement>("[data-region]"));
-  const families = Array.from(document.querySelectorAll<HTMLElement>("[data-family]"));
+  const scrollRootEl =
+    typeof options.scrollRoot === 'string'
+      ? document.querySelector<HTMLElement>(options.scrollRoot)
+      : (options.scrollRoot ?? null);
+  const scrollListenerTarget: HTMLElement | Window = scrollRootEl ?? window;
+  const regions = Array.from(document.querySelectorAll<HTMLElement>('[data-region]'));
+  const families = Array.from(document.querySelectorAll<HTMLElement>('[data-family]'));
   let raf = 0;
-  let lastKey = "";
+  let lastKey = '';
 
   const iomWeight = (rect: DOMRect, vw: number, vh: number): number => {
     const interW = Math.max(0, Math.min(rect.right, vw) - Math.max(rect.left, 0));
@@ -60,7 +71,7 @@ export function createTocEngine(
     raf = 0;
     const vw = innerWidth;
     const vh = innerHeight;
-    const line = lineOffset;
+    const line = typeof lineOffset === 'function' ? lineOffset() : lineOffset;
     const weights = new Map<string, number>();
     const familyWeights = new Map<string, number>();
 
@@ -87,11 +98,8 @@ export function createTocEngine(
 
     const key =
       pick +
-      "|" +
-      [...weights.entries()]
-        .map(([k, v]) => k + v.toFixed(2))
-        .sort()
-        .join(",");
+      '|' +
+      [...weights.entries()].map(([k, v]) => k + v.toFixed(2)).sort().join(',');
     if (key !== lastKey) {
       lastKey = key;
       onUpdate({ weights, pick, familyWeights });
@@ -101,12 +109,12 @@ export function createTocEngine(
   const schedule = (): void => {
     if (!raf) raf = requestAnimationFrame(compute);
   };
-  addEventListener("scroll", schedule, { passive: true });
-  addEventListener("resize", schedule, { passive: true });
+  scrollListenerTarget.addEventListener('scroll', schedule, { passive: true });
+  addEventListener('resize', schedule, { passive: true });
   compute();
   return () => {
-    removeEventListener("scroll", schedule);
-    removeEventListener("resize", schedule);
+    scrollListenerTarget.removeEventListener('scroll', schedule);
+    removeEventListener('resize', schedule);
     if (raf) cancelAnimationFrame(raf);
   };
 }

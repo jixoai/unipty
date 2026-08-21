@@ -1,0 +1,299 @@
+/**
+ * jixoai page scaffold styles (registry/files/ui/app-shell.css).
+ * Import once per site alongside app-shell.svelte.
+ *
+ * SPA view-transition system (Plan A, 2026-08-21 — openspecui tab-carousel
+ * port): the app routes client-side; every navigation runs through
+ * document.startViewTransition with an intent dataset on <html>
+ * (data-vt-kind="page-carousel", data-vt-direction="forward|backward").
+ *  - the sticky header band is "site-header" and persists untouched;
+ *  - the ACTIVE nav pill is "vt-nav-active" and MORPHS between pages
+ *    (the indicator slides along the header, 450ms — the slowest layer);
+ *  - the main column is "page-main" and slides horizontally with an
+ *    asymmetric travel (incoming 136px, outgoing 112px), scale(0.985),
+ *    blur(4px), and a soft reveal mask — keyframe values ported from
+ *    openspecui's vt-tab-* set;
+ *  - reduced motion degrades to a plain crossfade.
+ */
+
+/* overlay architecture (Owner, 2026-08-21): the shell is a fixed-height
+   viewport; the header overlays the body, the body owns the scrolling and
+   reserves a measured padding-top for the band — no sticky geometry. */
+.jx-shell {
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  overflow: clip;
+}
+.jx-top-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  transition: transform 260ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+/* immersive: the WHOLE top plane (header + float) slides out together */
+.jx-top-layer.jx-top-layer-hidden {
+  transform: translateY(-101%);
+}
+.jx-scaffold-header {
+  position: relative;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jx-top-layer {
+    transition: none;
+  }
+  .jx-shell-body {
+    scroll-behavior: auto;
+  }
+}
+.jx-shell-body {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+}
+
+.jx-skip-link {
+  clip-path: inset(50%);
+  height: 1px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+  width: 1px;
+  z-index: 100;
+}
+.jx-skip-link:focus-visible {
+  clip-path: none;
+  height: auto;
+  width: auto;
+  padding: 0.5rem 0.75rem;
+  background: var(--background);
+  color: var(--foreground);
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
+}
+
+.jx-page-main {
+  view-transition-name: page-main;
+}
+.jx-scaffold-header {
+  view-transition-name: site-header;
+}
+
+/* ── the nav indicator: morphs between pages, slowest layer ── */
+html[data-vt-kind='page-carousel']::view-transition-group(vt-nav-active) {
+  z-index: 5;
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  isolation: isolate;
+  overflow: clip;
+  /* the GROUP is the effect (Owner, 2026-08-21): with the snapshots
+     hidden, the morphing group box itself brightens whatever VT layer is
+     behind it — the persistent header with its pill text — instead of
+     painting an opaque rect over it. High stacking becomes harmless. */
+  -webkit-backdrop-filter: brightness(2);
+  backdrop-filter: brightness(2);
+}
+html[data-vt-kind='page-carousel'][data-vt-nav='light']::view-transition-group(vt-nav-active) {
+  -webkit-backdrop-filter: brightness(0.85);
+  backdrop-filter: brightness(0.85);
+}
+html[data-vt-kind='page-carousel']::view-transition-old(vt-nav-active),
+html[data-vt-kind='page-carousel']::view-transition-new(vt-nav-active) {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  mix-blend-mode: normal;
+  opacity: 0;
+}
+
+/* ── the page panel: asymmetric slide + scale + blur + reveal mask ── */
+html[data-vt-kind='page-carousel']::view-transition-group(page-main) {
+  z-index: 1;
+  isolation: isolate;
+  /* The group never tweens size/position (Owner, 2026-08-21): geometry is
+     fully owned by the old/new rules below — both snapshots share one box,
+     so there is nothing to interpolate and no vertical morph, ever. */
+  animation: none;
+}
+html[data-vt-kind='page-carousel']::view-transition-old(page-main),
+html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+  /* Precise old/new geometry (Owner, 2026-08-21): both snapshots render in
+     ONE shared box — absolutely positioned at the group's origin, full
+     width, viewport height, pixels undistorted, top-aligned (no center
+     cropping, no stretch). Height therefore never animates because both
+     states are already identical; only the slide/blur/mask keyframes run
+     on these elements themselves. */
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100dvh;
+  object-fit: none;
+  object-position: top left;
+  overflow: clip;
+  mix-blend-mode: normal;
+  mask-repeat: no-repeat;
+  mask-mode: alpha;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 400% 100%;
+  mask-size: 400% 100%;
+}
+
+html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition-old(page-main) {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    black 0%,
+    black 25%,
+    transparent 75%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to left, black 0%, black 25%, transparent 75%, transparent 100%);
+  animation:
+    jx-page-old-forward 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    jx-page-mask-forward-out 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+html[data-vt-kind='page-carousel'][data-vt-direction='forward']::view-transition-new(page-main) {
+  -webkit-mask-image: linear-gradient(
+    to left,
+    black 0%,
+    black 25%,
+    transparent 75%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to left, black 0%, black 25%, transparent 75%, transparent 100%);
+  animation:
+    jx-page-new-forward 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    jx-page-mask-forward-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transition-old(page-main) {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 25%,
+    transparent 75%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to right, black 0%, black 25%, transparent 75%, transparent 100%);
+  animation:
+    jx-page-old-backward 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards,
+    jx-page-mask-backward-out 330ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+html[data-vt-kind='page-carousel'][data-vt-direction='backward']::view-transition-new(page-main) {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    black 0%,
+    black 25%,
+    transparent 75%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to right, black 0%, black 25%, transparent 75%, transparent 100%);
+  animation:
+    jx-page-new-backward 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards,
+    jx-page-mask-backward-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ── keyframes: asymmetric travel (in 136px, out 112px), scale, blur ── */
+@keyframes jx-page-new-forward {
+  from {
+    filter: blur(4px);
+    transform: translateX(136px) scale(0.985);
+  }
+  to {
+    filter: blur(0);
+    transform: translateX(0);
+  }
+}
+@keyframes jx-page-old-forward {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    filter: blur(4px);
+    transform: translateX(-112px) scale(0.985);
+  }
+}
+@keyframes jx-page-new-backward {
+  from {
+    filter: blur(4px);
+    transform: translateX(-136px) scale(0.985);
+  }
+  to {
+    filter: blur(0);
+    transform: translateX(0);
+  }
+}
+@keyframes jx-page-old-backward {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    filter: blur(4px);
+    transform: translateX(112px) scale(0.985);
+  }
+}
+
+/* ── mask travel: the soft reveal edge ── */
+@keyframes jx-page-mask-forward-in {
+  from {
+    -webkit-mask-position: 0%;
+    mask-position: 0%;
+  }
+  to {
+    -webkit-mask-position: 100%;
+    mask-position: 100%;
+  }
+}
+@keyframes jx-page-mask-forward-out {
+  from {
+    -webkit-mask-position: 100%;
+    mask-position: 100%;
+  }
+  to {
+    -webkit-mask-position: 0%;
+    mask-position: 0%;
+  }
+}
+@keyframes jx-page-mask-backward-in {
+  from {
+    -webkit-mask-position: 100%;
+    mask-position: 100%;
+  }
+  to {
+    -webkit-mask-position: 0%;
+    mask-position: 0%;
+  }
+}
+@keyframes jx-page-mask-backward-out {
+  from {
+    -webkit-mask-position: 0%;
+    mask-position: 0%;
+  }
+  to {
+    -webkit-mask-position: 100%;
+    mask-position: 100%;
+  }
+}
+
+/* Reduced motion: plain crossfade, no travel, no blur, no mask. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-vt-kind='page-carousel']::view-transition-old(page-main),
+  html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+    animation: 120ms ease-out both;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  html[data-vt-kind='page-carousel']::view-transition-old(page-main) {
+    to {
+      opacity: 0;
+    }
+  }
+  html[data-vt-kind='page-carousel']::view-transition-new(page-main) {
+    from {
+      opacity: 0;
+    }
+  }
+}

@@ -78,12 +78,40 @@ CNAME gate, static checks) are unchanged.
 - **Fonts**: `@fontsource-variable/jetbrains-mono` +
   `@fontsource/share-tech-mono`, bundled locally — zero font network
   requests.
-- **Icons**: `lucide-svelte` deep imports (theme switcher, external-link
-  arrows).
+- **Icons**: no icon library — the registry `theme-toggle` (and the whole
+  registry chrome set) carries inline SVG. The earlier `lucide-svelte`
+  dependency was removed with the local theme switcher it served
+  (2026-08-21).
 - **Motion**: the skill's two-pattern law — `reveal` action +
   IntersectionObserver entrance (rule-draw variant included) and press
   physics on interactive elements; `prefers-reduced-motion: reduce`
-  disables both.
+  disables both. SPA navigations add the tab-carousel View Transition
+  (below), which reduced motion degrades to a plain crossfade.
+
+### SPA + overlay scaffold (2026-08-21) — registry app-shell landing
+
+The site consumed the registry overlay scaffold (`app-shell` /
+`scaffold-float` / `terminal-header` / `terminal-footer` / `theme-toggle`,
+synced verbatim from the jixoai ui registry source repo):
+
+- **Overlay architecture.** `.jx-shell` is a fixed-height viewport; the
+  header band and the docs ToC float live in one `.jx-top-layer` overlay
+  that slides away on scroll-down and back on scroll-up (immersive), while
+  `.jx-shell-body` owns the scrolling with a measured `padding-top` reserve.
+  The docs aside is authored in the page but adopted into the top layer by
+  the `scaffold-float` portal — the mobile glass rail rides the header by
+  construction.
+- **SPA navigation.** `data-sveltekit-reload` is gone: internal links route
+  client-side through an `onNavigate` View Transitions runner with the
+  tab-carousel direction law (PAGE_ORDER index comparison, ported from the
+  showcase/openspecui). Route directories carry the `.html` suffix
+  (`docs.html/`, `compatibility.html/`) so the client router resolves the
+  same URLs the flat artifact files serve for direct loads and no-JS.
+- **Named-line law.** Anchor landing moved from the site-level
+  `[id] { scroll-margin-top: 76px }` rule to the registry `toc.css`
+  contract: the ToC publishes `--jx-toc-line` (measured overlay-stack
+  bottom + 2em) and `.jx-shell-body` consumes it via `scroll-padding-top`.
+  The two mechanisms must never coexist for one container (they stack).
 
 ### Deliberate divergences from the reference (documented per skill law)
 
@@ -100,10 +128,10 @@ CNAME gate, static checks) are unchanged.
 - **`theme-color` is `#000000`**, matching the token sheet's pure-black
   dark canvas (the reference's `#09090b` matches its own zinc-tinted
   canvas).
-- **MPA navigation.** `<body data-sveltekit-reload>` makes every internal
-  link a full page load so the flat `docs.html`/`compatibility.html`
-  artifact keeps working without client-route resolution; prerendering
-  crawls nothing (`crawl: false` + explicit entries).
+- **SPA navigation.** Internal links route client-side (see the
+  2026-08-21 scaffold section above); the flat `docs.html` /
+  `compatibility.html` artifact keeps serving direct loads and no-JS, and
+  prerendering still crawls nothing (`crawl: false` + explicit entries).
 - **Published stylesheet path.** The emitted CSS bundle is republished as
   `dist/assets/styles.css` (font URLs rewritten to absolute `/_app`
   paths) because `check-site.mjs` reads that exact path; page links are

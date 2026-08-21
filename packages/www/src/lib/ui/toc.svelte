@@ -33,9 +33,12 @@
   interface Props {
     sections: TocSection[];
     title?: string;
+    /** Scroll root for overlay-shell layouts (selector or element);
+     *  defaults to the document. */
+    scrollRoot?: string | HTMLElement | null;
   }
 
-  let { sections, title = 'reading progress' }: Props = $props();
+  let { sections, title = 'reading progress', scrollRoot = null }: Props = $props();
 
   const flat = $derived(
     sections.flatMap((section, i) => [
@@ -59,10 +62,30 @@
   let viewport = $state<HTMLElement | null>(null);
   let mobileRoot = $state<HTMLElement | null>(null);
   let open = $state(false);
+  let currentPick = $state<string | null>(null);
 
-  const mobileLine = 44 + 32; // sticky bar bottom + 2em (equals scroll-margin-top)
+  // Live line (Owner fix, 2026-08-21): the old constant 76px assumed the
+  // legacy sticky rail (top:0, 44px tall). In the overlay shell the line
+  // must sit at the bottom of whatever top-layer stack covers the content
+  // column + 2em: on mobile that is this glass rail itself; on desktop the
+  // scaffold header band. The same value is published as --jx-toc-line so
+  // anchor scroll-margin lands headings exactly ON the line — then the
+  // margin-resolves-downward law picks the jumped entry deterministically.
+  const tocLine = () => {
+    const mobile = innerWidth < 900;
+    const anchor = mobile
+      ? (viewport as HTMLElement | null)
+      : (document.querySelector('.jx-scaffold-header') as HTMLElement | null);
+    const rect = anchor?.getBoundingClientRect();
+    const line = rect ? Math.round(rect.bottom) + 32 : mobile ? 76 : 106;
+    document.documentElement.style.setProperty('--jx-toc-line', `${line}px`);
+    return line;
+  };
 
   $effect(() => {
+    // publish the line var before any scroll/anchor logic runs so
+    // scroll-padding/margin and the engine share one value from frame one
+    tocLine();
     const stopEngine = createTocEngine(
       ({ weights, pick }) => {
         for (const li of desktopItems) {
@@ -72,6 +95,7 @@
           a.style.setProperty('--w', (weights.get(a.dataset.id!) ?? 0).toFixed(3));
         }
         if (!pick) return;
+        currentPick = pick;
         const parent = parentOf.get(pick);
         for (const li of desktopItems) {
           const current = li.dataset.id === pick || li.dataset.id === parent;
@@ -83,32 +107,56 @@
           if (isPick) a.setAttribute('aria-current', 'true');
           else a.removeAttribute('aria-current');
         }
-        // algorithmic binding: the single row scrolls to the pick entry
+        // unified sync (Owner, 2026-08-21): ONE algorithm for both paths —
+        // page scroll and expanded-click alike. Instant scrollTo on the
+        // collapsed row: no smooth animation to race the height transition,
+        // no snap semantics to disagree with. The 44px row shows exactly
+        // the picked li, every time.
         const li = mobileLinks.find((a) => a.dataset.id === pick)?.closest('li');
         if (viewport && li) {
-          const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-          viewport.scrollTo({ top: (li as HTMLElement).offsetTop, behavior: reduce ? 'auto' : 'smooth' });
+          viewport.scrollTo({ top: (li as HTMLElement).offsetTop });
         }
       },
-      { lineOffset: innerWidth < 900 ? mobileLine : 1 },
+      { lineOffset: tocLine, scrollRoot },
     );
 
+    const root =
+      typeof scrollRoot === 'string'
+        ? document.querySelector<HTMLElement>(scrollRoot)
+        : scrollRoot;
     const onScroll = () => {
       if (!spineFill) return;
-      const max = document.documentElement.scrollHeight - innerHeight;
-      const p = max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+      const max = root ? root.scrollHeight - root.clientHeight : document.documentElement.scrollHeight - innerHeight;
+      const y = root ? root.scrollTop : scrollY;
+      const p = max > 0 ? Math.min(1, Math.max(0, y / max)) : 0;
       spineFill.style.setProperty('--jx-progress', Math.max(0.02, p).toFixed(3));
     };
-    addEventListener('scroll', onScroll, { passive: true });
+    (root ?? window).addEventListener('scroll', onScroll, { passive: true });
     onScroll();
     return () => {
       stopEngine();
-      removeEventListener('scroll', onScroll);
+      (root ?? window).removeEventListener('scroll', onScroll);
     };
   });
 
+  const syncRow = () => {
+    const li = mobileLinks.find((a) => a.dataset.id === currentPick)?.closest('li');
+    if (viewport && li) viewport.scrollTo({ top: (li as HTMLElement).offsetTop });
+  };
+
   const close = () => {
     open = false;
+    // re-draw after the height transition truly ends: mid-transition the
+    // viewport's clamp ceiling (scrollHeight - clientHeight) is still
+    // shrinking, so an early scrollTo gets clamped and never auto-recovers.
+    // transitionend fires exactly once when height reaches 44px.
+    viewport?.addEventListener(
+      'transitionend',
+      (ev) => {
+        if (ev.propertyName === 'height') syncRow();
+      },
+      { once: true },
+    );
   };
 </script>
 
@@ -154,7 +202,7 @@
       class="jx-toggle"
       aria-expanded={open}
       aria-label="Expand table of contents"
-      onclick={() => (open = !open)}
+      onclick={() => (open ? close() : (open = true))}
     >
       ▾
     </button>

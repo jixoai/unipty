@@ -3,7 +3,7 @@
   import CodeBlock from '$lib/components/code-block.svelte'
   import PressButton from '$lib/components/press-button.svelte'
   import SectionCard from '$lib/components/section-card.svelte'
-  import TerminalCard from '$lib/components/terminal-card.svelte'
+  import TerminalCard from '$lib/ui/terminal-card.svelte'
   import { GITHUB_URL } from '$lib/constants'
 
   const quickStart = String.raw`import { UniPty } from "unipty";

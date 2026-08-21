@@ -29,11 +29,12 @@
     %sveltekit.head%
   </head>
   <!--
-    data-sveltekit-reload: the site is a flat multi-page artifact (index.html,
-    docs.html, compatibility.html); every internal link performs a full page
-    load instead of client-route resolution.
+    SPA shell: no full-reload body attribute — internal links route
+    client-side through onNavigate view transitions (tab-carousel); the
+    flat artifact files (/index.html, /docs.html, /compatibility.html)
+    serve the same URLs for direct loads and no-JS.
   -->
-  <body data-sveltekit-reload>
+  <body>
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>

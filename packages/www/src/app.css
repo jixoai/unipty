@@ -250,32 +250,14 @@
   color: var(--tok-number);
 }
 
-/* Skip link (a11y) — visible only on keyboard focus. */
-.skip-link {
-  clip-path: inset(50%);
-  height: 1px;
-  left: 0;
-  overflow: hidden;
-  position: absolute;
-  top: 0;
-  white-space: nowrap;
-  width: 1px;
-}
-.skip-link:focus-visible {
-  background: var(--background);
-  border: 1px solid var(--border);
-  clip-path: none;
-  height: auto;
-  padding: 0.5rem 0.75rem;
-  width: auto;
-  z-index: 50;
-}
+/* Skip link: owned by the registry app-shell (.jx-skip-link in
+ * app-shell.css) — no site-local duplicate. */
 
-/* Anchor targets clear the Combo ToC mobile rail exactly at its pick line:
- * sticky bar bottom (44px) + 2em = 76px, matching the toc-engine line law. */
-[id] {
-  scroll-margin-top: 76px;
-}
+/* Anchor landing law (registry toc.css, 2026-08-21): the overlay shell's
+ * scroll container (.jx-shell-body) consumes --jx-toc-line via
+ * scroll-padding-top. Per the named-line law, targets must NOT also carry
+ * scroll-margin for the same container — the two stack and double the
+ * landing. No site-level [id] scroll-margin rule exists anymore. */
 
 /* -------------------------------------------------------------------------
  * Reduced-motion law: the registry sheet already neutralizes reveal motion;

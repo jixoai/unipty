@@ -39,7 +39,7 @@
   }
   .jx-toc .jx-spine {
     position: absolute;
-    left: 2px;
+    left: 0px;
     top: 6px;
     bottom: 6px;
     width: 2px;
@@ -75,7 +75,7 @@
   }
   .jx-toc .jx-toc-desktop li::before {
     /* square node on level-1 only; level-2 drops it (Owner) */
-    content: "";
+    content: '';
     position: absolute;
     left: -21px;
     top: 50%;
@@ -130,7 +130,6 @@
 .jx-toc .jx-toc-mobile[data-open] .jx-viewport {
   height: 56vh;
   overflow-y: auto;
-  scroll-snap-type: y mandatory;
   overscroll-behavior: contain;
 }
 .jx-toc .jx-viewport ol {
@@ -139,7 +138,7 @@
   padding: 0;
 }
 .jx-toc .jx-viewport li {
-  scroll-snap-align: start;
+  /* no scroll-snap: the engine's scrollTo owns positioning uniformly */
 }
 .jx-toc .jx-viewport li + li {
   border-top: 1px solid color-mix(in oklab, var(--border) 12%, transparent);
@@ -158,7 +157,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-left: 2px solid color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
+  border-left: 2px solid
+    color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
 }
 .jx-toc .jx-viewport a .jx-cursor {
   color: var(--primary);
@@ -193,4 +193,49 @@
   .jx-toc .jx-spine-fill {
     transition: none;
   }
+}
+
+/* ── aside layout law (apply .jx-toc-aside to the wrapping <aside>) ──
+   DOM: the aside precedes main content; positioning is the aside's own
+   responsibility, never the re-mounted variant content's. */
+.jx-toc-aside {
+  min-width: 0;
+}
+@media (min-width: 900px) {
+  .jx-toc-aside {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    max-height: calc(100vh - 40px);
+  }
+}
+@media (max-width: 899.9px) {
+  /* sticky with height: 0 (Owner, 2026-08-20): zero flow impact — expanding
+     never reflows the document, so anchor jumps always land; the inner
+     content overflows and stays pinned over the scrolling page. Pair with
+     ~68px top padding on the main content column. No transform here:
+     a transform would create a backdrop root and kill the glass blur. */
+  .jx-toc-aside {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    height: 0;
+  }
+}
+
+/* ── the named line law (Owner, 2026-08-21) ──
+   --jx-toc-line is THE single source of truth for "where pinned content
+   ends". The toc component publishes it (measured: overlay-stack bottom
+   + 2em). The scroll CONTAINER consumes it via scroll-padding-top, so
+   anchor jumps land targets with their region top exactly on the line.
+   Do NOT also set scroll-margin on the targets for the same container:
+   the two properties stack and the landing doubles past the line.
+   Window-scrolled consumers (no .jx-shell-body) keep their own local
+   scroll-margin rule instead. The engine's line getter reads the same
+   measurement, so algorithm and landing can never drift. */
+:root {
+  --jx-toc-line: 76px;
+}
+.jx-shell-body {
+  scroll-padding-top: var(--jx-toc-line);
 }

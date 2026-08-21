@@ -2,6 +2,7 @@
   import { reveal } from '$lib/actions/reveal'
   import CodeBlock from '$lib/components/code-block.svelte'
   import SectionCard from '$lib/components/section-card.svelte'
+  import ScaffoldFloat from '$lib/ui/scaffold-float.svelte'
   import Toc, { type TocSection } from '$lib/ui/toc.svelte'
 
   const coreReadyCode = String.raw`import { UniPty } from "unipty";
@@ -192,14 +193,18 @@ const backend = await autoResolveUniPtyBackend({
 </svelte:head>
 
 <!-- Combo ToC layout law (registry component): the aside precedes main
-     content in the DOM; the page grid places it as the right column on
-     desktop (sticky, align-self: start) and as a sticky height:0 glass
-     single-row rail on mobile. -->
-<div class="docs-frame">
+     content in the DOM. It rides the scaffold's TOP LAYER: authored here,
+     adopted into .jx-top-layer by the float portal — on mobile the glass
+     single-row rail pins under the header band (immersive sync by
+     construction); on desktop it floats over the right column. The engine
+     reads the shell's internal scroll container. -->
+<ScaffoldFloat>
   <aside class="docs-aside" aria-label="On this page">
-    <Toc {sections} title="on this page" />
+    <Toc {sections} title="on this page" scrollRoot=".jx-shell-body" />
   </aside>
+</ScaffoldFloat>
 
+<div class="docs-frame">
   <div class="docs-main">
     <!-- Overview family: page head + architecture cards. -->
     <div class="docs-overview" data-family="overview">
@@ -479,19 +484,19 @@ const backend = await autoResolveUniPtyBackend({
 </div>
 
 <style>
-  /* Mobile (<900px): the Terminal Rail is a sticky height:0 overlay — zero
-   * flow impact, expanding never reflows the document — and the glass bar
-   * spans the full viewport width, so the frame carries no inline padding
-   * here; the main column pads itself and reserves the 68px top clearance
-   * under the 44px rail. */
+  /* Combo ToC page grid (registry toc.css law) adapted to the float portal:
+   * the aside is adopted into .jx-top-layer, so on mobile it pins below the
+   * header band (glass rail over the scrolling body, riding the immersive
+   * slide) and on desktop it floats over the frame's right column. */
   .docs-frame {
     display: block;
     padding-block: 0 1rem;
   }
   .docs-aside {
-    position: sticky;
-    top: 0;
-    height: 0;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: auto;
     z-index: 30;
   }
   .docs-main {
@@ -507,8 +512,9 @@ const backend = await autoResolveUniPtyBackend({
     gap: 1.5rem;
   }
 
-  /* Desktop (>=900px, the toc.css breakpoint): Rule Tracker in the right
-   * grid column, sticky and align-self: start; DOM order stays aside-first. */
+  /* Desktop (>=900px, the toc.css breakpoint): Rule Tracker floating over
+   * the right column, aligned to the frame's outer padding edge; DOM order
+   * stays aside-first. */
   @media (min-width: 900px) {
     .docs-frame {
       display: grid;
@@ -526,11 +532,12 @@ const backend = await autoResolveUniPtyBackend({
       padding-inline: 0;
     }
     .docs-aside {
-      grid-column: 2;
-      grid-row: 1;
-      position: sticky;
-      top: 1.25rem;
-      align-self: start;
+      position: absolute;
+      top: 96px;
+      right: max(1.5rem, calc((100vw - 90rem) / 2 + 1.5rem));
+      left: auto;
+      width: 14.5rem;
+      max-height: calc(100vh - 120px);
       height: auto;
       z-index: auto;
     }
@@ -538,6 +545,9 @@ const backend = await autoResolveUniPtyBackend({
   @media (min-width: 1024px) {
     .docs-frame {
       padding-inline: 2rem;
+    }
+    .docs-aside {
+      right: max(2rem, calc((100vw - 90rem) / 2 + 2rem));
     }
   }
 </style>

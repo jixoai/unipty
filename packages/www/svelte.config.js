@@ -9,8 +9,10 @@ const config = {
     prerender: {
       // Flat multi-page artifact: links point at real files (/docs.html) and
       // the catalog is copied after the build, so there is nothing to crawl.
+      // Route dirs carry the .html suffix themselves (showcase law), so the
+      // SPA client router resolves the same URLs the flat files serve.
       crawl: false,
-      entries: ["/", "/docs", "/compatibility"],
+      entries: ["/", "/docs.html", "/compatibility.html"],
     },
   },
 };
