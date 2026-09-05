@@ -22,12 +22,16 @@ The site now consumes the official jixoai design-language registry
   readonly code). Token values are byte-identical to the previous
   handwritten sheet for every token the registry defines (only cosmetic
   quote style differs on `--font-nav`; the registry drops the unused
-  second layer of `--shadow` in dark mode).
+  second layer of `--shadow` in dark mode). *(2026-09-06: superseded by
+  the 0.3.0 sync below — the registry theme now ships the
+  popover/destructive/input/ring/shadows mappings itself.)*
 - `src/lib/ui/toc.svelte` + `src/lib/toc.css` + `src/lib/toc-engine.ts`
   are the registry `toc` item (Combo ToC), installed with two import-path
   corrections for SvelteKit: `@lib/toc-engine` → `$lib/toc-engine` and
   `'../lib/toc.css'` → `$lib/toc.css` (the shipped paths assume a
-  non-SvelteKit alias layout).
+  non-SvelteKit alias layout). *(2026-09-06: superseded — 0.3.0 ships
+  SvelteKit-correct `$lib` paths in the directory layout; the manual
+  corrections and these flat files are retired.)*
 - The docs page wraps its content in the engine's contract: leaf blocks
   carry `data-region`, parent sections carry `data-family` (exposed on
   `SectionCard` via `family` / `region` / `headerRegion` props). The
@@ -87,6 +91,8 @@ CNAME gate, static checks) are unchanged.
   physics on interactive elements; `prefers-reduced-motion: reduce`
   disables both. SPA navigations add the tab-carousel View Transition
   (below), which reduced motion degrades to a plain crossfade.
+  *(2026-09-06: reveal is now pure CSS scroll-driven in 0.3.0; the IO
+  action is retired — see the 0.3.0 sync section.)*
 
 ### SPA + overlay scaffold (2026-08-21) — registry app-shell landing
 
@@ -112,6 +118,10 @@ synced verbatim from the jixoai ui registry source repo):
   contract: the ToC publishes `--jx-toc-line` (measured overlay-stack
   bottom + 2em) and `.jx-shell-body` consumes it via `scroll-padding-top`.
   The two mechanisms must never coexist for one container (they stack).
+  *(2026-09-06: the named-line contract survives in 0.3.0 unchanged; the
+  `scaffold-float` docs aside it served is retired — the toc rail now
+  renders from the website-scaffold's chrome plane. The float item stays
+  locked for the portal API.)*
 
 ### Deliberate divergences from the reference (documented per skill law)
 
@@ -156,6 +166,99 @@ from its own workspace assets plus exactly one release catalog artifact.
 the site toolchain only (no `@unipty/*`, `unipty`, or `@unipty/backend-*`
 edges — the workspace architecture check scans devDependencies too).
 
+## jixoai-ui 0.3.0 sync (2026-09-06) — directory layout + AI export layer
+
+Upgraded from 0.2.0 to 0.3.0 (openspec change
+`2026-09-06-sync-www-jixoai-ui-030`). The lock now describes **26 items /
+71 files**; every `src/lib/ui/**` file is canonical — zero hand patches
+remain, and a second `npx jixoai-ui@0.3.0 upgrade` performs zero writes
+(`updated 0, unchanged 71`). The three upgrade tasks
+(legacy-import-paths, spine-axis, scroll-margin-cleanup) all skip on
+fresh 0.3.0 content.
+
+### Breaking-API adaptations (site code)
+
+- **Directory layout.** Items live at `src/lib/ui/<name>/<name>.svelte`
+  and import siblings/shared modules through `$lib` aliases. The old
+  flat files (`src/lib/ui/<name>.svelte`), the hand-copied
+  `src/lib/jixoai.css`, `src/lib/toc.css`, `src/lib/toc-engine.ts`,
+  `src/lib/website-scaffold.css`, and the manual
+  `components/press-button.svelte` / `components/section-card.svelte`
+  were deleted before re-adding (0.3.0's `upgrade` does not remove
+  0.2.0 flat files; re-`add` over them would silently keep stale bytes
+  while the lock records canonical hashes).
+- **terminal-header / terminal-footer are composition-first.** The
+  header's `items` data tree is gone: `+layout.svelte` renders a
+  NavigationMenu combo in the header `children` snippet (current-page
+  derived from `page.url`), a `drawer` snippet for mobile, and
+  `bind:open` closed on navigate. The footer composes
+  `TerminalFooterColumn` children instead of a data tree.
+- **hero-section is composition-first.** String props
+  (eyebrow/summary/copyCommand) + snippet props
+  (title/badges/copy/terminal/secondary). Deviation: `copyCommand`
+  stays **required** by the props interface even when a `copy` snippet
+  replaces the default command surface — the hero passes an inert
+  value (the real install command, so it at least stays truthful) that
+  is never rendered.
+- **toc rides the chrome snippet.** 0.3.0's website-scaffold renders
+  the toc rail from the chrome plane; the docs page publishes its tree
+  via `+page.ts load()` returning `toc` (the ui repo's site-mode data
+  seam), and the layout's chrome snippet composes
+  `TocList`/`TocItem`/`TocLink` from `page.data.toc`
+  (`scrollRoot=".jx-shell-body"`, MANUAL mode). The page's old
+  `ScaffoldFloat` aside + custom grid CSS are deleted; the mobile toc
+  bar comes with the scaffold.
+- **reveal is pure CSS** (scroll-driven, `animation-timeline: view()`).
+  The IO `reveal` action (`src/lib/actions/reveal.ts`) is retired;
+  static `data-reveal` attributes stay (feature rows keep a manual
+  `--reveal-rise` stagger). `card-grid` ships its own IO entrance —
+  cards inside a `CardGrid` must NOT wrap `data-reveal`.
+- **SectionCard requires `children`.** A header-only card passes an
+  empty snippet (`{#snippet children()}{/snippet}`) — the docs
+  "Using UniPty" intro card. The old `contentClass` prop is gone.
+- **PressButton variants** renamed: primary/outline →
+  fill/tonal/outline/ghost/link. The 0.2.0 local divergence
+  ("auto-detect external hrefs, reserve `_blank` for them") is now
+  upstream behavior — the registry component does exactly that, so the
+  hand patch is retired.
+- **scrollbar-measure** is now an explicit lock item imported once in
+  the root layout (`import '$lib/scrollbar-measure'`) per the skill
+  law. The 0.2.0-era site never imported it (the task brief's
+  "still imported" was aspirational); this sync adds it.
+- **app.css trimmed.** 0.3.0's jixoai-theme ships the
+  popover/destructive/input/ring/shadows token→utility mappings itself
+  (the 2026-08-20 pitfall is resolved upstream). app.css keeps chart
+  tokens, `--shadow-lg`, readonly-code/tok palettes, the radius reset
+  (`--radius-*: initial` — this site deliberately flattens the
+  registry's radius scale), and the site surfaces (data tables,
+  badges, evidence, readonly code). `utils` (clsx +
+  tailwind-merge) moved to devDependencies, keeping the
+  zero-runtime-dependency contract.
+
+### AI export layer
+
+The `llms-txt` item is installed at `vite-plugins/llms-txt.mjs`
+(package root — the lock-consistent path). ONE generation point: the
+final step of `scripts/build.mjs` calls
+`generateLlmsTxt(distDir, LLMS_TXT_CONFIG)` (config exported from
+build.mjs; `siteUrl: https://unipty.jixoai.com`) — deliberately NOT a
+vite plugin, because the orchestrated build owns the dist directory.
+Outputs: `dist/llms.txt`, `dist/llms-full.txt`, and per-page `.md`
+mirrors (`index.md`, `docs.md`, `compatibility.md`) with provenance
+markers. `check-site.mjs` asserts headers/summary/absolute
+links/full-file/mirror-count on both fixtures and re-runs the
+generator with the same config to prove byte-determinism (cross-build
+sha256-identical exports).
+
+- **Deviation (upstream suggestion):** `pageUrlFromRel` maps the flat
+  `docs.html` route to `/docs` in `llms.txt` source URLs; the served
+  URL is `/docs.html` (GitHub Pages flat artifacts), so `/docs` 404s.
+  The `.md` mirrors agents actually consume carry exact links; only
+  the index's source-URL column carries the prettified path. Not
+  patched locally — the llms-txt law is declared-outputs-only with a
+  single generation point; the fix belongs upstream
+  (flat-html route support in `pageUrlFromRel`).
+
 ## Build-time data seam
 
 `scripts/build.mjs` writes `src/lib/generated/catalog.json` (the derived
@@ -179,11 +282,14 @@ artifact and never republish packages.
 - `node scripts/build.mjs` (or `pnpm --filter @unipty/www run build`) —
   validate catalog, run the static build, byte-identical copy to
   `dist/catalog/catalog.json` (sha256 logged), publish the stylesheet,
-  write `dist/CNAME` only when `WWW_CNAME=1`.
+  write `dist/CNAME` only when `WWW_CNAME=1`, then generate the AI
+  export (`llms.txt` + `llms-full.txt` + per-page `.md` mirrors, see
+  the 0.3.0 sync section).
 - `node scripts/check-site.mjs` (or `pnpm --filter @unipty/www run test`) —
   clean-build from both committed fixtures and run the static checks
   (links, catalog byte-identity, three-state rendering, no browser backend
-  imports, responsive smoke, CNAME gate).
+  imports, responsive smoke, CNAME gate, llms-txt export shape +
+  byte-determinism).
 
 Catalog input selection: CLI arg > `WWW_CATALOG` env > committed
 development fixture `fixtures/catalog.dev.json`.

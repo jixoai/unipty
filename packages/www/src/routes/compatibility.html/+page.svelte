@@ -1,7 +1,16 @@
+<!--
+  UniPty compatibility page — derived at build time from exactly one
+  immutable release catalog artifact (src/lib/generated/catalog.json,
+  written by scripts/build.mjs before vite build; never recomputed in the
+  browser).
+  jixoai-ui 0.3.0 adaptation (2026-09-06): registry SectionCard (the
+  contentClass prop died — body padding is the component's own law now);
+  CardGrid owns its children's entrance (cards carry no data-reveal);
+  scroll reveal rides the theme's pure CSS [data-reveal] hooks.
+-->
 <script lang="ts">
-  import { reveal } from '$lib/actions/reveal'
-  import CardGrid from '$lib/ui/card-grid.svelte';
-  import SectionCard from '$lib/components/section-card.svelte'
+  import CardGrid from '$lib/ui/card-grid/card-grid.svelte'
+  import SectionCard from '$lib/ui/section-card/section-card.svelte'
   import presentation from '$lib/generated/catalog.json'
   import release from '$lib/generated/release.json'
 
@@ -70,18 +79,13 @@
   />
 </svelte:head>
 
-<div
-  class="mx-auto w-full max-w-[90rem] px-4 pt-10 sm:px-6 lg:px-8"
-  data-reveal=""
-  use:reveal
->
+<div class="mx-auto w-full max-w-[90rem] px-4 pt-10 sm:px-6 lg:px-8" data-reveal="">
   <SectionCard
     headingLevel={1}
     tone="hero"
     eyebrow="Compatibility"
     title="Verified tuples for this release"
     summary="Derived at build time from exactly one release catalog artifact — never merged with history, never recomputed in your browser."
-    contentClass="pt-3 sm:pt-4"
   >
     <nav class="flex flex-wrap gap-2 text-xs" aria-label="Route matrices">
       {#each catalog.routes as route (route.packageName)}
@@ -98,7 +102,6 @@
 
 <div class="mx-auto w-full max-w-[90rem] px-4 pt-6 sm:px-6 lg:px-8">
   <CardGrid>
-  <div data-reveal="" use:reveal>
     <SectionCard eyebrow="States" title="How to read these states" class="grid grid-rows-subgrid row-span-2">
       <dl class="flex flex-col gap-4">
         {#each states as state (state)}
@@ -111,8 +114,6 @@
         {/each}
       </dl>
     </SectionCard>
-  </div>
-  <div data-reveal="" use:reveal={{ delay: 70 }}>
     <SectionCard eyebrow="Release artifact" title="One immutable input" class="grid grid-rows-subgrid row-span-2">
       <dl class="flex flex-col gap-3 text-[13px]">
         <div class="flex flex-wrap gap-x-3 gap-y-1">
@@ -142,7 +143,6 @@
         </div>
       </dl>
     </SectionCard>
-  </div>
   </CardGrid>
 </div>
 
@@ -152,7 +152,6 @@
       id="route-{slug(route.packageName)}"
       class="border-border bg-card border shadow-sm"
       data-reveal=""
-      use:reveal
     >
       <div class="border-border flex flex-col gap-2.5 border-b px-4 py-3 sm:px-5 sm:py-4">
         <h3 class="font-nav text-balance text-[1.05rem] tracking-tight sm:text-[1.22rem]">

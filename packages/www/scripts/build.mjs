@@ -19,6 +19,13 @@
  *     the page stylesheet links to it (the static checks expect that path).
  *  7. Write dist/CNAME ("unipty.jixoai.com") only when WWW_CNAME=1, so
  *     preview builds stay CNAME-free.
+ *  8. AI export layer (jixoai-ui 0.3.0, 2026-09-06; original request: 更新
+ *     官网站点到 jixoai-ui 0.3.0): generateLlmsTxt on the FINAL dist as the
+ *     LAST build step — llms.txt + llms-full.txt + per-page .md mirrors with
+ *     absolute URLs. ONE generation point for the whole site (the llms-txt
+ *     law forbids wiring the vite plugin adapter too — this build injects
+ *     artifacts after vite, so vite never owns the final dist). CNAME is not
+ *     HTML, so both CNAME modes produce byte-identical exports.
  */
 
 import { spawnSync } from "node:child_process";
@@ -36,6 +43,7 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { derivePresentation, validateCatalog } from "./lib/catalog.mjs";
+import { generateLlmsTxt } from "../vite-plugins/llms-txt.mjs";
 
 const nodeRequire = createRequire(import.meta.url);
 const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -45,6 +53,17 @@ const generatedDir = path.join(packageRoot, "src", "lib", "generated");
 const pages = ["index.html", "docs.html", "compatibility.html"];
 
 export class BuildError extends Error {}
+
+/** The AI export layer's single config source (also consumed by
+ * check-site.mjs's byte-identity probe — the regeneration must run with
+ * the exact same config the build used). */
+export const LLMS_TXT_CONFIG = {
+  // mirrors SITE_DOMAIN in src/lib/constants.ts (the CNAME target)
+  siteUrl: "https://unipty.jixoai.com",
+  title: "UniPty",
+  summary:
+    "Runtime-neutral PTY contract for Node, Bun, and Deno: one Core API, developer-selectable Backends (node-pty, Bun.Terminal, @sigma/pty-ffi), and support claims gated by the release evidence catalog.",
+};
 
 const walkFiles = (dir) =>
   readdirSync(dir).flatMap((entry) => {
@@ -183,6 +202,16 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
     writeFileSync(path.join(distDir, "CNAME"), "unipty.jixoai.com\n");
   }
 
+  // 8. AI export layer — the ONE generation point (orchestrated-build law:
+  // final step, on the final dist). Throws on hand-written .md conflicts
+  // and on the llms-full.txt size cap; staged writes are all-or-nothing.
+  let llms;
+  try {
+    llms = generateLlmsTxt(distDir, LLMS_TXT_CONFIG);
+  } catch (error) {
+    throw new BuildError(`llms.txt generation failed: ${error.message}`);
+  }
+
   log(`catalog: ${catalogPath}`);
   log(`catalog sha256: ${sha256} (${bytes.length} bytes, copied unchanged)`);
   log(
@@ -190,6 +219,9 @@ export function runBuild(catalogPath, { cname = false, quiet = false } = {}) {
   );
   log(`pages: ${pages.join(", ")}`);
   log(`cname: ${cname ? "written (unipty.jixoai.com)" : "skipped (preview build)"}`);
+  log(
+    `llms-txt: ${llms.pages} pages → ${llms.files.length} files (${llms.files.reduce((sum, file) => sum + file.bytes, 0)}B)`,
+  );
 
   return { distDir, sha256, presentation, catalog: validated.catalog };
 }

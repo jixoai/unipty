@@ -3,12 +3,19 @@
  *
  * The shared design-language token sheet (OKLCH one-hue law, dark -4° drift,
  * hard offset shadows, radius/bevel law, mono-first fonts, terminal surfaces,
- * reveal hook styles) is installed verbatim by `npx jixoai-ui init --hue 165`
- * as src/lib/jixoai.css (registry item `jixoai-theme`, https://ui.jixoai.com).
- * This file now carries ONLY site-specific supplements:
+ * scrollbar/press/reveal laws, the popover/destructive/input/ring and
+ * shadow token→utility mappings) is installed by `npx jixoai-ui add
+ * jixoai-theme` as src/lib/jixoai.css (registry item `jixoai-theme`,
+ * https://ui.jixoai.com; jixoai-ui 0.3.0 — the popover/destructive/input/
+ * ring/shadow mapping pitfall recorded in NOTES is fixed upstream since
+ * 0.3.0, so this file no longer carries those mappings).
+ *
+ * jixoai-ui 0.3.0 sync (2026-09-06): this file now carries ONLY site
+ * supplements:
  *   - tokens the registry sheet does not define (charts, shadow-lg,
  *     readonly-code surfaces, the build-time tokenizer palette);
- *   - the Tailwind token→utility mappings the registry sheet leaves open;
+ *   - the radius-scale reset (the registry maps --radius but owns no
+ *     `--radius-*: initial` reset);
  *   - site surfaces: data tables, state chips, evidence, readonly code.
  * ---------------------------------------------------------------------- */
 @import "tailwindcss";
@@ -56,26 +63,14 @@
   --tok-number: var(--secondary);
 }
 
-/* Tailwind token→utility mapping supplements. jixoai.css maps the colors and
- * fonts it owns; these tokens stay site-mapped so the utilities keep the
- * exact registry values (unmapped tokens would fall back to Tailwind's
- * default soft-shadow/rounded scale and silently break the design law). */
+/* Radius reset (registry gap): jixoai.css maps --radius but owns no scale
+ * reset — without this, rounded-* utilities silently fall back to
+ * Tailwind's soft default scale and break the radius-0 + bevel identity. */
 @theme inline {
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-
   --radius-*: initial;
   --radius: var(--radius);
 
-  --shadow-2xs: var(--shadow-2xs);
-  --shadow-xs: var(--shadow-xs);
-  --shadow-sm: var(--shadow-sm);
-  --shadow: var(--shadow);
-  --shadow-md: var(--shadow-md);
+  /* --shadow-lg is a site supplement; 2xs…md are registry-mapped. */
   --shadow-lg: var(--shadow-lg);
 }
 
@@ -83,7 +78,6 @@
   * {
     @apply border-border;
     corner-shape: bevel;
-    scrollbar-width: thin;
     accent-color: var(--primary);
   }
   html {
@@ -250,18 +244,19 @@
   color: var(--tok-number);
 }
 
-/* Skip link: owned by the registry app-shell (.jx-skip-link in
- * app-shell.css) — no site-local duplicate. */
+/* Skip link: owned by the registry website-scaffold (.jx-skip-link in
+ * website-scaffold.css) — no site-local duplicate. */
 
-/* Anchor landing law (registry toc.css, 2026-08-21): the overlay shell's
- * scroll container (.jx-shell-body) consumes --jx-toc-line via
- * scroll-padding-top. Per the named-line law, targets must NOT also carry
- * scroll-margin for the same container — the two stack and double the
- * landing. No site-level [id] scroll-margin rule exists anymore. */
+/* Anchor landing law (registry website-scaffold, 0.3.0): the shell's scroll
+ * container (.jx-shell-body) consumes --jx-toc-line via scroll-padding-top.
+ * Per the named-line law, targets must NOT also carry scroll-margin for the
+ * same container — the two stack and double the landing. No site-level
+ * [id] scroll-margin rule exists. */
 
 /* -------------------------------------------------------------------------
- * Reduced-motion law: the registry sheet already neutralizes reveal motion;
- * these cover the site's own transitions.
+ * Reduced-motion law: the registry sheet already neutralizes reveal,
+ * chrome-transition and press motion; these cover the site's own
+ * transitions.
  * ---------------------------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {
   html {

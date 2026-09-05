@@ -1,9 +1,17 @@
+<!--
+  UniPty overview page.
+  jixoai-ui 0.3.0 adaptation (2026-09-06): the hand-rolled hero block is
+  replaced by the registry hero-section (composition-first — title/badges/
+  copy/terminal snippets); PressButton rides the 0.3.0 variant ladder
+  (primary → fill); scroll reveal is the theme's pure CSS [data-reveal]
+  hooks (the IO action is retired; attributes are static).
+-->
 <script lang="ts">
-  import { reveal } from '$lib/actions/reveal'
   import CodeBlock from '$lib/components/code-block.svelte'
-  import PressButton from '$lib/components/press-button.svelte'
-  import SectionCard from '$lib/components/section-card.svelte'
-  import TerminalCard from '$lib/ui/terminal-card.svelte'
+  import HeroSection from '$lib/ui/hero-section/hero-section.svelte'
+  import PressButton from '$lib/ui/press-button/press-button.svelte'
+  import SectionCard from '$lib/ui/section-card/section-card.svelte'
+  import TerminalCard from '$lib/ui/terminal-card/terminal-card.svelte'
   import { GITHUB_URL } from '$lib/constants'
 
   const quickStart = String.raw`import { UniPty } from "unipty";
@@ -86,68 +94,46 @@ const { exitCode, signal } = await pty.exited;`
   />
 </svelte:head>
 
-<!-- Hero: open lead type + one-shot terminal typing story. -->
-<section class="mx-auto w-full max-w-[90rem] px-4 pb-10 pt-10 sm:px-6 sm:pt-14 lg:px-8">
-  <div
-    class="grid gap-10 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(25rem,31rem)] min-[1100px]:items-end min-[1100px]:gap-14"
-  >
-    <div class="min-w-0">
-      <p
-        class="font-nav text-primary text-[11px] uppercase tracking-[0.24em]"
-        data-reveal=""
-        use:reveal
-      >
-        UniPty v1 · PTY platform
-      </p>
-      <h1
-        class="mt-4 text-[clamp(2.4rem,5vw,4.4rem)] leading-[1.2] font-bold tracking-[-0.02em] text-balance"
-        data-reveal=""
-        use:reveal={{ delay: 60, rise: 14 }}
-      >
-        The runtime-neutral <em class="text-primary not-italic">PTY contract</em> for Node, Bun, and
-        Deno.
-      </h1>
-      <p
-        class="text-muted-foreground mt-5 max-w-[62ch] text-pretty text-[15px] leading-6 sm:text-base sm:leading-7"
-        data-reveal=""
-        use:reveal={{ delay: 120 }}
-      >
-        One Core API for pseudo-terminals. Bring your own native substrate — node-pty,
-        Bun.Terminal, or @sigma/pty-ffi — through developer-selectable, replaceable Backends.
-        Support claims come only from the release evidence catalog, never from metadata.
-      </p>
-      <div
-        class="text-muted-foreground font-nav mt-8 flex flex-wrap gap-x-6 gap-y-2 text-xs uppercase tracking-[0.14em]"
-        data-reveal=""
-        use:reveal={{ delay: 160 }}
-      >
-        <span>One Core API</span>
-        <span>Replaceable Backends</span>
-        <span>Evidence-gated support</span>
-        <span>MIT</span>
-      </div>
-      <div class="mt-8 flex flex-wrap gap-3" data-reveal="" use:reveal={{ delay: 200 }}>
-        <PressButton variant="primary" href="/docs.html">Read the docs</PressButton>
-        <PressButton variant="outline" href={GITHUB_URL}>GitHub ↗</PressButton>
-      </div>
-    </div>
-    <div class="min-w-0" data-reveal="" use:reveal={{ delay: 260, rise: 12 }}>
-      <TerminalCard
-        barTitle="unipty — /bin/sh -i"
-        command="node quick-start.mjs"
-        outputs={[
-          'backend ready: @unipty/backend-node-pty',
-          'spawn: /bin/sh -i · 80x24 cells',
-          'stream: utf8 text · bootstrap buffered',
-          'exit: code 0 · signal null',
-        ]}
-      />
-    </div>
-  </div>
-</section>
+<!-- Hero: registry composition-first hero (title/badges/copy/terminal as
+     snippets; the copy snippet replaces the default copy-CTA with the
+     docs CTA, secondary carries GitHub). -->
+<HeroSection
+  eyebrow="UniPty v1 · PTY platform"
+  summary="One Core API for pseudo-terminals. Bring your own native substrate — node-pty, Bun.Terminal, or @sigma/pty-ffi — through developer-selectable, replaceable Backends. Support claims come only from the release evidence catalog, never from metadata."
+  copyCommand="pnpm add unipty @unipty/backend-node-pty"
+  copyLabel="copy"
+>
+  {#snippet title()}
+    The runtime-neutral <em>PTY contract</em> for Node, Bun, and Deno.
+  {/snippet}
+  {#snippet badges()}
+    <span>One Core API</span>
+    <span>Replaceable Backends</span>
+    <span>Evidence-gated support</span>
+    <span>MIT</span>
+  {/snippet}
+  {#snippet copy()}
+    <PressButton variant="fill" href="/docs.html">Read the docs</PressButton>
+  {/snippet}
+  {#snippet secondary()}
+    <PressButton variant="outline" href={GITHUB_URL}>GitHub ↗</PressButton>
+  {/snippet}
+  {#snippet terminal()}
+    <TerminalCard
+      barTitle="unipty — /bin/sh -i"
+      command="node quick-start.mjs"
+      outputs={[
+        'backend ready: @unipty/backend-node-pty',
+        'spawn: /bin/sh -i · 80x24 cells',
+        'stream: utf8 text · bootstrap buffered',
+        'exit: code 0 · signal null',
+      ]}
+    />
+  {/snippet}
+</HeroSection>
 
 <!-- Quick start card. -->
-<div class="mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8" data-reveal="" use:reveal>
+<div class="mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-8" data-reveal="">
   <SectionCard
     eyebrow="Quick start"
     title="Acquire a Backend. Spawn a shell."
@@ -166,7 +152,6 @@ const { exitCode, signal } = await pty.exited;`
   <h2
     class="font-nav flex items-baseline gap-4 text-lg uppercase tracking-[0.3em]"
     data-reveal=""
-    use:reveal
   >
     What&rsquo;s inside
     <span class="bg-border h-px flex-1" aria-hidden="true"></span>
@@ -177,29 +162,20 @@ const { exitCode, signal } = await pty.exited;`
         id={feature.id}
         class="grid gap-2.5 border-t border-border py-6 min-[760px]:grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1.15fr)] min-[760px]:items-baseline min-[760px]:gap-10 sm:py-7"
       >
-        <div
-          class="bg-border h-px w-full min-[760px]:col-span-full"
-          data-reveal="rule"
-          use:reveal
-        ></div>
+        <div class="bg-border h-px w-full min-[760px]:col-span-full" data-reveal="rule"></div>
         <div
           class="font-nav text-primary text-[clamp(1.3rem,2.2vw,1.8rem)] leading-none"
           data-reveal=""
-          use:reveal={{ delay: 40, rise: 12 }}
+          style="--reveal-rise: 12px"
         >
           {`0${index + 1}`}
         </div>
-        <h3
-          class="text-[clamp(1.2rem,2vw,1.55rem)] font-bold tracking-[-0.015em]"
-          data-reveal=""
-          use:reveal={{ delay: 70, rise: 12 }}
-        >
+        <h3 class="text-[clamp(1.2rem,2vw,1.55rem)] font-bold tracking-[-0.015em]" data-reveal="">
           {feature.title}
         </h3>
         <p
           class="text-muted-foreground max-w-[62ch] text-pretty text-sm leading-6"
           data-reveal=""
-          use:reveal={{ delay: 100, rise: 12 }}
         >
           {feature.body}
         </p>
@@ -209,11 +185,7 @@ const { exitCode, signal } = await pty.exited;`
 </section>
 
 <!-- Official routes table. -->
-<div
-  class="mx-auto w-full max-w-[90rem] px-4 pb-4 pt-8 sm:px-6 lg:px-8"
-  data-reveal=""
-  use:reveal
->
+<div class="mx-auto w-full max-w-[90rem] px-4 pb-4 pt-8 sm:px-6 lg:px-8" data-reveal="">
   <SectionCard
     eyebrow="Official routes"
     title="Every package states its substrate honestly"
