@@ -49,7 +49,7 @@
  */
 
 declare const jxSlot: unique symbol;
-const SLOT_BRAND = Symbol('jx-defaults-slot') as typeof jxSlot;
+const SLOT_BRAND = Symbol("jx-defaults-slot") as typeof jxSlot;
 
 /**
  * A Defaults slot: `(explicit) => resolved`. Constructible only by the
@@ -59,7 +59,7 @@ const SLOT_BRAND = Symbol('jx-defaults-slot') as typeof jxSlot;
  */
 export interface DefaultsSlot<T> {
   (explicit: T | undefined): T;
-  readonly [jxSlot]: 'defaults-slot';
+  readonly [jxSlot]: "defaults-slot";
 }
 
 /**
@@ -100,9 +100,9 @@ export function defineAxisSlot<T>(
   const silentAmbient = (): T | undefined => undefined;
   const slot = (explicit: T | undefined): T => resolve(explicit, silentAmbient);
   const branded: DefaultsSlot<T> = Object.assign(slot, {
-    [SLOT_BRAND]: 'defaults-slot',
+    [SLOT_BRAND]: "defaults-slot",
   } as const);
-  Object.defineProperty(branded, 'name', { value: name });
+  Object.defineProperty(branded, "name", { value: name });
   SLOT_REGISTRY.add(branded);
   return branded;
 }
@@ -137,7 +137,7 @@ export function defineLiteralSlot<const T extends readonly (string | number | bo
   values: T,
   defaultValue: OneOf<T>,
 ): DefaultsSlot<OneOf<T>> {
-  return defineAxisSlot('literal', (explicit) => explicit ?? defaultValue);
+  return defineAxisSlot("literal", (explicit) => explicit ?? defaultValue);
 }
 
 /**
@@ -156,7 +156,7 @@ export function defineLiteralSlot<const T extends readonly (string | number | bo
 export function defineOpenSlot<T extends string | number | boolean = never>(
   own: NoInfer<T>,
 ): DefaultsSlot<T> {
-  return defineAxisSlot('literal', (explicit) => explicit ?? own);
+  return defineAxisSlot("literal", (explicit) => explicit ?? own);
 }
 
 /**
@@ -169,7 +169,7 @@ export function defineOpenSlot<T extends string | number | boolean = never>(
  * `SurfaceVariant | undefined`.
  */
 export function absentSlot<T extends {}>(): DefaultsSlot<T | undefined> {
-  return defineAxisSlot('absent', (explicit) => explicit);
+  return defineAxisSlot("absent", (explicit) => explicit);
 }
 
 /**
@@ -204,7 +204,7 @@ export function defineComponentDefaults<S extends Record<string, AnyBrandedSlot>
   if (import.meta.env?.DEV) {
     for (const key of Object.keys(slots) as (keyof S & string)[]) {
       if (!SLOT_REGISTRY.has(slots[key])) {
-        throw new Error('[defaults] slots accept factory products only');
+        throw new Error("[defaults] slots accept factory products only");
       }
     }
   }

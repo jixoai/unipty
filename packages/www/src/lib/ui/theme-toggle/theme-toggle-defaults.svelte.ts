@@ -23,9 +23,12 @@
  * item (installs with the family, byte mirrored, zero kernel
  * imports).
  */
-import { defineComponentDefaults, defineLiteralSlot } from '$lib/defaults.svelte';
+import { defineComponentDefaults, defineLiteralSlot } from "$lib/defaults.svelte";
 
-export const themeToggleVariantSlot = defineLiteralSlot(['full', 'compact', 'icon', 'text'], 'compact');
+export const themeToggleVariantSlot = defineLiteralSlot(
+  ["full", "compact", "icon", "text"],
+  "compact",
+);
 
 /** the structural selector — how much of the mode UI renders;
  *  ReturnType 反查 — the values tuple above is the union's source */

@@ -268,7 +268,11 @@ function checkLlmsExport(pages) {
   // exactly one mirror per published page, every mirror provenance-marked
   const mirrorOf = (page) => path.basename(page).replace(/\.html$/, ".md");
   const expectedMirrors = new Set(pages.map(mirrorOf));
-  const actualMirrors = new Set(walk(distDir).map((f) => path.basename(f)).filter((f) => f.endsWith(".md")));
+  const actualMirrors = new Set(
+    walk(distDir)
+      .map((f) => path.basename(f))
+      .filter((f) => f.endsWith(".md")),
+  );
   for (const page of pages) {
     const mirror = mirrorOf(page);
     if (!actualMirrors.has(mirror)) {
@@ -287,7 +291,9 @@ function checkLlmsExport(pages) {
 
   // byte-identical regeneration (the llms-txt determinism law) — the SAME
   // config the build used (LLMS_TXT_CONFIG is the single source)
-  const before = new Map([...actualMirrors, "llms.txt", "llms-full.txt"].map((f) => [f, sha256(read(f))]));
+  const before = new Map(
+    [...actualMirrors, "llms.txt", "llms-full.txt"].map((f) => [f, sha256(read(f))]),
+  );
   generateLlmsTxt(distDir, LLMS_TXT_CONFIG);
   for (const [file, hash] of before) {
     if (sha256(read(file)) !== hash) fail(`${file}: regeneration is not byte-identical`);
@@ -353,7 +359,13 @@ function checkCnameGate(lastCatalog) {
   }
   // the AI export layer must ship in BOTH modes (CNAME is not HTML, so the
   // exports themselves are mode-independent)
-  for (const exportFile of ["llms.txt", "llms-full.txt", "index.md", "docs.md", "compatibility.md"]) {
+  for (const exportFile of [
+    "llms.txt",
+    "llms-full.txt",
+    "index.md",
+    "docs.md",
+    "compatibility.md",
+  ]) {
     if (!existsSync(path.join(distDir, exportFile))) {
       fail(`WWW_CNAME build is missing the AI export ${exportFile}`);
     }

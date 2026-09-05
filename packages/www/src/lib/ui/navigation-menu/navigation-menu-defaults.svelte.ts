@@ -30,10 +30,13 @@
  * member of the registry:ui item (installs with the family, byte
  * mirrored, zero kernel imports).
  */
-import { defineComponentDefaults, defineLiteralSlot, defineOpenSlot } from '$lib/defaults.svelte';
-import { densitySlot } from '$lib/density.svelte';
+import { defineComponentDefaults, defineLiteralSlot, defineOpenSlot } from "$lib/defaults.svelte";
+import { densitySlot } from "$lib/density.svelte";
 
-export const navigationMenuSurfaceVariantSlot = defineLiteralSlot(['solid', 'acrylic', 'auto'], 'auto');
+export const navigationMenuSurfaceVariantSlot = defineLiteralSlot(
+  ["solid", "acrylic", "auto"],
+  "auto",
+);
 
 /** the OPEN-domain form ([B1]: a per-edge px measure is a free number,
  *  no closed union to enumerate) — the explicit type argument is the

@@ -39,16 +39,28 @@ import {
   rmdirSync,
   statSync,
   writeFileSync,
-} from 'node:fs';
-import path from 'node:path';
+} from "node:fs";
+import path from "node:path";
 
 /* --------------------------------------------------------------------------
  * 1. tokenizer + tree builder
  * ------------------------------------------------------------------------ */
 
 const VOID_ELEMENTS = new Set([
-  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input',
-  'link', 'meta', 'param', 'source', 'track', 'wbr',
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr",
 ]);
 
 /** Elements whose entire subtree is UI chrome, payloads, or non-text media. */
@@ -57,10 +69,27 @@ const VOID_ELEMENTS = new Set([
  * playground toggles) are noise for LLM consumption — the same semantics
  * live in the surrounding prose and usage code. */
 const STRIP_ELEMENTS = new Set([
-  'script', 'style', 'nav', 'header', 'footer', 'aside', 'form',
-  'svg', 'noscript', 'template', 'iframe', 'canvas', 'video',
-  'audio', 'picture', 'object', 'embed', 'select', 'textarea', 'input',
-  'button',
+  "script",
+  "style",
+  "nav",
+  "header",
+  "footer",
+  "aside",
+  "form",
+  "svg",
+  "noscript",
+  "template",
+  "iframe",
+  "canvas",
+  "video",
+  "audio",
+  "picture",
+  "object",
+  "embed",
+  "select",
+  "textarea",
+  "input",
+  "button",
 ]);
 
 /** Attribute-level chrome: decorative-by-contract (aria-hidden) and
@@ -68,23 +97,66 @@ const STRIP_ELEMENTS = new Set([
  * duplicates what the page shows in its open sections). */
 function isChromeElement(node) {
   return (
-    node.type === 'element' &&
+    node.type === "element" &&
     (STRIP_ELEMENTS.has(node.name) ||
-      node.attrs['aria-hidden'] === 'true' ||
-      node.attrs['inert'] !== undefined)
+      node.attrs["aria-hidden"] === "true" ||
+      node.attrs["inert"] !== undefined)
   );
 }
 
 const NAMED_ENTITIES = {
-  amp: '&', lt: '<', le: '≤', gt: '>', ge: '≥', quot: '"', apos: "'",
-  nbsp: ' ', hellip: '…', mdash: '—', ndash: '–', laquo: '«', raquo: '»',
-  larr: '←', rarr: '→', uarr: '↑', darr: '↓', copy: '©', reg: '®',
-  trade: '™', deg: '°', middot: '·', bull: '•', times: '×', divide: '÷',
-  plusmn: '±', sup2: '²', sup3: '³', frac12: '½', frac14: '¼',
-  ldquo: '“', rdquo: '”', lsquo: '‘', rsquo: '’', eacute: 'é',
-  egrave: 'è', agrave: 'à', ccedil: 'ç', uuml: 'ü', ouml: 'ö', auml: 'ä',
-  szlig: 'ß', ntilde: 'ñ', sect: '§', para: '¶', dagger: '†', prime: '′',
-  ensp: ' ', emsp: ' ', thinsp: ' ', zwj: '‍', zwnj: '‌',
+  amp: "&",
+  lt: "<",
+  le: "≤",
+  gt: ">",
+  ge: "≥",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  hellip: "…",
+  mdash: "—",
+  ndash: "–",
+  laquo: "«",
+  raquo: "»",
+  larr: "←",
+  rarr: "→",
+  uarr: "↑",
+  darr: "↓",
+  copy: "©",
+  reg: "®",
+  trade: "™",
+  deg: "°",
+  middot: "·",
+  bull: "•",
+  times: "×",
+  divide: "÷",
+  plusmn: "±",
+  sup2: "²",
+  sup3: "³",
+  frac12: "½",
+  frac14: "¼",
+  ldquo: "“",
+  rdquo: "”",
+  lsquo: "‘",
+  rsquo: "’",
+  eacute: "é",
+  egrave: "è",
+  agrave: "à",
+  ccedil: "ç",
+  uuml: "ü",
+  ouml: "ö",
+  auml: "ä",
+  szlig: "ß",
+  ntilde: "ñ",
+  sect: "§",
+  para: "¶",
+  dagger: "†",
+  prime: "′",
+  ensp: " ",
+  emsp: " ",
+  thinsp: " ",
+  zwj: "‍",
+  zwnj: "‌",
 };
 
 export function decodeEntities(text) {
@@ -99,21 +171,19 @@ export function decodeEntities(text) {
 }
 
 function safeCodePoint(code) {
-  return Number.isFinite(code) && code > 0 && code <= 0x10ffff
-    ? String.fromCodePoint(code)
-    : '';
+  return Number.isFinite(code) && code > 0 && code <= 0x10ffff ? String.fromCodePoint(code) : "";
 }
 
 /** Find the '>' that closes a tag, honoring quoted attribute values. */
 function findTagEnd(html, from) {
-  let quote = '';
+  let quote = "";
   for (let i = from; i < html.length; i++) {
     const ch = html[i];
     if (quote) {
-      if (ch === quote) quote = '';
+      if (ch === quote) quote = "";
     } else if (ch === '"' || ch === "'") {
       quote = ch;
-    } else if (ch === '>') {
+    } else if (ch === ">") {
       return i;
     }
   }
@@ -124,7 +194,7 @@ function parseAttrs(source) {
   const attrs = {};
   const pattern = /([:a-zA-Z_][-:a-zA-Z0-9_]*)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+)))?/g;
   for (const match of source.matchAll(pattern)) {
-    attrs[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4] ?? '';
+    attrs[match[1].toLowerCase()] = match[2] ?? match[3] ?? match[4] ?? "";
   }
   return attrs;
 }
@@ -138,32 +208,35 @@ export function* tokenizeHtml(html) {
   const n = html.length;
   let i = 0;
   while (i < n) {
-    const lt = html.indexOf('<', i);
+    const lt = html.indexOf("<", i);
     if (lt === -1) {
-      if (i < n) yield { type: 'text', text: html.slice(i) };
+      if (i < n) yield { type: "text", text: html.slice(i) };
       return;
     }
-    if (lt > i) yield { type: 'text', text: html.slice(i, lt) };
-    if (html.startsWith('<!--', lt)) {
-      const end = html.indexOf('-->', lt + 4);
+    if (lt > i) yield { type: "text", text: html.slice(i, lt) };
+    if (html.startsWith("<!--", lt)) {
+      const end = html.indexOf("-->", lt + 4);
       i = end === -1 ? n : end + 3;
       continue;
     }
-    if (html.startsWith('<!', lt) || html.startsWith('<?', lt)) {
-      const end = html.indexOf('>', lt);
+    if (html.startsWith("<!", lt) || html.startsWith("<?", lt)) {
+      const end = html.indexOf(">", lt);
       i = end === -1 ? n : end + 1;
       continue;
     }
-    if (html.startsWith('</', lt)) {
-      const gt = html.indexOf('>', lt);
-      const name = html.slice(lt + 2, gt === -1 ? n : gt).trim().toLowerCase();
+    if (html.startsWith("</", lt)) {
+      const gt = html.indexOf(">", lt);
+      const name = html
+        .slice(lt + 2, gt === -1 ? n : gt)
+        .trim()
+        .toLowerCase();
       i = gt === -1 ? n : gt + 1;
-      if (/^[a-z][^\s/>]*$/.test(name)) yield { type: 'close', name };
+      if (/^[a-z][^\s/>]*$/.test(name)) yield { type: "close", name };
       continue;
     }
     const nameMatch = /^<([a-zA-Z][^\s/>]*)/.exec(html.slice(lt, lt + 80));
     if (!nameMatch) {
-      yield { type: 'text', text: '<' };
+      yield { type: "text", text: "<" };
       i = lt + 1;
       continue;
     }
@@ -175,9 +248,9 @@ export function* tokenizeHtml(html) {
     const inner = html.slice(lt + 1 + nameMatch[1].length, gt);
     const name = nameMatch[1].toLowerCase();
     yield {
-      type: 'open',
+      type: "open",
       name,
-      attrs: parseAttrs(inner.replace(/\/\s*$/, '')),
+      attrs: parseAttrs(inner.replace(/\/\s*$/, "")),
       selfClosing: /\/\s*$/.test(inner) || VOID_ELEMENTS.has(name),
     };
     i = gt + 1;
@@ -190,14 +263,14 @@ export function* tokenizeHtml(html) {
  * forgiving stack builder, not a validator.
  */
 export function parseFragment(html) {
-  const root = { type: 'root', children: [] };
+  const root = { type: "root", children: [] };
   const stack = [root];
   for (const token of tokenizeHtml(html)) {
     const top = stack[stack.length - 1];
-    if (token.type === 'text') {
-      top.children.push({ type: 'text', text: token.text });
-    } else if (token.type === 'open') {
-      const node = { type: 'element', name: token.name, attrs: token.attrs, children: [] };
+    if (token.type === "text") {
+      top.children.push({ type: "text", text: token.text });
+    } else if (token.type === "open") {
+      const node = { type: "element", name: token.name, attrs: token.attrs, children: [] };
       top.children.push(node);
       if (!token.selfClosing) stack.push(node);
     } else {
@@ -222,9 +295,9 @@ export function parseFragment(html) {
 function safeHref(href, baseUrl) {
   const value = href?.trim();
   if (!value) return null;
-  if (value.startsWith('//')) return null; // protocol-relative: scheme-less off-site
+  if (value.startsWith("//")) return null; // protocol-relative: scheme-less off-site
   if (/^(https?:|mailto:)/i.test(value)) return value;
-  if (value.startsWith('/') || value.startsWith('#')) return value;
+  if (value.startsWith("/") || value.startsWith("#")) return value;
   if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) return null; // javascript:, data:, vbscript:, …
   if (baseUrl) {
     try {
@@ -239,13 +312,13 @@ function safeHref(href, baseUrl) {
 /** Minimal escaping: structure-breaking characters only. LLM readability
  * beats full GFM escaping — stray emphasis markers are harmless noise. */
 function escapeText(text, inTable) {
-  let out = text.replace(/\\/g, '\\\\');
-  if (inTable) out = out.replace(/\|/g, '\\|');
+  let out = text.replace(/\\/g, "\\\\");
+  if (inTable) out = out.replace(/\|/g, "\\|");
   return out;
 }
 
 function collapseInline(text) {
-  return decodeEntities(text).replace(/[ \t\r\n]+/g, ' ');
+  return decodeEntities(text).replace(/[ \t\r\n]+/g, " ");
 }
 
 /** Verbatim text of a subtree (code blocks): keeps whitespace, decodes
@@ -253,18 +326,18 @@ function collapseInline(text) {
  * the markup did not separate with a real newline get one, so code never
  * collapses into a single line. */
 function textOf(nodes) {
-  let out = '';
+  let out = "";
   let afterLineSpan = false;
   for (const node of nodes) {
-    if (node.type === 'text') {
+    if (node.type === "text") {
       out += decodeEntities(node.text);
       afterLineSpan = false;
-    } else if (node.name === 'br') {
-      out += '\n';
+    } else if (node.name === "br") {
+      out += "\n";
       afterLineSpan = false;
     } else {
-      const isLine = /(?:^|\s)line(?:\s|$)/.test(node.attrs['class'] || '');
-      if (afterLineSpan && isLine && !out.endsWith('\n')) out += '\n';
+      const isLine = /(?:^|\s)line(?:\s|$)/.test(node.attrs["class"] || "");
+      if (afterLineSpan && isLine && !out.endsWith("\n")) out += "\n";
       out += textOf(node.children);
       afterLineSpan = isLine;
     }
@@ -273,89 +346,89 @@ function textOf(nodes) {
 }
 
 function detectLanguage(node) {
-  const candidates = [node, ...node.children.filter((c) => c.type === 'element')];
+  const candidates = [node, ...node.children.filter((c) => c.type === "element")];
   for (const candidate of candidates) {
-    const direct = candidate.attrs['data-lang'] || candidate.attrs['lang'];
+    const direct = candidate.attrs["data-lang"] || candidate.attrs["lang"];
     if (direct) return direct;
-    const klass = candidate.attrs['class'] || '';
+    const klass = candidate.attrs["class"] || "";
     const match = /(?:^|\s)(?:language|lang)-([^\s]+)/.exec(klass);
     if (match) return match[1];
   }
-  return '';
+  return "";
 }
 
 function codeFence(raw) {
   const longest = Math.max(3, ...(raw.match(/`+/g) || []).map((run) => run.length + 1));
-  return '`'.repeat(longest);
+  return "`".repeat(longest);
 }
 
 /** Convert an inline run (headings, cells, link text) to a single line. */
 function inlineOf(nodes, ctx) {
-  let out = '';
+  let out = "";
   for (const node of nodes) {
-    if (node.type === 'text') {
+    if (node.type === "text") {
       out += escapeText(collapseInline(node.text), ctx.inTable);
       continue;
     }
     const { name, attrs, children } = node;
     if (isChromeElement(node)) continue;
-    if (name === 'br') {
-      out += ' ';
-    } else if (name === 'a') {
-      const href = safeHref(attrs['href'], ctx.baseUrl);
+    if (name === "br") {
+      out += " ";
+    } else if (name === "a") {
+      const href = safeHref(attrs["href"], ctx.baseUrl);
       const label = inlineOf(children, ctx).trim();
       out += href && label ? `[${label}](${href})` : label;
-    } else if (name === 'img') {
-      const alt = collapseInline(attrs['alt'] || '').trim();
-      const src = safeHref(attrs['src'], ctx.baseUrl);
+    } else if (name === "img") {
+      const alt = collapseInline(attrs["alt"] || "").trim();
+      const src = safeHref(attrs["src"], ctx.baseUrl);
       // data: URIs are unverifiable inline blobs — the alt text is the content.
       out += src ? `![${alt}](${src})` : alt;
-    } else if (name === 'code') {
-      const raw = textOf(children).replace(/\n+$/, '');
-      const tick = raw.includes('`') ? '``' : '`';
+    } else if (name === "code") {
+      const raw = textOf(children).replace(/\n+$/, "");
+      const tick = raw.includes("`") ? "``" : "`";
       out += `${tick}${raw}${tick}`;
-    } else if (name === 'strong' || name === 'b') {
+    } else if (name === "strong" || name === "b") {
       const label = inlineOf(children, ctx).trim();
-      out += label ? `**${label}**` : '';
-    } else if (name === 'em' || name === 'i') {
+      out += label ? `**${label}**` : "";
+    } else if (name === "em" || name === "i") {
       const label = inlineOf(children, ctx).trim();
-      out += label ? `_${label}_` : '';
-    } else if (name === 'del' || name === 's') {
+      out += label ? `_${label}_` : "";
+    } else if (name === "del" || name === "s") {
       const label = inlineOf(children, ctx).trim();
-      out += label ? `~~${label}~~` : '';
+      out += label ? `~~${label}~~` : "";
     } else {
       out += inlineOf(children, ctx);
     }
   }
-  return out.replace(/ {2,}/g, ' ');
+  return out.replace(/ {2,}/g, " ");
 }
 
 function convertList(node, ctx, depth) {
-  const indent = '  '.repeat(depth);
-  const ordered = node.name === 'ol';
-  let index = parseInt(node.attrs['start'] || '1', 10) || 1;
+  const indent = "  ".repeat(depth);
+  const ordered = node.name === "ol";
+  let index = parseInt(node.attrs["start"] || "1", 10) || 1;
   const items = [];
   for (const child of node.children) {
-    if (child.type !== 'element') continue;
-    if (child.name === 'li') {
+    if (child.type !== "element") continue;
+    if (child.name === "li") {
       // Tight lists: a nested list or paragraph inside an item stays on
       // the item's own line chain (no blank lines inside a list).
       const raw = childrenToMarkdown(child.children, { ...ctx, inTable: false })
         .trim()
-        .replace(/\n{2,}/g, '\n');
-      const marker = ordered ? `${index++}. ` : '- ';
+        .replace(/\n{2,}/g, "\n");
+      const marker = ordered ? `${index++}. ` : "- ";
       const body = raw
-        .split('\n')
+        .split("\n")
         .map((line, lineIndex) =>
-          lineIndex === 0 || line === '' ? line : ' '.repeat(marker.length) + line,
+          lineIndex === 0 || line === "" ? line : " ".repeat(marker.length) + line,
         )
-        .join('\n');
+        .join("\n");
       items.push(indent + marker + body);
-    } else if (child.name === 'ul' || child.name === 'ol') {
+    } else if (child.name === "ul" || child.name === "ol") {
       items.push(convertList(child, ctx, depth + 1).trim());
     }
   }
-  return `\n\n${items.join('\n')}\n`;
+  return `\n\n${items.join("\n")}\n`;
 }
 
 function convertTable(node, ctx) {
@@ -364,41 +437,41 @@ function convertTable(node, ctx) {
   const collect = (tr) => {
     const cells = [];
     for (const cell of tr.children) {
-      if (cell.type !== 'element' || (cell.name !== 'td' && cell.name !== 'th')) continue;
-      if (cell.attrs['colspan'] || cell.attrs['rowspan']) irregular = true;
+      if (cell.type !== "element" || (cell.name !== "td" && cell.name !== "th")) continue;
+      if (cell.attrs["colspan"] || cell.attrs["rowspan"]) irregular = true;
       cells.push(inlineOf(cell.children, { ...ctx, inTable: true }).trim());
     }
     if (cells.length) rows.push(cells);
   };
   const walk = (element) => {
     for (const child of element.children) {
-      if (child.type !== 'element') continue;
-      if (child.name === 'tr') collect(child);
-      else if (child.name !== 'td' && child.name !== 'th') walk(child);
+      if (child.type !== "element") continue;
+      if (child.name === "tr") collect(child);
+      else if (child.name !== "td" && child.name !== "th") walk(child);
     }
   };
   walk(node);
-  if (!rows.length) return '\n';
+  if (!rows.length) return "\n";
   if (irregular) {
     // Colspan/rowspan tables cannot become correct GFM: degrade to one
     // bullet per row instead of emitting a wrong grid.
-    const lines = rows.map((cells) => `- ${cells.map((c) => c || '·').join(' — ')}`);
-    return `\n\n${lines.join('\n')}\n`;
+    const lines = rows.map((cells) => `- ${cells.map((c) => c || "·").join(" — ")}`);
+    return `\n\n${lines.join("\n")}\n`;
   }
   const width = Math.max(...rows.map((cells) => cells.length));
   const padded = rows.map((cells) => {
     const copy = [...cells];
-    while (copy.length < width) copy.push('');
+    while (copy.length < width) copy.push("");
     return copy;
   });
   const [header, ...body] = padded;
-  const line = (cells) => `| ${cells.join(' | ')} |`;
-  return `\n\n${line(header)}\n${line(Array.from({ length: width }, () => '---'))}\n${body.map(line).join('\n')}\n`;
+  const line = (cells) => `| ${cells.join(" | ")} |`;
+  return `\n\n${line(header)}\n${line(Array.from({ length: width }, () => "---"))}\n${body.map(line).join("\n")}\n`;
 }
 
 /** Convert the children of one node into block markdown. */
 function childrenToMarkdown(nodes, ctx) {
-  let out = '';
+  let out = "";
   for (const node of nodes) {
     out += nodeToMarkdown(node, ctx);
   }
@@ -406,60 +479,71 @@ function childrenToMarkdown(nodes, ctx) {
 }
 
 function nodeToMarkdown(node, ctx) {
-  if (node.type === 'text') {
+  if (node.type === "text") {
     const collapsed = collapseInline(node.text);
-    return collapsed === ' ' ? '\n' : escapeText(collapsed, ctx.inTable);
+    return collapsed === " " ? "\n" : escapeText(collapsed, ctx.inTable);
   }
   const { name, attrs, children } = node;
-  if (isChromeElement(node)) return '';
+  if (isChromeElement(node)) return "";
 
-  if (name === 'pre') {
+  if (name === "pre") {
     // Raw fidelity: leading/trailing newlines and indentation survive
     // verbatim (only the fence separators are added); the closing fence
     // needs exactly one preceding newline.
     const raw = textOf(children);
-    const body = raw.endsWith('\n') ? raw : `${raw}\n`;
+    const body = raw.endsWith("\n") ? raw : `${raw}\n`;
     const fence = codeFence(raw);
     return `\n\n${fence}${detectLanguage(node)}\n${body}${fence}\n`;
   }
-  if (name === 'code') {
+  if (name === "code") {
     return inlineOf([node], ctx); // bare <code> outside <pre>: inline code
   }
 
   switch (name) {
-    case 'h1': case 'h2': case 'h3': case 'h4': case 'h5': case 'h6': {
+    case "h1":
+    case "h2":
+    case "h3":
+    case "h4":
+    case "h5":
+    case "h6": {
       const label = inlineOf(children, ctx).trim();
-      return label ? `\n\n${'#'.repeat(Number(name[1]))} ${label}\n` : '';
+      return label ? `\n\n${"#".repeat(Number(name[1]))} ${label}\n` : "";
     }
-    case 'p': {
+    case "p": {
       const label = inlineOf(children, ctx).trim();
-      return label ? `\n\n${label}\n` : '\n';
+      return label ? `\n\n${label}\n` : "\n";
     }
-    case 'hr':
-      return '\n\n---\n';
-    case 'br':
-      return '\n';
-    case 'blockquote': {
-      const inner = childrenToMarkdown(children, ctx).trim().replace(/\n{2,}/g, '\n\n');
+    case "hr":
+      return "\n\n---\n";
+    case "br":
+      return "\n";
+    case "blockquote": {
+      const inner = childrenToMarkdown(children, ctx)
+        .trim()
+        .replace(/\n{2,}/g, "\n\n");
       return inner
-        ? `\n\n${inner.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')}\n`
-        : '';
+        ? `\n\n${inner
+            .split("\n")
+            .map((line) => `> ${line}`.trimEnd())
+            .join("\n")}\n`
+        : "";
     }
-    case 'ul': case 'ol':
+    case "ul":
+    case "ol":
       return convertList(node, ctx, 0);
-    case 'table':
+    case "table":
       return convertTable(node, ctx);
-    case 'dt': {
+    case "dt": {
       const label = inlineOf(children, ctx).trim();
-      return label ? `\n\n**${label}**\n` : '';
+      return label ? `\n\n**${label}**\n` : "";
     }
-    case 'dd': {
+    case "dd": {
       const label = inlineOf(children, ctx).trim();
-      return label ? `${label}\n` : '';
+      return label ? `${label}\n` : "";
     }
-    case 'summary': {
+    case "summary": {
       const label = inlineOf(children, ctx).trim();
-      return label ? `\n\n**${label}**\n` : '';
+      return label ? `\n\n**${label}**\n` : "";
     }
     default:
       // Inline-level elements stay inline; block containers (div/section/
@@ -471,7 +555,7 @@ function nodeToMarkdown(node, ctx) {
 
 /** Public converter: fragment → deterministic markdown (UTF-8, LF, one trailing newline). */
 export function htmlToMarkdown(rootNode, options = {}) {
-  const ctx = { baseUrl: options.baseUrl || '', inTable: false };
+  const ctx = { baseUrl: options.baseUrl || "", inTable: false };
   const raw = childrenToMarkdown(rootNode.children ?? rootNode, ctx);
   // Blank-line runs collapse to one blank line — but never inside fenced
   // code blocks, whose raw newline layout is preserved verbatim.
@@ -484,11 +568,11 @@ export function htmlToMarkdown(rootNode, options = {}) {
     },
   );
   const normalized = sheltered
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .replace(/\u0000llms-fence-(\d+)\u0000/g, (_, index) => fences[Number(index)])
     .trim();
-  return normalized ? `${normalized}\n` : '';
+  return normalized ? `${normalized}\n` : "";
 }
 
 /* --------------------------------------------------------------------------
@@ -497,7 +581,7 @@ export function htmlToMarkdown(rootNode, options = {}) {
 
 function findFirst(node, name) {
   for (const child of node.children ?? []) {
-    if (child.type === 'element') {
+    if (child.type === "element") {
       if (child.name === name) return child;
       const found = findFirst(child, name);
       if (found) return found;
@@ -508,8 +592,8 @@ function findFirst(node, name) {
 
 function collectMetas(node, into = []) {
   for (const child of node.children ?? []) {
-    if (child.type === 'element') {
-      if (child.name === 'meta') into.push(child.attrs);
+    if (child.type === "element") {
+      if (child.name === "meta") into.push(child.attrs);
       collectMetas(child, into);
     }
   }
@@ -521,7 +605,7 @@ function collectMetas(node, into = []) {
  * panels). */
 function stripChrome(node) {
   node.children = (node.children ?? []).filter((child) => {
-    if (child.type === 'element') {
+    if (child.type === "element") {
       if (isChromeElement(child)) return false;
       stripChrome(child);
     }
@@ -537,52 +621,50 @@ function stripChrome(node) {
  */
 export function extractPage(html) {
   const tree = parseFragment(html);
-  const titleEl = findFirst(tree, 'title');
+  const titleEl = findFirst(tree, "title");
   const metas = collectMetas(tree);
-  const description = metas
-    .find((attrs) => (attrs['name'] || '').toLowerCase() === 'description');
-  const robots = metas
-    .find((attrs) => (attrs['name'] || '').toLowerCase() === 'robots');
-  let content = findFirst(tree, 'main') ?? findFirst(tree, 'body') ?? tree;
+  const description = metas.find((attrs) => (attrs["name"] || "").toLowerCase() === "description");
+  const robots = metas.find((attrs) => (attrs["name"] || "").toLowerCase() === "robots");
+  let content = findFirst(tree, "main") ?? findFirst(tree, "body") ?? tree;
   content = stripChrome(content);
-  const h1 = findFirst(content, 'h1');
+  const h1 = findFirst(content, "h1");
   return {
-    title: titleEl ? collapseInline(textOf(titleEl.children)).trim() : '',
-    description: description ? collapseInline(description['content'] || '').trim() : '',
-    noindex: robots ? /noindex/i.test(robots['content'] || '') : false,
-    h1: h1 ? inlineOf(h1.children, { baseUrl: '', inTable: false }).trim() : '',
+    title: titleEl ? collapseInline(textOf(titleEl.children)).trim() : "",
+    description: description ? collapseInline(description["content"] || "").trim() : "",
+    noindex: robots ? /noindex/i.test(robots["content"] || "") : false,
+    h1: h1 ? inlineOf(h1.children, { baseUrl: "", inTable: false }).trim() : "",
     contentNode: content,
   };
 }
 
 /** index.html → '/', docs/index.html → '/docs/', a/b.html → '/a/b' */
 export function pageUrlFromRel(rel) {
-  if (rel === 'index.html') return '/';
-  if (rel.endsWith('/index.html')) return `/${rel.slice(0, -'index.html'.length)}`;
-  return `/${rel.replace(/\.html?$/i, '')}`;
+  if (rel === "index.html") return "/";
+  if (rel.endsWith("/index.html")) return `/${rel.slice(0, -"index.html".length)}`;
+  return `/${rel.replace(/\.html?$/i, "")}`;
 }
 
 function mdRelFromRel(rel) {
-  return rel.replace(/\.html?$/i, '.md');
+  return rel.replace(/\.html?$/i, ".md");
 }
 
 /** Minimal glob → anchored RegExp: `**` spans separators, `*`/`?` do not. */
 export function globToRegExp(glob) {
-  let source = '';
+  let source = "";
   for (let i = 0; i < glob.length; i++) {
     const ch = glob[i];
-    if (ch === '*') {
-      if (glob[i + 1] === '*') {
-        source += '.*';
+    if (ch === "*") {
+      if (glob[i + 1] === "*") {
+        source += ".*";
         i++;
-        if (glob[i + 1] === '/') i++; // '**/' also swallows the slash
+        if (glob[i + 1] === "/") i++; // '**/' also swallows the slash
       } else {
-        source += '[^/]*';
+        source += "[^/]*";
       }
-    } else if (ch === '?') {
-      source += '[^/]';
+    } else if (ch === "?") {
+      source += "[^/]";
     } else {
-      source += ch.replace(/[.+^${}()|[\]\\]/g, '\\$&');
+      source += ch.replace(/[.+^${}()|[\]\\]/g, "\\$&");
     }
   }
   return new RegExp(`^${source}$`);
@@ -593,7 +675,7 @@ function matchAny(rel, globs) {
 }
 
 /** Recursively list *.html files under dir as POSIX paths relative to it. */
-function listHtmlFiles(dir, prefix = '') {
+function listHtmlFiles(dir, prefix = "") {
   const out = [];
   let entries;
   try {
@@ -617,7 +699,7 @@ function listHtmlFiles(dir, prefix = '') {
  * 4. composition + staged all-or-nothing deterministic writes
  * ------------------------------------------------------------------------ */
 
-const MD_MARKER_PREFIX = '<!-- generated by jixoai llms-txt · do not edit';
+const MD_MARKER_PREFIX = "<!-- generated by jixoai llms-txt · do not edit";
 
 function mdMarker(sourceUrl) {
   return `${MD_MARKER_PREFIX} · source: ${sourceUrl} -->\n\n`;
@@ -626,19 +708,19 @@ function mdMarker(sourceUrl) {
 function truncateDescription(text, max = 200) {
   if (text.length <= max) return text;
   const cut = text.slice(0, max);
-  const space = cut.lastIndexOf(' ');
+  const space = cut.lastIndexOf(" ");
   return `${cut.slice(0, space > max * 0.6 ? space : max).trimEnd()}…`;
 }
 
 function joinUrl(siteUrl, pagePath) {
-  return `${siteUrl.replace(/\/+$/, '')}${pagePath}`;
+  return `${siteUrl.replace(/\/+$/, "")}${pagePath}`;
 }
 
 function composeIndexBody(config, sections) {
-  const lines = [`# ${config.title}`, '', `> ${config.summary}`, ''];
+  const lines = [`# ${config.title}`, "", `> ${config.summary}`, ""];
   for (const section of sections) {
     if (!section.entries.length) continue;
-    lines.push(`## ${section.title}`, '');
+    lines.push(`## ${section.title}`, "");
     for (const entry of section.entries) {
       lines.push(
         entry.description
@@ -646,9 +728,12 @@ function composeIndexBody(config, sections) {
           : `- [${entry.title}](${entry.link})`,
       );
     }
-    lines.push('');
+    lines.push("");
   }
-  return `${lines.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`;
+  return `${lines
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trimEnd()}\n`;
 }
 
 /**
@@ -660,12 +745,12 @@ function composeIndexBody(config, sections) {
  * @returns {{pages: number, files: {path: string, bytes: number}[], skipped: string[]}}
  */
 export function generateLlmsTxt(distDir, config) {
-  if (!config || typeof config !== 'object') {
-    throw new Error('[llms-txt] config object is required');
+  if (!config || typeof config !== "object") {
+    throw new Error("[llms-txt] config object is required");
   }
   let siteUrl;
   try {
-    siteUrl = new URL(config.siteUrl).href.replace(/\/+$/, '');
+    siteUrl = new URL(config.siteUrl).href.replace(/\/+$/, "");
   } catch {
     throw new Error(`[llms-txt] config.siteUrl must be an absolute URL (got: ${config.siteUrl})`);
   }
@@ -674,9 +759,9 @@ export function generateLlmsTxt(distDir, config) {
     throw new Error(`[llms-txt] dist directory does not exist: ${rootDir}`);
   }
 
-  const include = config.include ?? ['**/*.html'];
-  const exclude = config.exclude ?? ['404.html'];
-  const linkStyle = config.linkStyle ?? 'absolute';
+  const include = config.include ?? ["**/*.html"];
+  const exclude = config.exclude ?? ["404.html"];
+  const linkStyle = config.linkStyle ?? "absolute";
   const perPageMarkdown = config.perPageMarkdown ?? true;
   const full = { enabled: true, maxBytes: 10_000_000, ...(config.full ?? {}) };
   const locale = config.locale ?? null;
@@ -686,7 +771,7 @@ export function generateLlmsTxt(distDir, config) {
   const pages = listHtmlFiles(rootDir)
     .filter((rel) => matchAny(rel, include) && !matchAny(rel, exclude))
     .map((rel) => {
-      const page = extractPage(readFileSync(path.join(rootDir, ...rel.split('/')), 'utf8'));
+      const page = extractPage(readFileSync(path.join(rootDir, ...rel.split("/")), "utf8"));
       if (page.noindex) skipped.push(rel);
       const pageUrl = pageUrlFromRel(rel);
       // The .md link derives from the MIRROR path (mdRelFromRel), never
@@ -697,13 +782,13 @@ export function generateLlmsTxt(distDir, config) {
       return {
         rel,
         pageUrl,
-        link: linkStyle === 'absolute' ? joinUrl(siteUrl, mdUrl) : mdUrl,
+        link: linkStyle === "absolute" ? joinUrl(siteUrl, mdUrl) : mdUrl,
         sourceUrl: joinUrl(siteUrl, pageUrl),
-        baseUrl: joinUrl(siteUrl, pageUrl === '/' ? '/' : pageUrl),
+        baseUrl: joinUrl(siteUrl, pageUrl === "/" ? "/" : pageUrl),
         title: page.h1 || page.title || pageUrl,
         description: truncateDescription(page.description),
         noindex: page.noindex,
-        body: '',
+        body: "",
         contentNode: page.contentNode,
       };
     })
@@ -711,7 +796,7 @@ export function generateLlmsTxt(distDir, config) {
 
   // ---- section assignment (first matching section wins) --------------------
   const sectionDefs = config.sections ?? null;
-  const fallbackTitle = sectionDefs ? 'Pages' : 'Docs';
+  const fallbackTitle = sectionDefs ? "Pages" : "Docs";
   const buckets = new Map();
   const bucketFor = (page) => {
     if (!sectionDefs) return fallbackTitle;
@@ -735,7 +820,8 @@ export function generateLlmsTxt(distDir, config) {
     // Config URLs pass the same safety gate as page links, restricted to
     // absolute http(s)/mailto or root-relative site paths.
     const safe = safeHref(entry.url, null);
-    const valid = safe && (/^https?:/i.test(safe) || safe.startsWith('mailto:') || safe.startsWith('/'));
+    const valid =
+      safe && (/^https?:/i.test(safe) || safe.startsWith("mailto:") || safe.startsWith("/"));
     if (!valid) {
       throw new Error(
         `[llms-txt] additionalEntries url must be absolute http(s)/mailto or root-relative` +
@@ -744,9 +830,9 @@ export function generateLlmsTxt(distDir, config) {
     }
     // Off-site http(s)/mailto URLs are used verbatim in both link styles;
     // only root-relative site paths join against siteUrl.
-    const isOffsite = /^https?:/i.test(safe) || safe.startsWith('mailto:');
-    const link = isOffsite ? safe : linkStyle === 'absolute' ? joinUrl(siteUrl, safe) : safe;
-    const title = entry.optional ? 'Optional' : entry.section || 'Optional';
+    const isOffsite = /^https?:/i.test(safe) || safe.startsWith("mailto:");
+    const link = isOffsite ? safe : linkStyle === "absolute" ? joinUrl(siteUrl, safe) : safe;
+    const title = entry.optional ? "Optional" : entry.section || "Optional";
     if (!buckets.has(title)) {
       buckets.set(title, []);
       sectionOrder.push(title);
@@ -755,7 +841,7 @@ export function generateLlmsTxt(distDir, config) {
       isStatic: true,
       title: entry.name,
       link,
-      description: entry.description ?? '',
+      description: entry.description ?? "",
     });
   }
 
@@ -764,9 +850,7 @@ export function generateLlmsTxt(distDir, config) {
     return sectionOrder
       .map((title) => ({
         title,
-        entries: (buckets.get(title) ?? []).filter(
-          (entry) => entry.isStatic || inList.has(entry),
-        ),
+        entries: (buckets.get(title) ?? []).filter((entry) => entry.isStatic || inList.has(entry)),
       }))
       .filter((section) => section.entries.length > 0);
   };
@@ -781,7 +865,7 @@ export function generateLlmsTxt(distDir, config) {
   let fullPages = pages;
 
   if (!locale) {
-    outputs.push({ rel: 'llms.txt', content: composeIndexBody(config, buildSections(pages)) });
+    outputs.push({ rel: "llms.txt", content: composeIndexBody(config, buildSections(pages)) });
   } else {
     const segments = locale.segments;
     const grouped = Object.fromEntries(segments.map((segment) => [segment, []]));
@@ -810,8 +894,8 @@ export function generateLlmsTxt(distDir, config) {
         link: joinUrl(siteUrl, `/${segment}/llms.txt`),
         description: `The ${segment} edition of this index.`,
       }));
-    if (others.length) defaultSections.push({ title: 'Other languages', entries: others });
-    outputs.push({ rel: 'llms.txt', content: composeIndexBody(config, defaultSections) });
+    if (others.length) defaultSections.push({ title: "Other languages", entries: others });
+    outputs.push({ rel: "llms.txt", content: composeIndexBody(config, defaultSections) });
     // llms-full.txt follows the default locale only (a mixed-language dump
     // defeats retrieval); every locale still gets its per-page .md mirrors.
     fullPages = defaultPages;
@@ -827,12 +911,12 @@ export function generateLlmsTxt(distDir, config) {
   }
 
   if (full.enabled) {
-    const indexText = outputs.find((output) => output.rel === 'llms.txt').content;
+    const indexText = outputs.find((output) => output.rel === "llms.txt").content;
     const parts = [indexText];
     for (const page of fullPages) {
       parts.push(`\n---\n\n# ${page.title}\n\n${page.sourceUrl}\n\n${page.body}`);
     }
-    outputs.push({ rel: 'llms-full.txt', content: parts.join('') });
+    outputs.push({ rel: "llms-full.txt", content: parts.join("") });
   }
 
   // ---- guards BEFORE any write --------------------------------------------------
@@ -860,7 +944,7 @@ export function generateLlmsTxt(distDir, config) {
     }
   }
   if (duplicateIssues.length) {
-    throw new Error(`[llms-txt] duplicate page/mirror targets: ${duplicateIssues.join('; ')}`);
+    throw new Error(`[llms-txt] duplicate page/mirror targets: ${duplicateIssues.join("; ")}`);
   }
 
   const isDirectory = (file) => {
@@ -872,29 +956,29 @@ export function generateLlmsTxt(distDir, config) {
   };
   const conflicts = [];
   for (const output of outputs) {
-    const file = path.join(rootDir, ...output.rel.split('/'));
+    const file = path.join(rootDir, ...output.rel.split("/"));
     if (!existsSync(file)) continue;
     if (isDirectory(file)) {
       conflicts.push(`${output.rel} (a directory occupies the output path)`);
       continue;
     }
-    if (output.rel.endsWith('.md') && !readFileSync(file, 'utf8').startsWith(MD_MARKER_PREFIX)) {
+    if (output.rel.endsWith(".md") && !readFileSync(file, "utf8").startsWith(MD_MARKER_PREFIX)) {
       conflicts.push(`${output.rel} (hand-written markdown)`);
     }
   }
   if (conflicts.length) {
     throw new Error(
-      `[llms-txt] refusing to touch conflicting outputs: ${conflicts.join(', ')}` +
-        ' (move the file or adjust include/exclude)',
+      `[llms-txt] refusing to touch conflicting outputs: ${conflicts.join(", ")}` +
+        " (move the file or adjust include/exclude)",
     );
   }
-  const fullOutput = outputs.find((output) => output.rel === 'llms-full.txt');
+  const fullOutput = outputs.find((output) => output.rel === "llms-full.txt");
   if (fullOutput) {
-    const bytes = Buffer.byteLength(fullOutput.content, 'utf8');
+    const bytes = Buffer.byteLength(fullOutput.content, "utf8");
     if (bytes > full.maxBytes) {
       throw new Error(
         `[llms-txt] llms-full.txt is ${bytes}B, over the ${full.maxBytes}B cap — exclude` +
-          ' playground pages, disable full.enabled, or raise full.maxBytes',
+          " playground pages, disable full.enabled, or raise full.maxBytes",
       );
     }
   }
@@ -912,21 +996,24 @@ export function generateLlmsTxt(distDir, config) {
   try {
     mkdirSync(stagingDir, { recursive: true });
     for (const output of outputs) {
-      const staged = path.join(stagingDir, ...output.rel.split('/'));
+      const staged = path.join(stagingDir, ...output.rel.split("/"));
       mkdirSync(path.dirname(staged), { recursive: true });
-      writeFileSync(staged, output.content, 'utf8');
+      writeFileSync(staged, output.content, "utf8");
     }
     const backups = [];
     const created = [];
     const createdDirs = [];
     try {
       outputs.forEach((output, outputIndex) => {
-        const target = path.join(rootDir, ...output.rel.split('/'));
+        const target = path.join(rootDir, ...output.rel.split("/"));
         // Test seam (NOT a public config field — never set by real builds;
         // tests only): fail the commit after N successful target renames,
         // so the rollback path stays covered by automated fixtures instead
         // of only by manual fault injection.
-        if (config.__testFailCommitAfter !== undefined && outputIndex > config.__testFailCommitAfter) {
+        if (
+          config.__testFailCommitAfter !== undefined &&
+          outputIndex > config.__testFailCommitAfter
+        ) {
           throw new Error(`injected commit failure after target ${config.__testFailCommitAfter}`);
         }
         const parent = path.dirname(target);
@@ -935,14 +1022,14 @@ export function generateLlmsTxt(distDir, config) {
           createdDirs.push(parent);
         }
         if (existsSync(target)) {
-          const backup = path.join(stagingDir, '.backup', ...output.rel.split('/'));
+          const backup = path.join(stagingDir, ".backup", ...output.rel.split("/"));
           mkdirSync(path.dirname(backup), { recursive: true });
           renameSync(target, backup);
           backups.push([target, backup]);
         } else {
           created.push(target);
         }
-        renameSync(path.join(stagingDir, ...output.rel.split('/')), target);
+        renameSync(path.join(stagingDir, ...output.rel.split("/")), target);
       });
     } catch (error) {
       const rollbackErrors = [];
@@ -969,12 +1056,12 @@ export function generateLlmsTxt(distDir, config) {
         }
       }
       const suffix = rollbackErrors.length
-        ? ` (ROLLBACK INCOMPLETE: ${rollbackErrors.join('; ')})`
-        : '';
+        ? ` (ROLLBACK INCOMPLETE: ${rollbackErrors.join("; ")})`
+        : "";
       throw new Error(`[llms-txt] commit failed and was rolled back: ${error.message}${suffix}`);
     }
     for (const output of outputs) {
-      report.files.push({ path: output.rel, bytes: Buffer.byteLength(output.content, 'utf8') });
+      report.files.push({ path: output.rel, bytes: Buffer.byteLength(output.content, "utf8") });
     }
   } finally {
     rmSync(stagingDir, { recursive: true, force: true });
@@ -1001,19 +1088,22 @@ export function generateLlmsTxt(distDir, config) {
 export function llmsTxt(options = {}) {
   let resolved = null;
   return {
-    name: 'jixoai:llms-txt',
-    enforce: 'post',
+    name: "jixoai:llms-txt",
+    enforce: "post",
     configResolved(config) {
       resolved = config;
     },
     closeBundle() {
-      if (!resolved || resolved.command !== 'build' || !resolved.build.ssr) return;
+      if (!resolved || resolved.command !== "build" || !resolved.build.ssr) return;
       const { distDir, ...generatorConfig } = options;
-      const report = generateLlmsTxt(path.resolve(resolved.root, distDir ?? 'dist'), generatorConfig);
+      const report = generateLlmsTxt(
+        path.resolve(resolved.root, distDir ?? "dist"),
+        generatorConfig,
+      );
       const total = report.files.reduce((sum, file) => sum + file.bytes, 0);
       console.log(
         `[llms-txt] ${report.pages} pages → ${report.files.length} files (${total}B)` +
-          (report.skipped.length ? `, skipped noindex: ${report.skipped.join(', ')}` : ''),
+          (report.skipped.length ? `, skipped noindex: ${report.skipped.join(", ")}` : ""),
       );
     },
   };

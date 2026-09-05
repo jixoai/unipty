@@ -6,9 +6,9 @@
 //    vite), so the llms-txt law puts generation in the orchestrator's final
 //    step, never a second plugin.
 // 2. Dev server pinned to port 13500 (unique per concurrent agent law).
-import { sveltekit } from '@sveltejs/kit/vite';
-import tailwindcss from '@tailwindcss/vite';
-import { defineConfig } from 'vite';
+import { sveltekit } from "@sveltejs/kit/vite";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
 
 export default defineConfig({
   plugins: [sveltekit(), tailwindcss()],

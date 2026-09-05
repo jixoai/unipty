@@ -15,13 +15,13 @@
  * theme sheet.
  */
 
-import { getContext, setContext } from 'svelte';
-import { getContextPlugins, defineContextDef, type ContextDef } from './context-plugin.svelte';
-import { defineAxisSlot, type DefaultsSlot } from './defaults.svelte';
+import { getContext, setContext } from "svelte";
+import { getContextPlugins, defineContextDef, type ContextDef } from "./context-plugin.svelte";
+import { defineAxisSlot, type DefaultsSlot } from "./defaults.svelte";
 
-export type Density = 'lg' | 'default' | 'sm' | 'xs' | '2xs';
+export type Density = "lg" | "default" | "sm" | "xs" | "2xs";
 
-export const DEFAULT_DENSITY: Density = 'default';
+export const DEFAULT_DENSITY: Density = "default";
 
 export interface DensityContext {
   /** the inherited OPINION — undefined means this provider passes NO
@@ -32,7 +32,7 @@ export interface DensityContext {
   readonly density: Density | undefined;
 }
 
-export const DENSITY_KEY = Symbol('jx-density');
+export const DENSITY_KEY = Symbol("jx-density");
 
 /**
  * The density def — the identity object plugins target
@@ -46,8 +46,8 @@ export const DENSITY_KEY = Symbol('jx-density');
  * manufacture a stamp), so the hook author and the apply site see
  * the same truth.
  */
-export const DENSITY_DEF: ContextDef<'density', Density | undefined> = defineContextDef({
-  key: 'density',
+export const DENSITY_DEF: ContextDef<"density", Density | undefined> = defineContextDef({
+  key: "density",
   defaults: (): Density | undefined => DEFAULT_DENSITY,
   ssrSafe: DEFAULT_DENSITY,
 });
@@ -127,7 +127,7 @@ function ambientDensity(): DensityContext | undefined {
  * by design (a no-opinion axis needs no family narrowing).
  */
 export function densitySlot(own?: Density): DefaultsSlot<Density | undefined> {
-  return defineAxisSlot<Density | undefined>('density', (explicit) => {
+  return defineAxisSlot<Density | undefined>("density", (explicit) => {
     // the ambient read happens ONLY when the explicit lane is silent
     // — an explicit prop never tracks the ambient getter (no wasted
     // re-derivation; the plugin chain still rides the terminal value

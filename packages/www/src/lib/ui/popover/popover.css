@@ -1,7 +1,7 @@
 @layer theme, base, components, utilities;
 
 @layer components {
-/* jixoai popover — D1-exempt residue (tw4, 2026-08-24): panel anchor
+  /* jixoai popover — D1-exempt residue (tw4, 2026-08-24): panel anchor
  * geometry only. Flush anchoring (Owner, 2026-08-23 r22): the adaptive
  * shadow always falls to the OUTWARD side (away from the anchor), so
  * the panel can hug the anchor directly — the gap default MUST stay 0
@@ -18,44 +18,47 @@
  * The scroll law's try-fallbacks + anchors-visible hide a panel whose
  * anchor scrolled away. Trigger/caret/scroll paint lives in the
  * markup. */
-.jx-pop {
-  position: fixed;
-  margin: var(--jx-pop-gap, 0px);
-  position-try-fallbacks: flip-block, flip-inline, flip-block flip-inline;
-  position-try: flip-block, flip-inline, flip-block flip-inline;
-  position-visibility: anchors-visible;
-  width: fit-content;
-  height: fit-content;
-  max-width: min(92vw, 22rem);
-  padding: 0;
-  font-size: 13px;
-  color: var(--popover-foreground);
-}
-/* Engines without the FULL anchored-positioning set: authored
+  .jx-pop {
+    position: fixed;
+    margin: var(--jx-pop-gap, 0px);
+    position-try-fallbacks:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+    position-try:
+      flip-block,
+      flip-inline,
+      flip-block flip-inline;
+    position-visibility: anchors-visible;
+    width: fit-content;
+    height: fit-content;
+    max-width: min(92vw, 22rem);
+    padding: 0;
+    font-size: 13px;
+    color: var(--popover-foreground);
+  }
+  /* Engines without the FULL anchored-positioning set: authored
    viewport-center — the v1 visual, never worse. The check is JOINT
    (Codex co-review 2026-08-26): anchor-name alone is true in engines
    that still lack position-area/try (Safari 26 partial support), which
    would skip this fallback and strand the panel; both legacy and
    current area property names reset (the fallback used to reset only
    inset-area). */
-@supports not (
-  (anchor-name: --jx-pop-fallback) and
-  (position-anchor: --jx-pop-fallback) and
-  (position-area: bottom) and
-  (position-try-fallbacks: flip-block)
-) {
-  .jx-pop {
-    position-anchor: auto !important;
-    inset-area: none !important;
-    position-area: none !important;
-    inset: 0;
-    margin: auto !important; /* the gap is meaningless at viewport-center */
+  @supports not
+  ((anchor-name: --jx-pop-fallback) and (position-anchor: --jx-pop-fallback) and
+    (position-area: bottom) and (position-try-fallbacks: flip-block)) {
+    .jx-pop {
+      position-anchor: auto !important;
+      inset-area: none !important;
+      position-area: none !important;
+      inset: 0;
+      margin: auto !important; /* the gap is meaningless at viewport-center */
+    }
   }
-}
-/* Popovers get a ::backdrop too; light dismiss must never dim the page. */
-.jx-pop::backdrop {
-  background: transparent;
-}
+  /* Popovers get a ::backdrop too; light dismiss must never dim the page. */
+  .jx-pop::backdrop {
+    background: transparent;
+  }
 }
 
 /* ── UNLAYERED ───────────────────────────────────────────────────────

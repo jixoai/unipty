@@ -22,16 +22,16 @@ The site now consumes the official jixoai design-language registry
   readonly code). Token values are byte-identical to the previous
   handwritten sheet for every token the registry defines (only cosmetic
   quote style differs on `--font-nav`; the registry drops the unused
-  second layer of `--shadow` in dark mode). *(2026-09-06: superseded by
+  second layer of `--shadow` in dark mode). _(2026-09-06: superseded by
   the 0.3.0 sync below — the registry theme now ships the
-  popover/destructive/input/ring/shadows mappings itself.)*
+  popover/destructive/input/ring/shadows mappings itself.)_
 - `src/lib/ui/toc.svelte` + `src/lib/toc.css` + `src/lib/toc-engine.ts`
   are the registry `toc` item (Combo ToC), installed with two import-path
   corrections for SvelteKit: `@lib/toc-engine` → `$lib/toc-engine` and
   `'../lib/toc.css'` → `$lib/toc.css` (the shipped paths assume a
-  non-SvelteKit alias layout). *(2026-09-06: superseded — 0.3.0 ships
+  non-SvelteKit alias layout). _(2026-09-06: superseded — 0.3.0 ships
   SvelteKit-correct `$lib` paths in the directory layout; the manual
-  corrections and these flat files are retired.)*
+  corrections and these flat files are retired.)_
 - The docs page wraps its content in the engine's contract: leaf blocks
   carry `data-region`, parent sections carry `data-family` (exposed on
   `SectionCard` via `family` / `region` / `headerRegion` props). The
@@ -91,8 +91,8 @@ CNAME gate, static checks) are unchanged.
   physics on interactive elements; `prefers-reduced-motion: reduce`
   disables both. SPA navigations add the tab-carousel View Transition
   (below), which reduced motion degrades to a plain crossfade.
-  *(2026-09-06: reveal is now pure CSS scroll-driven in 0.3.0; the IO
-  action is retired — see the 0.3.0 sync section.)*
+  _(2026-09-06: reveal is now pure CSS scroll-driven in 0.3.0; the IO
+  action is retired — see the 0.3.0 sync section.)_
 
 ### SPA + overlay scaffold (2026-08-21) — registry app-shell landing
 
@@ -118,10 +118,10 @@ synced verbatim from the jixoai ui registry source repo):
   contract: the ToC publishes `--jx-toc-line` (measured overlay-stack
   bottom + 2em) and `.jx-shell-body` consumes it via `scroll-padding-top`.
   The two mechanisms must never coexist for one container (they stack).
-  *(2026-09-06: the named-line contract survives in 0.3.0 unchanged; the
+  _(2026-09-06: the named-line contract survives in 0.3.0 unchanged; the
   `scaffold-float` docs aside it served is retired — the toc rail now
   renders from the website-scaffold's chrome plane. The float item stays
-  locked for the portal API.)*
+  locked for the portal API.)_
 
 ### Deliberate divergences from the reference (documented per skill law)
 

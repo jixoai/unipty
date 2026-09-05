@@ -20,9 +20,9 @@
  * member of the registry:ui item (installs with the family, byte
  * mirrored, zero kernel imports).
  */
-import { defineComponentDefaults, defineLiteralSlot } from '$lib/defaults.svelte';
+import { defineComponentDefaults, defineLiteralSlot } from "$lib/defaults.svelte";
 
-export const sectionCardToneSlot = defineLiteralSlot(['default', 'hero'], 'default');
+export const sectionCardToneSlot = defineLiteralSlot(["default", "hero"], "default");
 
 /** the section's typographic register — everyday bordered body vs
  *  inner-page hero head (a layout decision, never a paint rung);

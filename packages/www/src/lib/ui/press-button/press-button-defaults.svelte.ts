@@ -25,9 +25,9 @@
  * file is a member of the registry:ui item (installs with the family,
  * byte mirrored, zero kernel imports).
  */
-import { defineComponentDefaults } from '$lib/defaults.svelte';
-import { densitySlot } from '$lib/density.svelte';
-import { definePaintSlot } from '$lib/paint.svelte';
+import { defineComponentDefaults } from "$lib/defaults.svelte";
+import { densitySlot } from "$lib/density.svelte";
+import { definePaintSlot } from "$lib/paint.svelte";
 
 /**
  * The family slot, values-first (slot-values-first D1): the five-value
@@ -42,8 +42,8 @@ import { definePaintSlot } from '$lib/paint.svelte';
  */
 // own = the grammar's frozen default, never a local choice
 export const pressButtonVariantSlot = definePaintSlot(
-  ['fill', 'tonal', 'outline', 'ghost', 'link'],
-  'outline',
+  ["fill", "tonal", "outline", "ghost", "link"],
+  "outline",
 );
 
 /** the ladder's five values as a type — ReturnType 反查 (the values

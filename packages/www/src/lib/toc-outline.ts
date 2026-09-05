@@ -47,15 +47,18 @@ export interface TocOutlineOptions {
  * derived slugs stamp onto the headings, so re-derivation (content
  * mutation, HMR) yields the same ids.
  */
-export function deriveTocOutline(root: ParentNode, options: TocOutlineOptions = {}): TocOutlineEntry[] {
+export function deriveTocOutline(
+  root: ParentNode,
+  options: TocOutlineOptions = {},
+): TocOutlineEntry[] {
   const levels = [...new Set((options.levels ?? [2, 3]).filter((l) => l >= 1 && l <= 6))].sort(
     (a, b) => a - b,
   );
   if (levels.length === 0) return [];
-  const selector = levels.map((l) => `h${l}`).join(',');
+  const selector = levels.map((l) => `h${l}`).join(",");
   const used = new Set<string>();
   const headings = Array.from(root.querySelectorAll<HTMLElement>(selector)).filter(
-    (el) => !el.closest('[data-toc-skip]'),
+    (el) => !el.closest("[data-toc-skip]"),
   );
 
   const slugOf = (label: string, index: number): string => {
@@ -63,8 +66,8 @@ export function deriveTocOutline(root: ParentNode, options: TocOutlineOptions = 
       .toLowerCase()
       // ascii-slugs only: CJK and friends collapse to nothing, so keep a
       // positional fallback (stable across re-derivation for static content)
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
     const base = slug || `section-${index + 1}`;
     let id = base;
     let n = 2;
@@ -76,8 +79,8 @@ export function deriveTocOutline(root: ParentNode, options: TocOutlineOptions = 
   const entries: TocOutlineEntry[] = [];
   headings.forEach((el, i) => {
     const level = Number(el.tagName.slice(1));
-    const label = (el.textContent ?? '').trim();
-    const id = el.id !== '' && !used.has(el.id) ? (used.add(el.id), el.id) : slugOf(label, i);
+    const label = (el.textContent ?? "").trim();
+    const id = el.id !== "" && !used.has(el.id) ? (used.add(el.id), el.id) : slugOf(label, i);
     // stamp derived ids back: ToC links are real fragment anchors
     if (el.id !== id) el.id = id;
     // extent end = next heading at same or higher level (smaller number)

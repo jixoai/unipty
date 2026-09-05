@@ -1,7 +1,7 @@
 @layer theme, base, components, utilities;
 
 @layer components {
-/**
+  /**
  * jixoai Combo ToC styles (registry/files/ui/toc/toc.css).
  * Import once per site alongside the toc component.
  *
@@ -27,246 +27,239 @@
  *   the old .lvl-2 class. Paint is unchanged.
  */
 
-:where(.jx-toc){
-  min-width: 0;
-}
+  :where(.jx-toc) {
+    min-width: 0;
+  }
 
-/* ── desktop ── */
-:where(.jx-toc .jx-toc-desktop){
-  display: none;
-}
-@media (min-width: 900px) {
-  :where(.jx-toc .jx-toc-mobile){
+  /* ── desktop ── */
+  :where(.jx-toc .jx-toc-desktop) {
     display: none;
   }
-  :where(.jx-toc .jx-toc-desktop){
-    display: block;
+  @media (min-width: 900px) {
+    :where(.jx-toc .jx-toc-mobile) {
+      display: none;
+    }
+    :where(.jx-toc .jx-toc-desktop) {
+      display: block;
+      position: relative;
+      padding-left: 18px;
+      font-size: 12.5px;
+    }
+    :where(.jx-toc .jx-spine) {
+      position: absolute;
+      left: 0px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: color-mix(in oklab, var(--border) 18%, transparent);
+    }
+    :where(.jx-toc .jx-spine-fill) {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      background: var(--primary);
+      transform-origin: top center;
+      transform: scaleY(var(--jx-progress, 0));
+      transition: transform 90ms linear;
+    }
+    :where(.jx-toc .jx-toc-title) {
+      font-family: var(--font-nav);
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.24em;
+      font-size: 11px;
+      margin: 0 0 12px;
+    }
+    :where(.jx-toc .jx-toc-desktop ul) {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    :where(.jx-toc .jx-toc-desktop li) {
+      position: relative;
+      margin: 6px 0;
+    }
+    :where(.jx-toc .jx-toc-desktop li::before) {
+      /* square node on level-1 only; nested items drop it (Owner) */
+      content: "";
+      position: absolute;
+      left: -21px;
+      top: 50%;
+      width: 8px;
+      height: 8px;
+      transform: translateY(-50%);
+      background: color-mix(in oklab, var(--background), var(--primary) calc(var(--w, 0) * 100%));
+      border: 2px solid
+        color-mix(
+          in oklab,
+          color-mix(in oklab, var(--border) 30%, transparent),
+          var(--primary) calc(var(--w, 0) * 100%)
+        );
+    }
+    :where(.jx-toc .jx-toc-desktop li li::before) {
+      display: none;
+    }
+    :where(.jx-toc .jx-toc-desktop li.active::before) {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+    :where(.jx-toc .jx-toc-desktop a) {
+      color: color-mix(in oklab, var(--muted-foreground), var(--primary) calc(var(--w, 0) * 100%));
+      opacity: calc(0.62 + 0.38 * var(--w, 0));
+      text-decoration: none;
+      font-size: 12.5px;
+    }
+    :where(.jx-toc .jx-toc-desktop a:hover) {
+      color: var(--foreground);
+    }
+    :where(.jx-toc .jx-toc-desktop li.active > a) {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    :where(.jx-toc .jx-toc-desktop li li a) {
+      font-size: 11.5px;
+    }
+  }
+
+  /* ── mobile: the single-row ToC (same list, height clipped to one row) ── */
+  :where(.jx-toc .jx-toc-mobile) {
     position: relative;
-    padding-left: 18px;
-    font-size: 12.5px;
+    outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
+    outline-offset: -1px;
   }
-  :where(.jx-toc .jx-spine){
-    position: absolute;
-    left: 0px;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    background: color-mix(in oklab, var(--border) 18%, transparent);
+  :where(.jx-toc .jx-viewport) {
+    position: relative;
+    height: var(--jx-chrome-bar, 44px);
+    overflow: hidden;
+    transition: height 240ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  :where(.jx-toc .jx-spine-fill){
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 2px;
-    height: 100%;
-    background: var(--primary);
-    transform-origin: top center;
-    transform: scaleY(var(--jx-progress, 0));
-    transition: transform 90ms linear;
+  :where(.jx-toc .jx-toc-mobile[data-open] .jx-viewport) {
+    height: 56vh;
+    overflow-y: auto;
+    /* scrollbar law: both-edges gutters (full-bleed rows — no ring
+     padding to hand back) */
+    scrollbar-gutter: stable both-edges;
+    overscroll-behavior: contain;
   }
-  :where(.jx-toc .jx-toc-title){
-    font-family: var(--font-nav);
-    color: var(--muted-foreground);
-    text-transform: uppercase;
-    letter-spacing: 0.24em;
-    font-size: 11px;
-    margin: 0 0 12px;
-  }
-  :where(.jx-toc .jx-toc-desktop ul){
+  :where(.jx-toc .jx-viewport ul) {
     list-style: none;
     margin: 0;
     padding: 0;
   }
-  :where(.jx-toc .jx-toc-desktop li){
-    position: relative;
-    margin: 6px 0;
+  :where(.jx-toc .jx-viewport li) {
+    /* no scroll-snap: the engine's scrollTo owns positioning uniformly */
   }
-  :where(.jx-toc .jx-toc-desktop li::before){
-    /* square node on level-1 only; nested items drop it (Owner) */
-    content: '';
-    position: absolute;
-    left: -21px;
-    top: 50%;
-    width: 8px;
-    height: 8px;
-    transform: translateY(-50%);
-    background: color-mix(in oklab, var(--background), var(--primary) calc(var(--w, 0) * 100%));
-    border: 2px solid
-      color-mix(
-        in oklab,
-        color-mix(in oklab, var(--border) 30%, transparent),
-        var(--primary) calc(var(--w, 0) * 100%)
-      );
+  :where(.jx-toc .jx-viewport li + li) {
+    border-top: 1px solid color-mix(in oklab, var(--border) 12%, transparent);
   }
-  :where(.jx-toc .jx-toc-desktop li li::before){
-    display: none;
-  }
-  :where(.jx-toc .jx-toc-desktop li.active::before){
-    border-color: var(--primary);
-    background: var(--primary);
-  }
-  :where(.jx-toc .jx-toc-desktop a){
+  :where(.jx-toc .jx-viewport a) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: var(--jx-chrome-bar, 44px);
+    padding-inline: 16px 52px;
+    font-family: var(--font-nav);
+    font-size: 12.5px;
     color: color-mix(in oklab, var(--muted-foreground), var(--primary) calc(var(--w, 0) * 100%));
     opacity: calc(0.62 + 0.38 * var(--w, 0));
     text-decoration: none;
-    font-size: 12.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-left: 2px solid color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
   }
-  :where(.jx-toc .jx-toc-desktop a:hover){
-    color: var(--foreground);
-  }
-  :where(.jx-toc .jx-toc-desktop li.active > a){
+  :where(.jx-toc .jx-viewport a .jx-cursor) {
     color: var(--primary);
-    font-weight: 700;
+    opacity: var(--jx-cur, 0);
+    width: 12px;
+    flex: none;
   }
-  :where(.jx-toc .jx-toc-desktop li li a){
+  :where(.jx-toc .jx-viewport li li a) {
     font-size: 11.5px;
   }
-
-}
-
-/* ── mobile: the single-row ToC (same list, height clipped to one row) ── */
-:where(.jx-toc .jx-toc-mobile){
-  position: relative;
-  outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
-  outline-offset: -1px;
-}
-:where(.jx-toc .jx-viewport){
-  position: relative;
-  height: var(--jx-chrome-bar, 44px);
-  overflow: hidden;
-  transition: height 240ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-:where(.jx-toc .jx-toc-mobile[data-open] .jx-viewport){
-  height: 56vh;
-  overflow-y: auto;
-  /* scrollbar law: both-edges gutters (full-bleed rows — no ring
-     padding to hand back) */
-  scrollbar-gutter: stable both-edges;
-  overscroll-behavior: contain;
-}
-:where(.jx-toc .jx-viewport ul){
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-:where(.jx-toc .jx-viewport li){
-  /* no scroll-snap: the engine's scrollTo owns positioning uniformly */
-}
-:where(.jx-toc .jx-viewport li + li){
-  border-top: 1px solid color-mix(in oklab, var(--border) 12%, transparent);
-}
-:where(.jx-toc .jx-viewport a){
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  height: var(--jx-chrome-bar, 44px);
-  padding-inline: 16px 52px;
-  font-family: var(--font-nav);
-  font-size: 12.5px;
-  color: color-mix(in oklab, var(--muted-foreground), var(--primary) calc(var(--w, 0) * 100%));
-  opacity: calc(0.62 + 0.38 * var(--w, 0));
-  text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-left: 2px solid
-    color-mix(in oklab, transparent, var(--primary) calc(var(--w, 0) * 100%));
-}
-:where(.jx-toc .jx-viewport a .jx-cursor){
-  color: var(--primary);
-  opacity: var(--jx-cur, 0);
-  width: 12px;
-  flex: none;
-}
-:where(.jx-toc .jx-viewport li li a){
-  font-size: 11.5px;
-}
-:where(.jx-toggle){
-  position: absolute;
-  top: 0;
-  right: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--jx-chrome-bar, 44px);
-  height: var(--jx-chrome-bar, 44px);
-  border: 0;
-  outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
-  outline-offset: -1px;
-  background: color-mix(in oklab, var(--background) 68%, transparent);
-  color: var(--muted-foreground);
-  cursor: pointer;
-  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-:where(.jx-toc .jx-toc-mobile[data-open] .jx-toggle){
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :where(.jx-toc .jx-viewport),
-:where(.jx-toggle),
-:where(.jx-toc .jx-spine-fill){
-    transition: none;
+  :where(.jx-toggle) {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--jx-chrome-bar, 44px);
+    height: var(--jx-chrome-bar, 44px);
+    border: 0;
+    outline: 1px solid color-mix(in oklab, var(--border) 25%, transparent);
+    outline-offset: -1px;
+    background: color-mix(in oklab, var(--background) 68%, transparent);
+    color: var(--muted-foreground);
+    cursor: pointer;
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  :where(.jx-toc .jx-toc-mobile[data-open] .jx-toggle) {
+    transform: rotate(180deg);
   }
 
-}
+  @media (prefers-reduced-motion: reduce) {
+    :where(.jx-toc .jx-viewport),
+    :where(.jx-toggle),
+    :where(.jx-toc .jx-spine-fill) {
+      transition: none;
+    }
+  }
 
-/* ── aside layout law (apply .jx-toc-aside to the wrapping <aside>) ──
+  /* ── aside layout law (apply .jx-toc-aside to the wrapping <aside>) ──
    DOM: the aside precedes main content; positioning is the aside's own
    responsibility, never the re-mounted variant content's. */
-:where(.jx-toc-aside){
-  min-width: 0;
-}
-@media (min-width: 900px) {
-  :where(.jx-toc-aside){
-    position: sticky;
-    top: 20px;
-    align-self: start;
-    max-height: calc(100vh - 40px);
+  :where(.jx-toc-aside) {
+    min-width: 0;
   }
-
-}
-@media (max-width: 899.9px) {
-  /* sticky with height: 0 (Owner, 2026-08-20): zero flow impact — expanding
+  @media (min-width: 900px) {
+    :where(.jx-toc-aside) {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      max-height: calc(100vh - 40px);
+    }
+  }
+  @media (max-width: 899.9px) {
+    /* sticky with height: 0 (Owner, 2026-08-20): zero flow impact — expanding
      never reflows the document, so anchor jumps always land; the inner
      content overflows and stays pinned over the scrolling page. Pair with
      ~68px top padding on the main content column. No transform here:
      a transform would create a backdrop root and kill the glass blur. */
-  :where(.jx-toc-aside){
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    height: 0;
+    :where(.jx-toc-aside) {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      height: 0;
+    }
   }
 
-}
-
-/* ── surface switching ──
+  /* ── surface switching ──
    Standalone consumers (no website-scaffold): the viewport media query
    decides. Inside the grid shell, the SHELL's container form is the
    truth — the two @container blocks re-assert the pair and win by source
    order, so an embedded narrow shell shows the narrow surface even in a
    wide window (and the 900–1024 desync era is structurally gone). */
-@container jx-shell (max-width: 899.9px) {
-  :where(.jx-toc .jx-toc-desktop){
-    display: none;
+  @container jx-shell (max-width: 899.9px) {
+    :where(.jx-toc .jx-toc-desktop) {
+      display: none;
+    }
+    :where(.jx-toc .jx-toc-mobile) {
+      display: block;
+    }
   }
-  :where(.jx-toc .jx-toc-mobile){
-    display: block;
+  @container jx-shell (min-width: 900px) {
+    :where(.jx-toc .jx-toc-desktop) {
+      display: block;
+    }
+    :where(.jx-toc .jx-toc-mobile) {
+      display: none;
+    }
   }
 
-}
-@container jx-shell (min-width: 900px) {
-  :where(.jx-toc .jx-toc-desktop){
-    display: block;
-  }
-  :where(.jx-toc .jx-toc-mobile){
-    display: none;
-  }
-
-}
-
-/* ── chrome placement, firstpaint era (2026-08-24) ──
+  /* ── chrome placement, firstpaint era (2026-08-24) ──
    Inside a website-scaffold the toc is authored in the scaffold's
    `chrome` snippet — SSR-rendered into its grid cell through the
    permanent data-area="toc"; the self-adoption mechanism and the
@@ -275,21 +268,20 @@
    The rail's cell inset is PADDING, never margin (Owner rule,
    2026-08-24): margin pairs badly with the percentage max-height the
    grid cell imposes, and the scrollbar law below is padding-shaped. */
-@media (min-width: 900px) {
-  :where(.jx-top-layer .jx-toc[data-area='toc']){
-    padding-block-start: 1.25rem;
-    /* scrollbar law: the rail is a REAL scrollport (the shell caps it
+  @media (min-width: 900px) {
+    :where(.jx-top-layer .jx-toc[data-area="toc"]) {
+      padding-block-start: 1.25rem;
+      /* scrollbar law: the rail is a REAL scrollport (the shell caps it
        with max-height + overflow) — both-edges gutters, and the padding
        hands the measured gutter back so the visual insets stay */
-    scrollbar-width: thin;
-    scrollbar-gutter: stable both-edges;
-    padding-left: max(1.25rem - var(--jx-scrollbar-thin, 0px), 0px);
-    padding-right: max(0.5rem - var(--jx-scrollbar-thin, 0px), 0px);
+      scrollbar-width: thin;
+      scrollbar-gutter: stable both-edges;
+      padding-left: max(1.25rem - var(--jx-scrollbar-thin, 0px), 0px);
+      padding-right: max(0.5rem - var(--jx-scrollbar-thin, 0px), 0px);
+    }
   }
 
-}
-
-/* ── the named line law (Owner, 2026-08-21) ──
+  /* ── the named line law (Owner, 2026-08-21) ──
    --jx-toc-line is THE single source of truth for "where pinned content
    ends". Inside the grid shell the BODY's scroll-padding-top carries it
    (website-scaffold.css derives it from the measured header height +
@@ -298,9 +290,9 @@
    local scroll-margin rules instead. Do NOT also set scroll-margin on
    the targets for the same container: the two properties stack and the
    landing doubles past the line. */
-@layer theme {
-:root{
-  --jx-toc-line: 76px;
-}
-}
+  @layer theme {
+    :root {
+      --jx-toc-line: 76px;
+    }
+  }
 }

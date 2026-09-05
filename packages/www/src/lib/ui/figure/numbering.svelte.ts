@@ -29,28 +29,28 @@
  *     FIRST live registration the winner; a disposing winner
  *     promotes the earliest still-live candidate in the same settle.
  */
-import { getContext } from 'svelte';
-import { SvelteMap } from 'svelte/reactivity';
+import { getContext } from "svelte";
+import { SvelteMap } from "svelte/reactivity";
 
-export type FigureKind = 'figure' | 'table' | 'equation' | 'listing';
+export type FigureKind = "figure" | "table" | "equation" | "listing";
 
 /** the single-source display words: caption (full) / reference (short) */
 export const FIGURE_LABELS: Record<FigureKind, { caption: string; reference: string }> = {
-  figure: { caption: 'Figure', reference: 'Fig' },
-  table: { caption: 'Table', reference: 'Table' },
-  equation: { caption: 'Equation', reference: 'Eq' },
-  listing: { caption: 'Listing', reference: 'Listing' },
+  figure: { caption: "Figure", reference: "Fig" },
+  table: { caption: "Table", reference: "Table" },
+  equation: { caption: "Equation", reference: "Eq" },
+  listing: { caption: "Listing", reference: "Listing" },
 };
 
-export const NUMBERING_DOMAIN_KEY = Symbol.for('jx-numbering-domain');
-export const DOCUMENT_TARGETS_KEY = Symbol.for('jx-document-targets');
-export const DOCUMENT_DOMAINS_KEY = Symbol.for('jx-document-domains');
+export const NUMBERING_DOMAIN_KEY = Symbol.for("jx-numbering-domain");
+export const DOCUMENT_TARGETS_KEY = Symbol.for("jx-document-targets");
+export const DOCUMENT_DOMAINS_KEY = Symbol.for("jx-document-domains");
 
 // ── the target registry (Reference resolution) ─────────────────────
 
 export type FigureTargetEntry = {
   id: string;
-  kind: 'figure';
+  kind: "figure";
   figureKind: FigureKind;
   readonly number: () => string;
   readonly title: null;
@@ -58,7 +58,7 @@ export type FigureTargetEntry = {
 
 export type SectionTargetEntry = {
   id: string;
-  kind: 'section';
+  kind: "section";
   readonly number: () => string | null;
   readonly title: () => string;
 };
@@ -143,7 +143,7 @@ export interface NumberingDomain {
   /** undefined until attachRoot — the template-order proxy covers SSR */
   readonly root: Element | undefined;
   readonly parent: NumberingDomain | null;
-  readonly floatScope: Partial<Record<FigureKind, 'chapter' | 'document'>>;
+  readonly floatScope: Partial<Record<FigureKind, "chapter" | "document">>;
   /** the records consumers derive ordinals from (order never assigned) */
   readonly sections: readonly SectionRecord[];
   readonly figures: readonly FigureRecord[];
@@ -153,7 +153,7 @@ export interface NumberingDomain {
 
 export function createNumberingDomain(opts: {
   parent: NumberingDomain | null;
-  floatScope?: Partial<Record<FigureKind, 'chapter' | 'document'>>;
+  floatScope?: Partial<Record<FigureKind, "chapter" | "document">>;
 }): NumberingDomain {
   const sections: SectionRecord[] = [];
   const figures: FigureRecord[] = [];
@@ -186,7 +186,7 @@ export function createNumberingDomain(opts: {
       if (root === el) return; // idempotent for the same root
       if (root !== undefined) return; // one root per domain, by law
       root = el;
-      if (typeof MutationObserver !== 'undefined') {
+      if (typeof MutationObserver !== "undefined") {
         observer = new MutationObserver(bump);
         observer.observe(el, { childList: true, subtree: true });
       }
@@ -295,7 +295,7 @@ export function domainOrdinal(domain: NumberingDomain, registry: DomainRegistry)
 }
 
 export interface FigureOrdinal {
-  scope: 'chapter' | 'document';
+  scope: "chapter" | "document";
   /** the 1-based position in its counting set */
   ordinal: number;
   /** the owning domain's top-level ordinal (the chapter prefix) */
@@ -307,12 +307,16 @@ export function figureOrdinal(
   domain: NumberingDomain,
   registry: DomainRegistry,
 ): FigureOrdinal {
-  const scope: 'chapter' | 'document' =
-    domain.floatScope[record.kind] === 'document' ? 'document' : 'chapter';
-  if (scope === 'chapter') {
+  const scope: "chapter" | "document" =
+    domain.floatScope[record.kind] === "document" ? "document" : "chapter";
+  if (scope === "chapter") {
     void domain.domainRevision; // the signal read
     const peers = domain.figures.filter((f) => f.kind === record.kind);
-    return { scope, ordinal: ordinalOf(peers, record), domainOrdinal: domainOrdinal(domain, registry) };
+    return {
+      scope,
+      ordinal: ordinalOf(peers, record),
+      domainOrdinal: domainOrdinal(domain, registry),
+    };
   }
   // document scope: iterate EVERY participating domain (top-level and
   // nested alike — each declares its own participation), collect that
@@ -320,9 +324,13 @@ export function figureOrdinal(
   // domain-list order: F1, F2, F3 — not F1, F3, F2)
   void registry.documentRevision; // the signal read
   const peers = registry.domains
-    .filter((d) => d.floatScope[record.kind] === 'document')
+    .filter((d) => d.floatScope[record.kind] === "document")
     .flatMap((d) => d.figures.filter((f) => f.kind === record.kind));
-  return { scope, ordinal: ordinalOf(peers, record), domainOrdinal: domainOrdinal(domain, registry) };
+  return {
+    scope,
+    ordinal: ordinalOf(peers, record),
+    domainOrdinal: domainOrdinal(domain, registry),
+  };
 }
 
 /** §1.1b's sole algorithm — the root gets its domain ordinal (nested
@@ -349,5 +357,5 @@ export function sectionNumber(
     cursor = cursor.parent ?? undefined;
   }
   if (cursor !== root) return null; // chain escaped the domain — illegal shape
-  return `${domainOrdinal(domain, registry)}.${path.join('.')}`;
+  return `${domainOrdinal(domain, registry)}.${path.join(".")}`;
 }

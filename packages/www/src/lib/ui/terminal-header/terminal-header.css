@@ -60,17 +60,17 @@
 /* ── band 2: the state-machine carve-out (unlayered, zero specificity) ── */
 
 /* the hamburger bars fold into an ✕ while the panel is open */
-:where(.jx-nav button[aria-expanded='true'] .jx-bar:first-child) {
+:where(.jx-nav button[aria-expanded="true"] .jx-bar:first-child) {
   transform: translateY(4.5px) rotate(45deg);
 }
-:where(.jx-nav button[aria-expanded='true'] .jx-bar:last-child) {
+:where(.jx-nav button[aria-expanded="true"] .jx-bar:last-child) {
   transform: translateY(-4.5px) rotate(-45deg);
 }
 /* the second-level caret marker; flips while its control is open (the
    composed trigger is a button; the drawer's disclosure rows may be
    authored as either) */
-:where(.jx-nav a[aria-expanded='true'] .jx-caret),
-:where(.jx-nav button[aria-expanded='true'] .jx-caret) {
+:where(.jx-nav a[aria-expanded="true"] .jx-caret),
+:where(.jx-nav button[aria-expanded="true"] .jx-caret) {
   transform: rotate(180deg);
 }
 
@@ -100,10 +100,10 @@
 /* sub-link engagement (the consumer-authored .jx-sub-link rows inside
    the panels): hover/current fill + the 2px primary inset edge */
 :where(.jx-nav .jx-sub-link:hover),
-:where(.jx-nav .jx-sub-link[aria-current='page']) {
+:where(.jx-nav .jx-sub-link[aria-current="page"]) {
   background: var(--terminal-hover);
 }
-:where(.jx-nav .jx-sub-link[aria-current='page']) {
+:where(.jx-nav .jx-sub-link[aria-current="page"]) {
   box-shadow: inset 2px 0 0 0 var(--primary);
 }
 
@@ -117,8 +117,8 @@
 :where(.jx-nav button) {
   -webkit-tap-highlight-color: transparent;
 }
-:where(.jx-nav nav a:not([aria-current='page']):hover),
-:where(.jx-nav nav [data-jx-navmenu-trigger]:not([aria-current='true']):hover) {
+:where(.jx-nav nav a:not([aria-current="page"]):hover),
+:where(.jx-nav nav [data-jx-navmenu-trigger]:not([aria-current="true"]):hover) {
   background: var(--terminal-hover);
 }
 :where(.jx-nav :where(a, button):focus-visible) {

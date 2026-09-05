@@ -23,10 +23,7 @@ export interface RippleRuntime {
   /** reactive ink queue — render into the host's .jx-ripple-layer */
   readonly ripples: RippleInk[];
   /** use: action — WAAPI owns the dot's lifecycle */
-  ink: (
-    dot: HTMLElement,
-    params: { key: number; duration: number }
-  ) => { destroy: () => void };
+  ink: (dot: HTMLElement, params: { key: number; duration: number }) => { destroy: () => void };
   /** the host's click handler: spawn from the activation point, then
    *  the consumer's own activation */
   onclick: (event: MouseEvent & { currentTarget: HTMLElement }) => void;
@@ -40,25 +37,28 @@ export function createRipple(onActivate?: () => void): RippleRuntime {
     host: HTMLElement,
     clientX: number,
     clientY: number,
-    fromPointer: boolean
+    fromPointer: boolean,
   ): void => {
-    if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches)
       return;
     const rect = host.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
     const px = fromPointer ? clientX : rect.left + rect.width / 2;
     const py = fromPointer ? clientY : rect.top + rect.height / 2;
     const key = ++rippleSeq;
-    ripples = [...ripples, { x: px - rect.left - size / 2, y: py - rect.top - size / 2, size, key }];
+    ripples = [
+      ...ripples,
+      { x: px - rect.left - size / 2, y: py - rect.top - size / 2, size, key },
+    ];
   };
 
   const ink = (dot: HTMLElement, params: { key: number; duration: number }) => {
     const anim = dot.animate(
       [
-        { transform: 'scale(0)', opacity: 1 },
-        { transform: 'scale(2)', opacity: 0 },
+        { transform: "scale(0)", opacity: 1 },
+        { transform: "scale(2)", opacity: 0 },
       ],
-      { duration: params.duration, easing: 'ease-out', fill: 'both' }
+      { duration: params.duration, easing: "ease-out", fill: "both" },
     );
     const clear = () => {
       ripples = ripples.filter((r) => r.key !== params.key);

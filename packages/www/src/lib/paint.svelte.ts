@@ -38,15 +38,15 @@
  *      Svelte's own lifecycle error propagates — never caught)
  */
 
-import { getContext, setContext } from 'svelte';
-import { defineAxisSlot, type DefaultsSlot, type OneOf } from './defaults.svelte';
+import { getContext, setContext } from "svelte";
+import { defineAxisSlot, type DefaultsSlot, type OneOf } from "./defaults.svelte";
 
 /**
  * The ladder + the one interaction exception — the whole paint value
  * domain, owned by the axis (the family unions are its subsets;
  * link is PressButton-only per the frozen availability table).
  */
-export type PaintVariant = 'fill' | 'tonal' | 'outline' | 'ghost' | 'link';
+export type PaintVariant = "fill" | "tonal" | "outline" | "ghost" | "link";
 
 /**
  * The zone's value domain: link EXCLUDED — link is PressButton's
@@ -57,7 +57,7 @@ export type PaintVariant = 'fill' | 'tonal' | 'outline' | 'ghost' | 'link';
  * construction; the family slots' static narrow unions remain the
  * second line of defense — no runtime clamp on this key).
  */
-export type ZonePaintVariant = Exclude<PaintVariant, 'link'>;
+export type ZonePaintVariant = Exclude<PaintVariant, "link">;
 
 /**
  * The axis-level zone key — global symbol registry (independent
@@ -65,7 +65,7 @@ export type ZonePaintVariant = Exclude<PaintVariant, 'link'>;
  * family-state context key (BUTTON_GROUP_KEY carries layout +
  * policy; this key carries paint values only).
  */
-export const PAINT_ZONE_KEY = Symbol.for('jx-paint-zone');
+export const PAINT_ZONE_KEY = Symbol.for("jx-paint-zone");
 
 /** the zone payload: getter-endorsed (reads land in the consumer's
  *  $derived dependency graph — never a snapshot) */
@@ -131,7 +131,7 @@ export function definePaintSlot<const T extends readonly PaintVariant[]>(
   values: T,
   own: OneOf<T>,
 ): DefaultsSlot<OneOf<T>> {
-  return defineAxisSlot<OneOf<T>>('paint', (explicit) => {
+  return defineAxisSlot<OneOf<T>>("paint", (explicit) => {
     if (explicit !== undefined) return explicit;
     const ambient = readAmbientVariant();
     if (ambient === undefined) return own; // no opinion — the zone's silence

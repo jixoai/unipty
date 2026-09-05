@@ -54,13 +54,13 @@
        span-3 card's third row), so it is never inferred from the
        children. The default two-row contract above stays
        byte-identical for every existing consumer. */
-    .jx-card-grid[data-rows='foot'] {
+    .jx-card-grid[data-rows="foot"] {
       grid-template-rows: auto 1fr auto;
     }
-    .jx-card-grid[data-rows='foot'] > * {
+    .jx-card-grid[data-rows="foot"] > * {
       grid-row: span 3;
     }
-    .jx-card-grid[data-rows='foot'] > *[data-no-subgrid] {
+    .jx-card-grid[data-rows="foot"] > *[data-no-subgrid] {
       grid-row: auto;
     }
   }

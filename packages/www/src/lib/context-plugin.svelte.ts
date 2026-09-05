@@ -72,12 +72,12 @@
  * the lib item stays installable standalone.
  */
 
-import { getContext, setContext } from 'svelte';
+import { getContext, setContext } from "svelte";
 
 // ---- the type domain ---------------------------------------------------
 
 /** The medium vocabulary — owned by the kernel (env is kernel surface). */
-export type MediumState = 'screen' | 'sim' | 'print';
+export type MediumState = "screen" | "sim" | "print";
 
 /**
  * A factory INPUT: a context's identity + default value contract,
@@ -102,7 +102,7 @@ export interface ContextDefInit<K extends string, T> {
  */
 declare const defBrand: unique symbol;
 /** the declared brand's value twin, module-private */
-const DEF_BRAND: typeof defBrand = Symbol('jx-context-def') as unknown as typeof defBrand;
+const DEF_BRAND: typeof defBrand = Symbol("jx-context-def") as unknown as typeof defBrand;
 
 /** A context def — the identity object plugins target. */
 export interface ContextDef<K extends string, T> extends ContextDefInit<K, T> {
@@ -167,7 +167,7 @@ export interface PluginSpec<D extends ContextDef<string, unknown>> {
   readonly name: string;
   /** the single-element law: one plugin, one def target */
   readonly targets: readonly [D];
-  readonly enforce?: 'pre' | 'post';
+  readonly enforce?: "pre" | "post";
   init?(def: D): (defaults: DefValue<D>) => DefValue<D>;
   filter?(def: D, env: ContextEnv): boolean;
   before?(value: DefValue<D>, env: ContextEnv): DefValue<D>;
@@ -180,13 +180,14 @@ export interface PluginSpec<D extends ContextDef<string, unknown>> {
  *  `provideContextPlugins` re-checks it at runtime). The runtime token
  *  below is the declared symbol's value twin, module-private. */
 declare const defined: unique symbol;
-const BRAND: typeof defined = Symbol('jx-defined-plugin') as unknown as typeof defined;
+const BRAND: typeof defined = Symbol("jx-defined-plugin") as unknown as typeof defined;
 
 /** `definePlugin`'s product — `targets` frozen to the single def,
  * constructor private (brand field): the only registration currency a
  * plugin root accepts. */
-export interface DefinedPlugin<D extends ContextDef<string, unknown> = ContextDef<string, unknown>>
-  extends Omit<PluginSpec<D>, 'targets'> {
+export interface DefinedPlugin<
+  D extends ContextDef<string, unknown> = ContextDef<string, unknown>,
+> extends Omit<PluginSpec<D>, "targets"> {
   readonly targets: readonly [D];
   readonly [defined]: true;
 }
@@ -212,10 +213,7 @@ type MediumTargetRejected =
  * the same way: the safe direction.
  */
 function isReadOnlyTarget(target: object): boolean {
-  return (
-    READ_ONLY.has(target) ||
-    (target as { readOnly?: unknown }).readOnly === true
-  );
+  return READ_ONLY.has(target) || (target as { readOnly?: unknown }).readOnly === true;
 }
 
 /**
@@ -255,7 +253,7 @@ export function definePlugin<const D extends ContextDef<string, unknown>>(
 
 // ---- sorting ------------------------------------------------------------
 
-const ENFORCE_ANCHOR: Record<'pre' | 'post', number> = { pre: 0, post: 2 };
+const ENFORCE_ANCHOR: Record<"pre" | "post", number> = { pre: 0, post: 2 };
 
 /**
  * Compose one root's plugin order: vite semantics — user array order
@@ -279,9 +277,7 @@ export function sortPlugins(plugins: readonly UnknownPlugin[]): readonly Unknown
   }
   const anchored = [...byName.values()].map((plugin, index) => ({
     anchor:
-      plugin.enforce === 'pre' || plugin.enforce === 'post'
-        ? ENFORCE_ANCHOR[plugin.enforce]
-        : 1,
+      plugin.enforce === "pre" || plugin.enforce === "post" ? ENFORCE_ANCHOR[plugin.enforce] : 1,
     index,
     plugin,
   }));
@@ -313,7 +309,7 @@ export interface PluginScope {
  * kernel surface. The scope itself lives in Svelte's per-root context
  * map: root-scoped, stacking, never a module-level singleton.
  */
-const PLUGIN_SCOPE_KEY = Symbol('jx-context-plugins');
+const PLUGIN_SCOPE_KEY = Symbol("jx-context-plugins");
 
 export interface PluginRootOptions {
   /** the providing component's host element (bind:this / action
@@ -345,9 +341,9 @@ export function provideContextPlugins(
   // read-only domain (marker-or-identity — a spread copy of the medium
   // def carries the marker and is rejected fail-closed; impl-review S3)
   for (const plugin of plugins) {
-    if (plugin === null || typeof plugin !== 'object' || !(BRAND in plugin)) {
+    if (plugin === null || typeof plugin !== "object" || !(BRAND in plugin)) {
       throw new Error(
-        '[context-plugin] registration accepts definePlugin() products only — forge one with definePlugin',
+        "[context-plugin] registration accepts definePlugin() products only — forge one with definePlugin",
       );
     }
     for (const target of plugin.targets) {
@@ -371,7 +367,7 @@ export function provideContextPlugins(
   // it). No getter / undefined → the explicit 'screen' initial.
   const env: ContextEnv = Object.freeze({
     get medium(): MediumState {
-      return options.medium ? options.medium() ?? 'screen' : 'screen';
+      return options.medium ? (options.medium() ?? "screen") : "screen";
     },
     get root(): HTMLElement | undefined {
       return options.root;
@@ -419,7 +415,7 @@ function eligible(
   env: ContextEnv,
 ): boolean {
   const filter = hooksOf(plugin).filter;
-  return typeof filter === 'function' ? filter(def, env) !== false : true;
+  return typeof filter === "function" ? filter(def, env) !== false : true;
 }
 
 /**
@@ -453,14 +449,14 @@ export function applyChain<T>(
   for (const plugin of targeting) {
     if (!eligible(plugin, def, env)) continue;
     const before = hooksOf(plugin).before;
-    if (typeof before === 'function') current = before(current, env) as T;
+    if (typeof before === "function") current = before(current, env) as T;
   }
   // after: onion inner→outer (reverse order)
   for (let i = targeting.length - 1; i >= 0; i--) {
     const plugin = targeting[i];
     if (!eligible(plugin, def, env)) continue;
     const after = hooksOf(plugin).after;
-    if (typeof after === 'function') current = after(current, env) as T;
+    if (typeof after === "function") current = after(current, env) as T;
   }
   return current;
 }
@@ -490,7 +486,7 @@ function applyInit<T>(
   let value = defaults;
   for (const plugin of targeting) {
     const init = hooksOf(plugin).init;
-    if (typeof init === 'function') {
+    if (typeof init === "function") {
       value = (init as (d: ContextDef<string, unknown>) => (v: T) => T)(def)(value);
     }
   }
@@ -547,7 +543,7 @@ export function withPlugins<T>(
     for (const plugin of targeting) {
       if (!eligible(plugin, def, env)) continue;
       const before = hooksOf(plugin).before;
-      if (typeof before === 'function') current = before(current, env) as T;
+      if (typeof before === "function") current = before(current, env) as T;
     }
     return current;
   });
@@ -557,7 +553,7 @@ export function withPlugins<T>(
       const plugin = targeting[i];
       if (!eligible(plugin, def, env)) continue;
       const after = hooksOf(plugin).after;
-      if (typeof after === 'function') current = after(current, env) as T;
+      if (typeof after === "function") current = after(current, env) as T;
     }
     return current;
   });

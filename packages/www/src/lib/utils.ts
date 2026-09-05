@@ -13,24 +13,24 @@
  * form. Cross-form mixing (jx-hue-error + [--jx-tonal:…]) is NOT
  * dedupable: the rule is one form per slot in a class list.
  */
-import { clsx, type ClassValue } from 'clsx';
-import { extendTailwindMerge } from 'tailwind-merge';
+import { clsx, type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
 
 // the AdditionalClassGroupIds generic (tailwind-merge >= 3.6) keeps
 // the closed set type-checked — a future drift in these ids fails
 // compilation instead of hiding behind a cast
-const twMerge = extendTailwindMerge<'jx-hue' | 'jx-pair'>({
+const twMerge = extendTailwindMerge<"jx-hue" | "jx-pair">({
   extend: {
     classGroups: {
-      'jx-hue': [
-        'jx-hue-primary',
-        'jx-hue-neutral',
-        'jx-hue-error',
-        'jx-hue-success',
-        'jx-hue-warning',
-        'jx-hue-info',
+      "jx-hue": [
+        "jx-hue-primary",
+        "jx-hue-neutral",
+        "jx-hue-error",
+        "jx-hue-success",
+        "jx-hue-warning",
+        "jx-hue-info",
       ],
-      'jx-pair': ['jx-pair-destructive'],
+      "jx-pair": ["jx-pair-destructive"],
     },
   },
 });
