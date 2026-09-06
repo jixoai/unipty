@@ -16,7 +16,13 @@
  *     readonly-code surfaces, the build-time tokenizer palette);
  *   - the radius-scale reset (the registry maps --radius but owns no
  *     `--radius-*: initial` reset);
- *   - site surfaces: data tables, state chips, evidence, readonly code.
+ *   - site surfaces: data tables, state chips, evidence, readonly code;
+ *   - mobile-polish seam overrides (2026-09-06 mobile-audit): presentation
+ *     rules over LOCKED registry chrome (terminal-header, hero-section,
+ *     terminal-card — files stay byte-identical per jixoai-ui.lock), riding
+ *     the components' own stable hooks; unlayered on purpose so they outrank
+ *     the components' utility cascade. See the dedicated section near the
+ *     end of this file.
  * ---------------------------------------------------------------------- */
 @import "tailwindcss";
 @import "./lib/jixoai.css";
@@ -252,6 +258,69 @@
  * Per the named-line law, targets must NOT also carry scroll-margin for the
  * same container — the two stack and double the landing. No site-level
  * [id] scroll-margin rule exists. */
+
+/* -------------------------------------------------------------------------
+ * Mobile polish overrides (2026-09-06 mobile-audit, P2) — presentation
+ * seams over the LOCKED registry chrome (terminal-header, hero-section,
+ * terminal-card): the registry files stay byte-identical (jixoai-ui.lock);
+ * every rule below rides a stable hook the locked components already ship.
+ * Unlayered on purpose: these must outrank the utility cascade layered
+ * inside the components.
+ *
+ * 1. zh hero title: the hero H1 wraps with `text-wrap: balance`; in CJK
+ *    prose the balancer evens line widths by stretching the few ASCII
+ *    spaces to 2-3 character widths — reading as accidental justification.
+ *    zh titles read ragged-left instead; every other locale keeps the
+ *    balanced wrap.
+ * 2. header brand domain line: below sm the stacked tier has no room for
+ *    the domain row — the registry truncate seam cuts it to "jixo.…" —
+ *    so the narrow tier shows the wordmark only (sm+ keeps all rows).
+ * 3. hamburger hit area: the pointer-modality chrome band sizes the
+ *    button at 32px inside its 38px frame; an invisible ::after grows
+ *    the touch target to the 44px floor without touching any paint.
+ * 4. hero terminal card body: hydration discards the prerendered settled
+ *    state and replays the typing story — until the lines resurface the
+ *    lower card body reads as an empty black box (and any late font swap
+ *    reflows it). The output rows keep their boxes but the block is only
+ *    as tall as its content; pin it to the settled 4-line measure (the
+ *    outputs are locale-invariant data, so the zh card matches the en
+ *    card exactly) — the card body never collapses or jumps mid-story.
+ * ---------------------------------------------------------------------- */
+:lang(zh) [data-jx-hero-title] {
+  text-align: left;
+  /* `wrap` (not `normal`) is deliberate, twice over: the build minifier
+   * strips bare `text-wrap: normal` as an initial value, AND Chromium 145
+   * silently REJECTS the `normal` keyword in declarations (verified
+   * 2026-09-06 mobile-audit: inline style.setProperty('text-wrap',
+   * 'normal', 'important') is dropped) while accepting every other
+   * keyword. `wrap` is the explicit form of ordinary wrapping (mode:
+   * wrap, style: normal) — no balancing, so no stretched ASCII gaps in
+   * CJK prose, incl. the pre-webfont fallback phase where the balancer's
+   * justify-like gaps were reported. Engines that predate the `wrap`
+   * keyword ignore the declaration and keep the utility's balance —
+   * no regression. !important outranks the locked component's layered
+   * text-balance utility. */
+  text-wrap: wrap !important;
+}
+
+@media (max-width: 39.99rem) {
+  .jx-nav [data-jx-chrome] > a span.font-nav.truncate.text-sm {
+    display: none;
+  }
+}
+
+.jx-nav button[aria-label='Toggle navigation'] {
+  position: relative;
+}
+.jx-nav button[aria-label='Toggle navigation']::after {
+  content: '';
+  inset: -6px;
+  position: absolute;
+}
+
+[data-jx-terminal] div:has(> .jx-out) {
+  min-height: calc(4 * 1.25rem + 3 * 0.25rem);
+}
 
 /* -------------------------------------------------------------------------
  * Reduced-motion law: the registry sheet already neutralizes reveal,
