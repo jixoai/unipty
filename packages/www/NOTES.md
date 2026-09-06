@@ -368,12 +368,11 @@ previously got English unless it clicked the switcher.
   variants): every locale anchor records its code to localStorage
   `lang` before the anchored navigation, so an explicit click always
   beats detection afterwards; storage failures are swallowed (the
-  anchor still navigates). This is a site-level divergence from the
-  registry bytes (persistence onclick handlers + comment) — the
-  `jixoai-ui.lock` hash for the file still records the pristine
-  registry bytes, same recorded-divergence posture as the prettier-
-  formatted shared items above; re-adding the item would need the
-  persist handlers re-applied.
+  anchor still navigates). CONVERGED 2026-09-06 (consumer-feedback-fixes
+  P0-2 upgrade): the registry item now ships this persistence contract
+  itself, so the former site-level divergence (local persist handlers
+  over pristine registry bytes) is retired — the file is registry canon
+  again and `jixoai-ui.lock` matches it exactly.
 - **Check suite**: `checkLocales` additionally asserts the negotiation
   bootstrap ships on every page (probes `navigator.languages` in the
   output html — the inline script is emitted verbatim by the
@@ -424,3 +423,40 @@ artifact and never republish packages.
 
 Catalog input selection: CLI arg > `WWW_CATALOG` env > committed
 development fixture `fixtures/catalog.dev.json`.
+
+## Upstream consumer-feedback-fixes consumption (2026-09-06)
+
+- `npx jixoai-ui upgrade` (registry ui.jixoai.com): updated 8 /
+  unchanged 66 / skipped 3. Updated: `theme-toggle`, `hero-section`,
+  `jixoai-theme`, `defaults`, `context-plugin`, `scrollbar-measure`,
+  `press-button`, `language-switcher`. Lock 27 → 27; hue re-applied
+  165 (verified `--brand-hue: 165`).
+- Divergence convergence (the headline for this site): the
+  language-switcher persistence hack — historically maintained HERE as
+  a site-level patch over pristine registry bytes (see the retired
+  note above) — is now upstream canon (P0-2: click →
+  `localStorage.lang`, try/catch silent, pure anchor navigation). The
+  upgrade replaced the local patch with canon; no layout hack ever
+  existed on this site (persistence always lived in the component), so
+  nothing was deleted — the patched-vs-canon drift simply closed.
+- `jixoai.css` came back registry-formatted (single quotes): the
+  committed bytes had been prettier-reformatted post-0.3.0-sync (fmt
+  pass 7f5bf94). The rewrite is formatting-equivalent (`git diff -w`
+  shows only the hue-comment context fix beyond whitespace/quotes);
+  hue 165 intact. The prettier-formatting lock-vs-disk drift on the
+  shared items NOT touched this run (~38 files: barrels, css, defaults
+  siblings) predates this change (documented 2026-09-06 site-i18n-zh)
+  and is left as-is — cosmetic only, and check-site has no fmt gate.
+- `theme-toggle` optional `labels` prop not consumed: site uses
+  `variant="compact"` (icon-only), English defaults fine.
+- Verification: `node scripts/check-site.mjs` ALL GREEN across both
+  fixtures (catalog.dev + catalog.alt) + the CNAME-gate production
+  build — links, states, locales (lang/hreflang/switcher wired/
+  negotiation bootstrap/en-zh anchors identical), llms export
+  byte-identity, malformed-catalog rejection. Playwright headless dev
+  spot check (port 13504): click 中文 → `lang=zh` + `/zh/`, reload
+  stays zh (`<html lang="zh">`), click EN → `lang=en` + `/`, reload
+  stays en — 6/6 (one script race on the EN click was root-caused to
+  `networkidle` resolving before the anchor navigation and fixed with
+  `waitForURL`; a manual probe confirmed the site behavior was always
+  correct).

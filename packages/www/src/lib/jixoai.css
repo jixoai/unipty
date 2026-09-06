@@ -26,12 +26,12 @@
  * here — the theme owns laws, not options.
  */
 
-@import "@fontsource-variable/jetbrains-mono";
-@import "@fontsource/share-tech-mono";
+@import '@fontsource-variable/jetbrains-mono';
+@import '@fontsource/share-tech-mono';
 
 :root,
 .jx-light {
-  --brand-hue: 165; /* pre-JS flash value only — the live hue is wall-clock driven by hue-runtime. per-project defaults: unipty=165 幽绿, openspecui=27 */
+  --brand-hue: 165; /* the registry's own default (ui.jixoai.com pink) — for REGISTRY CONSUMERS this static value is the live one (jixoai-ui init --hue rewrites it); the wall-clock hue rotation is ui.jixoai.com's site-local hue-runtime script, never shipped to consumers. per-project values: unipty=165 幽绿, openspecui=27 */
 
   --background: oklch(1 0 0);
   --foreground: oklch(0 0 0);
@@ -78,11 +78,10 @@
   --chart-4: var(--warning);
   --chart-5: var(--error);
 
-  --font-sans:
-    "JetBrains Mono Variable", "JetBrains Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
-    monospace;
+  --font-sans: 'JetBrains Mono Variable', 'JetBrains Mono', SFMono-Regular, Menlo,
+    Consolas, 'Liberation Mono', monospace;
   --font-mono: var(--font-sans);
-  --font-nav: "Share Tech Mono", "JetBrains Mono Variable", monospace;
+  --font-nav: 'Share Tech Mono', 'JetBrains Mono Variable', monospace;
 
   --radius: 0px;
   @supports (corner-shape: bevel) {
@@ -140,8 +139,8 @@
      model. */
   --jx-engrave-shade: hsl(0 0% 0% / 0.4);
   --jx-engrave-glow: hsl(0 0% 100% / 0.96);
-  --shadow-engrave:
-    inset 1px 1px 0px 0px var(--jx-engrave-shade), inset -1px -1px 0px 0px var(--jx-engrave-glow);
+  --shadow-engrave: inset 1px 1px 0px 0px var(--jx-engrave-shade),
+    inset -1px -1px 0px 0px var(--jx-engrave-glow);
   --shadow-well: inset 1px 1px 0px 0px hsl(0 0% 0% / 0.12);
   --shadow-well-hover: inset 1px 1px 0px 0px hsl(0 0% 0% / 0.28);
 
@@ -247,8 +246,8 @@
      the glow wall's black on dark reads as the carved sheen) */
   --jx-engrave-shade: hsl(0 0% 100% / 0.4);
   --jx-engrave-glow: hsl(0 0% 0% / 0.96);
-  --shadow-engrave:
-    inset 1px 1px 0px 0px var(--jx-engrave-shade), inset -1px -1px 0px 0px var(--jx-engrave-glow);
+  --shadow-engrave: inset 1px 1px 0px 0px var(--jx-engrave-shade),
+    inset -1px -1px 0px 0px var(--jx-engrave-glow);
   --shadow-well: inset 1px 1px 0px 0px hsl(0 0% 100% / 0.12);
   --shadow-well-hover: inset 1px 1px 0px 0px hsl(0 0% 100% / 0.28);
 
@@ -259,7 +258,7 @@
   --surface-shadow: oklch(0 0 0 / 0.32); /* black — r14-17, Owner */
 }
 
-:where([data-density="lg"]) {
+:where([data-density='lg']) {
   --jx-text: var(--jx-density-text-lg);
   --jx-leading: var(--jx-density-leading-lg);
   --jx-line: var(--jx-density-line-lg);
@@ -460,7 +459,7 @@
    full declarativity. The first-frame law rides the formulas: at p=0
    opacity computes to 0, so the pre-JS frame can never flash. */
 @property --jx-p {
-  syntax: "<number>";
+  syntax: '<number>';
   inherits: true;
   initial-value: 0;
 }
@@ -471,7 +470,7 @@
    the r26 live probe). Registered, it computes to a number each frame
    and inherits as one */
 @property --jx-t {
-  syntax: "<number>";
+  syntax: '<number>';
   inherits: true;
   initial-value: 0;
 }
@@ -483,7 +482,8 @@
   --jx-t: clamp(calc((var(--jx-p) - 0.5) * 2), 0, 1); /* 2nd-half sub-progress */
   opacity: clamp(calc(var(--jx-p) * 2), 0, 1);
   filter: blur(calc((1 - clamp(calc(var(--jx-p) * 2), 0, 1)) * 100px));
-  translate: calc(var(--jx-dx) * var(--jx-m1) * (1 - var(--jx-p)))
+  translate:
+    calc(var(--jx-dx) * var(--jx-m1) * (1 - var(--jx-p)))
     calc(var(--jx-dy) * var(--jx-m1) * (1 - var(--jx-p)));
 }
 /* materials develop in the second half; solid keeps an opaque fill */
@@ -496,8 +496,8 @@
    and was winning the cascade all along; every "lazy paint" theory in
    the r26 probe session was this misdiagnosis) */
   background: oklch(
-    from var(--jx-surface-solid-fill, var(--popover)) l c h /
-      calc(1 - clamp(calc((var(--jx-p) - 0.5) * 2), 0, 1) * 0.28)
+    from var(--jx-surface-solid-fill, var(--popover))
+    l c h / calc(1 - clamp(calc((var(--jx-p) - 0.5) * 2), 0, 1) * 0.28)
   );
 }
 .jx-surface.jx-surface.jx-waapi .jx-surface-shadow {
@@ -506,20 +506,22 @@
      --shadow-color, so the resting pose lands exactly on
      oklch(1 0 0 / 0.32) / oklch(0 0 0 / 0.32) */
   background: oklch(
-    from var(--surface-shadow) l c h / calc(1 - clamp(calc((var(--jx-p) - 0.5) * 2), 0, 1) * 0.68)
+    from var(--surface-shadow)
+    l c h / calc(1 - clamp(calc((var(--jx-p) - 0.5) * 2), 0, 1) * 0.68)
   );
-  translate: calc(var(--jx-dx) * var(--jx-m2) * var(--jx-t))
+  translate:
+    calc(var(--jx-dx) * var(--jx-m2) * var(--jx-t))
     calc(var(--jx-dy) * var(--jx-m2) * var(--jx-t));
 }
 /* solid keeps an opaque fill — its formula IS the end state */
-.jx-surface.jx-surface.jx-waapi[data-variant="solid"] .jx-surface-body {
+.jx-surface.jx-surface.jx-waapi[data-variant='solid'] .jx-surface-body {
   background: var(--jx-surface-solid-fill, var(--popover));
 }
 /* SOLID never defocuses: the variant is the opaque, static-weight
    material — a blurred solid panel reads as broken glass, and the
    filter would be pure compositor cost over an opaque fill (Owner
    ruling, r28) */
-.jx-surface.jx-surface.jx-waapi[data-variant="solid"] {
+.jx-surface.jx-surface.jx-waapi[data-variant='solid'] {
   filter: none;
 }
 
@@ -594,7 +596,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
    subtracts the inner from the outer, leaving exactly the ring.
    Regular surfaces never opt in: zero paint, zero cost. */
 .jx-surface[data-border-ring]::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 1; /* above the surface body's fill */
@@ -630,7 +632,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
    resting pose) */
 .jx-surface::after,
 .jx-surface-shadow {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
@@ -661,8 +663,8 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
 /* acrylic / auto: the body carries ONE filter — blur. Bezel panels
    retune the fill through the custom properties, keeping their
    identity in BOTH variants. */
-.jx-surface[data-variant="acrylic"] .jx-surface-body,
-.jx-surface[data-variant="auto"] .jx-surface-body {
+.jx-surface[data-variant='acrylic'] .jx-surface-body,
+.jx-surface[data-variant='auto'] .jx-surface-body {
   background: var(--jx-surface-acrylic-fill, color-mix(in oklab, var(--popover) 72%, transparent));
   -webkit-backdrop-filter: blur(14px) brightness(2);
   backdrop-filter: blur(14px) brightness(2);
@@ -670,7 +672,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
 /* auto = acrylic UNLESS the environment asks for less transparency —
    then exactly solid */
 @media (prefers-reduced-transparency: reduce) {
-  .jx-surface[data-variant="auto"] .jx-surface-body {
+  .jx-surface[data-variant='auto'] .jx-surface-body {
     background: var(--jx-surface-solid-fill, var(--popover));
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -679,7 +681,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
      above never beat it, so auto panels kept their 0.72 alpha under
      reduced transparency (blur died, tint stayed — Codex P0). This
      override matches the formula's specificity and comes later */
-  .jx-surface.jx-surface.jx-waapi[data-variant="auto"] .jx-surface-body {
+  .jx-surface.jx-surface.jx-waapi[data-variant='auto'] .jx-surface-body {
     background: var(--jx-surface-solid-fill, var(--popover));
   }
 }
@@ -738,7 +740,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
   position: relative;
 }
 .jx-press[data-jx-press-flat]:active::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -1px; /* over the border ring exactly: abs insets measure
     from the padding edge, so -1px spans the 1px frame */
@@ -756,13 +758,9 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
       color-mix(in oklab, var(--jx-engrave-glow) 55%, transparent),
       transparent 60%
     );
-  -webkit-mask:
-    linear-gradient(#000 0 0) padding-box,
-    linear-gradient(#000 0 0);
+  -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#000 0 0) padding-box,
-    linear-gradient(#000 0 0);
+  mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
   mask-composite: exclude;
   pointer-events: none;
 }
@@ -843,7 +841,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     animation-timeline: view();
     animation-range: entry 0% entry 75%;
   }
-  [data-reveal="rule"] {
+  [data-reveal='rule'] {
     animation: jx-reveal-rule both;
     animation-timeline: view();
     animation-range: entry 0% entry 70%;
@@ -862,7 +860,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
 }
 @media (prefers-reduced-motion: reduce) {
   [data-reveal],
-  [data-reveal="rule"] {
+  [data-reveal='rule'] {
     animation: none;
   }
 }
@@ -889,7 +887,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
    component css; components consume the inherited --jx-* aliases.
    ============================================================ */
 :root {
-  --jx-unit: 0.25rem; /* U = 4px at the 16px root */
+  --jx-unit: 0.25rem;        /* U = 4px at the 16px root */
   --jx-text-base: 0.8125rem; /* T_base = 13px */
   --jx-hit-floor: calc(var(--jx-unit) * 7); /* 28px guardrail, not a clamp */
 
@@ -924,9 +922,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
   --jx-density-line-2xs: calc(var(--jx-density-text-2xs) * var(--jx-density-leading-2xs));
   --jx-density-line-xs: calc(var(--jx-density-text-xs) * var(--jx-density-leading-xs));
   --jx-density-line-sm: calc(var(--jx-density-text-sm) * var(--jx-density-leading-sm));
-  --jx-density-line-default: calc(
-    var(--jx-density-text-default) * var(--jx-density-leading-default)
-  );
+  --jx-density-line-default: calc(var(--jx-density-text-default) * var(--jx-density-leading-default));
   --jx-density-line-lg: calc(var(--jx-density-text-lg) * var(--jx-density-leading-lg));
 
   --jx-density-inline-gap-2xs: calc(var(--jx-unit) * var(--jx-density-inline-factor-2xs));
@@ -956,56 +952,30 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
   --jx-density-inline-inset-default: var(--jx-density-inline-gap-default);
   --jx-density-inline-inset-lg: var(--jx-density-inline-gap-lg);
 
-  --jx-density-content-gap-2xs: max(
-    calc(var(--jx-unit) / 2),
-    calc(var(--jx-density-stack-gap-2xs) / 2)
-  );
-  --jx-density-content-gap-xs: max(
-    calc(var(--jx-unit) / 2),
-    calc(var(--jx-density-stack-gap-xs) / 2)
-  );
-  --jx-density-content-gap-sm: max(
-    calc(var(--jx-unit) / 2),
-    calc(var(--jx-density-stack-gap-sm) / 2)
-  );
-  --jx-density-content-gap-default: max(
-    calc(var(--jx-unit) / 2),
-    calc(var(--jx-density-stack-gap-default) / 2)
-  );
-  --jx-density-content-gap-lg: max(
-    calc(var(--jx-unit) / 2),
-    calc(var(--jx-density-stack-gap-lg) / 2)
-  );
+  --jx-density-content-gap-2xs: max(calc(var(--jx-unit) / 2), calc(var(--jx-density-stack-gap-2xs) / 2));
+  --jx-density-content-gap-xs: max(calc(var(--jx-unit) / 2), calc(var(--jx-density-stack-gap-xs) / 2));
+  --jx-density-content-gap-sm: max(calc(var(--jx-unit) / 2), calc(var(--jx-density-stack-gap-sm) / 2));
+  --jx-density-content-gap-default: max(calc(var(--jx-unit) / 2), calc(var(--jx-density-stack-gap-default) / 2));
+  --jx-density-content-gap-lg: max(calc(var(--jx-unit) / 2), calc(var(--jx-density-stack-gap-lg) / 2));
 
   --jx-density-row-min-2xs: max(
-    calc(
-      var(--jx-density-line-2xs) + var(--jx-density-stack-gap-2xs) + var(--jx-density-stack-gap-2xs)
-    ),
+    calc(var(--jx-density-line-2xs) + var(--jx-density-stack-gap-2xs) + var(--jx-density-stack-gap-2xs)),
     calc(var(--jx-unit) * var(--jx-density-row-floor-2xs))
   );
   --jx-density-row-min-xs: max(
-    calc(
-      var(--jx-density-line-xs) + var(--jx-density-stack-gap-xs) + var(--jx-density-stack-gap-xs)
-    ),
+    calc(var(--jx-density-line-xs) + var(--jx-density-stack-gap-xs) + var(--jx-density-stack-gap-xs)),
     calc(var(--jx-unit) * var(--jx-density-row-floor-xs))
   );
   --jx-density-row-min-sm: max(
-    calc(
-      var(--jx-density-line-sm) + var(--jx-density-stack-gap-sm) + var(--jx-density-stack-gap-sm)
-    ),
+    calc(var(--jx-density-line-sm) + var(--jx-density-stack-gap-sm) + var(--jx-density-stack-gap-sm)),
     calc(var(--jx-unit) * var(--jx-density-row-floor-sm))
   );
   --jx-density-row-min-default: max(
-    calc(
-      var(--jx-density-line-default) + var(--jx-density-stack-gap-default) +
-        var(--jx-density-stack-gap-default)
-    ),
+    calc(var(--jx-density-line-default) + var(--jx-density-stack-gap-default) + var(--jx-density-stack-gap-default)),
     calc(var(--jx-unit) * var(--jx-density-row-floor-default))
   );
   --jx-density-row-min-lg: max(
-    calc(
-      var(--jx-density-line-lg) + var(--jx-density-stack-gap-lg) + var(--jx-density-stack-gap-lg)
-    ),
+    calc(var(--jx-density-line-lg) + var(--jx-density-stack-gap-lg) + var(--jx-density-stack-gap-lg)),
     calc(var(--jx-unit) * var(--jx-density-row-floor-lg))
   );
 
@@ -1030,42 +1000,17 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
      DEGENERATES: max(0.625rem, 10px − 1px) = 10px = the primary size —
      the role distinction collapses at its floor (differentiate by ink,
      never by size, below xs). */
-  --jx-density-secondary-text-2xs: max(
-    0.625rem,
-    calc(var(--jx-density-text-2xs) - calc(var(--jx-unit) / 4))
-  );
-  --jx-density-secondary-text-xs: max(
-    0.625rem,
-    calc(var(--jx-density-text-xs) - calc(var(--jx-unit) / 4))
-  );
-  --jx-density-secondary-text-sm: max(
-    0.625rem,
-    calc(var(--jx-density-text-sm) - calc(var(--jx-unit) / 4))
-  );
-  --jx-density-secondary-text-default: max(
-    0.625rem,
-    calc(var(--jx-density-text-default) - calc(var(--jx-unit) / 4))
-  );
-  --jx-density-secondary-text-lg: max(
-    0.625rem,
-    calc(var(--jx-density-text-lg) - calc(var(--jx-unit) / 4))
-  );
+  --jx-density-secondary-text-2xs: max(0.625rem, calc(var(--jx-density-text-2xs) - calc(var(--jx-unit) / 4)));
+  --jx-density-secondary-text-xs: max(0.625rem, calc(var(--jx-density-text-xs) - calc(var(--jx-unit) / 4)));
+  --jx-density-secondary-text-sm: max(0.625rem, calc(var(--jx-density-text-sm) - calc(var(--jx-unit) / 4)));
+  --jx-density-secondary-text-default: max(0.625rem, calc(var(--jx-density-text-default) - calc(var(--jx-unit) / 4)));
+  --jx-density-secondary-text-lg: max(0.625rem, calc(var(--jx-density-text-lg) - calc(var(--jx-unit) / 4)));
   --jx-density-secondary-leading: 1.5;
-  --jx-density-secondary-line-2xs: calc(
-    var(--jx-density-secondary-text-2xs) * var(--jx-density-secondary-leading)
-  );
-  --jx-density-secondary-line-xs: calc(
-    var(--jx-density-secondary-text-xs) * var(--jx-density-secondary-leading)
-  );
-  --jx-density-secondary-line-sm: calc(
-    var(--jx-density-secondary-text-sm) * var(--jx-density-secondary-leading)
-  );
-  --jx-density-secondary-line-default: calc(
-    var(--jx-density-secondary-text-default) * var(--jx-density-secondary-leading)
-  );
-  --jx-density-secondary-line-lg: calc(
-    var(--jx-density-secondary-text-lg) * var(--jx-density-secondary-leading)
-  );
+  --jx-density-secondary-line-2xs: calc(var(--jx-density-secondary-text-2xs) * var(--jx-density-secondary-leading));
+  --jx-density-secondary-line-xs: calc(var(--jx-density-secondary-text-xs) * var(--jx-density-secondary-leading));
+  --jx-density-secondary-line-sm: calc(var(--jx-density-secondary-text-sm) * var(--jx-density-secondary-leading));
+  --jx-density-secondary-line-default: calc(var(--jx-density-secondary-text-default) * var(--jx-density-secondary-leading));
+  --jx-density-secondary-line-lg: calc(var(--jx-density-secondary-text-lg) * var(--jx-density-secondary-leading));
   --jx-icon-optical: 0px;
 }
 
@@ -1107,24 +1052,12 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
    jx-hue-destructive (destructive is an ACTION — the pair below),
    and the pair emits --jx-fill WITH --jx-fill-ink in one class, so
    the always-inject-both law is structural, not documentation. */
-@utility jx-hue-primary {
-  --jx-tonal: var(--primary);
-}
-@utility jx-hue-neutral {
-  --jx-tonal: var(--muted-foreground);
-}
-@utility jx-hue-error {
-  --jx-tonal: var(--error);
-}
-@utility jx-hue-success {
-  --jx-tonal: var(--success);
-}
-@utility jx-hue-warning {
-  --jx-tonal: var(--warning);
-}
-@utility jx-hue-info {
-  --jx-tonal: var(--info);
-}
+@utility jx-hue-primary { --jx-tonal: var(--primary); }
+@utility jx-hue-neutral { --jx-tonal: var(--muted-foreground); }
+@utility jx-hue-error { --jx-tonal: var(--error); }
+@utility jx-hue-success { --jx-tonal: var(--success); }
+@utility jx-hue-warning { --jx-tonal: var(--warning); }
+@utility jx-hue-info { --jx-tonal: var(--info); }
 @utility jx-pair-destructive {
   --jx-fill: var(--destructive);
   --jx-fill-ink: var(--destructive-foreground);
@@ -1147,115 +1080,96 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
 
 /* @jixoai/css-laws:begin:jx-html-utility — GENERATED, do not edit (source: packages/css-laws/src/laws) */
 @layer components {
-  .jx-html-input {
-    corner-shape: var(--corner-shape, bevel);
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    min-height: var(--jx-hit, 2.5rem);
-    padding-block: var(--jx-gap, 0.5rem);
-    padding-inline: var(--jx-inset, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    color: var(--foreground);
-    box-shadow: var(--shadow-well);
-    caret-color: var(--primary);
-    font: inherit;
-    font-size: var(--jx-text, 0.875rem);
-    line-height: var(--jx-leading, 1.45);
-    transition:
-      box-shadow 150ms ease-out,
-      border-color 150ms ease-out;
-  }
+.jx-html-input {
+  corner-shape: var(--corner-shape, bevel);
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--jx-hit, 2.5rem);
+  padding-block: var(--jx-gap, 0.5rem);
+  padding-inline: var(--jx-inset, 0.75rem);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-well);
+  caret-color: var(--primary);
+  font: inherit;
+  font-size: var(--jx-text, 0.875rem);
+  line-height: var(--jx-leading, 1.45);
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+}
 
-  .jx-html-input::placeholder {
-    color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
-    opacity: 1;
-  }
+.jx-html-input::placeholder {
+  color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
+  opacity: 1;
+}
 
-  .jx-html-input:hover:not(:disabled) {
-    box-shadow: var(--shadow-well-hover);
-  }
+.jx-html-input:hover:not(:disabled) {
+  box-shadow: var(--shadow-well-hover);
+}
 
-  .jx-html-input:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-    border-color: var(--ring);
-  }
+.jx-html-input:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  border-color: var(--ring);
+}
 
-  .jx-html-input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-input[aria-invalid="true"] {
-    border-style: dashed;
-  }
+.jx-html-input[aria-invalid='true'] {
+  border-style: dashed;
+}
 
-  .jx-html-input::-webkit-calendar-picker-indicator {
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-calendar,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-input::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-calendar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-input[type="time"]::-webkit-calendar-picker-indicator {
-    background-image: var(
-      --jx-icon-clock,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E")
-    );
-  }
+.jx-html-input[type='time']::-webkit-calendar-picker-indicator {
+  background-image: var(--jx-icon-clock, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E"));
+}
 
-  .jx-html-input[type="email"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-mail,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-input[type='email'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-mail, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-input[type="search"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-search,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-input[type='search'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-search, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-input[type="search"]::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-clear,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-input[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-input {
@@ -1263,117 +1177,98 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-textarea {
-    corner-shape: var(--corner-shape, bevel);
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    min-height: var(--jx-textarea-min, 5rem);
-    padding-block: var(--jx-gap, 0.5rem);
-    padding-inline: var(--jx-inset, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    color: var(--foreground);
-    box-shadow: var(--shadow-well);
-    caret-color: var(--primary);
-    font: inherit;
-    font-size: var(--jx-text, 0.875rem);
-    line-height: var(--jx-leading, 1.45);
-    transition:
-      box-shadow 150ms ease-out,
-      border-color 150ms ease-out;
-    height: auto;
-    resize: vertical;
-  }
+.jx-html-textarea {
+  corner-shape: var(--corner-shape, bevel);
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--jx-textarea-min, 5rem);
+  padding-block: var(--jx-gap, 0.5rem);
+  padding-inline: var(--jx-inset, 0.75rem);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-well);
+  caret-color: var(--primary);
+  font: inherit;
+  font-size: var(--jx-text, 0.875rem);
+  line-height: var(--jx-leading, 1.45);
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+  height: auto;
+  resize: vertical;
+}
 
-  .jx-html-textarea::placeholder {
-    color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
-    opacity: 1;
-  }
+.jx-html-textarea::placeholder {
+  color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
+  opacity: 1;
+}
 
-  .jx-html-textarea:hover:not(:disabled) {
-    box-shadow: var(--shadow-well-hover);
-  }
+.jx-html-textarea:hover:not(:disabled) {
+  box-shadow: var(--shadow-well-hover);
+}
 
-  .jx-html-textarea:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-    border-color: var(--ring);
-  }
+.jx-html-textarea:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  border-color: var(--ring);
+}
 
-  .jx-html-textarea:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-textarea[aria-invalid="true"] {
-    border-style: dashed;
-  }
+.jx-html-textarea[aria-invalid='true'] {
+  border-style: dashed;
+}
 
-  .jx-html-textarea::-webkit-calendar-picker-indicator {
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-calendar,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-textarea::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-calendar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-textarea[type="time"]::-webkit-calendar-picker-indicator {
-    background-image: var(
-      --jx-icon-clock,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E")
-    );
-  }
+.jx-html-textarea[type='time']::-webkit-calendar-picker-indicator {
+  background-image: var(--jx-icon-clock, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E"));
+}
 
-  .jx-html-textarea[type="email"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-mail,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-textarea[type='email'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-mail, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-textarea[type="search"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-search,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-textarea[type='search'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-search, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-textarea[type="search"]::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-clear,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-textarea[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-textarea {
@@ -1381,118 +1276,99 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-select {
-    --jx-icon-chevron-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
-    corner-shape: var(--corner-shape, bevel);
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    max-width: 100%;
-    min-height: var(--jx-hit, 2.5rem);
-    padding-block: var(--jx-gap, 0.5rem);
-    padding-inline: var(--jx-inset, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    color: var(--foreground);
-    box-shadow: var(--shadow-well);
-    caret-color: var(--primary);
-    font: inherit;
-    font-size: var(--jx-text, 0.875rem);
-    line-height: var(--jx-leading, 1.45);
-    transition:
-      box-shadow 150ms ease-out,
-      border-color 150ms ease-out;
-    cursor: pointer;
-    padding-inline-end: calc(var(--jx-inset, 0.75rem) + var(--jx-icon, 1.25rem));
-  }
+.jx-html-select {
+  --jx-icon-chevron-svg: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  corner-shape: var(--corner-shape, bevel);
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-height: var(--jx-hit, 2.5rem);
+  padding-block: var(--jx-gap, 0.5rem);
+  padding-inline: var(--jx-inset, 0.75rem);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-well);
+  caret-color: var(--primary);
+  font: inherit;
+  font-size: var(--jx-text, 0.875rem);
+  line-height: var(--jx-leading, 1.45);
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+  cursor: pointer;
+  padding-inline-end: calc(var(--jx-inset, 0.75rem) + var(--jx-icon, 1.25rem));
+}
 
-  .jx-html-select::placeholder {
-    color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
-    opacity: 1;
-  }
+.jx-html-select::placeholder {
+  color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
+  opacity: 1;
+}
 
-  .jx-html-select:hover:not(:disabled) {
-    box-shadow: var(--shadow-well-hover);
-  }
+.jx-html-select:hover:not(:disabled) {
+  box-shadow: var(--shadow-well-hover);
+}
 
-  .jx-html-select:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-    border-color: var(--ring);
-  }
+.jx-html-select:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  border-color: var(--ring);
+}
 
-  .jx-html-select:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-select[aria-invalid="true"] {
-    border-style: dashed;
-  }
+.jx-html-select[aria-invalid='true'] {
+  border-style: dashed;
+}
 
-  .jx-html-select::-webkit-calendar-picker-indicator {
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-calendar,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-select::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-calendar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-select[type="time"]::-webkit-calendar-picker-indicator {
-    background-image: var(
-      --jx-icon-clock,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E")
-    );
-  }
+.jx-html-select[type='time']::-webkit-calendar-picker-indicator {
+  background-image: var(--jx-icon-clock, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E"));
+}
 
-  .jx-html-select[type="email"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-mail,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-select[type='email'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-mail, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-select[type="search"] {
-    padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem))
-      var(--jx-inset, 0.75rem);
-    background-image: var(
-      --jx-icon-search,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-select[type='search'] {
+  padding-inline: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem)) var(--jx-inset, 0.75rem);
+  background-image: var(--jx-icon-search, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-select[type="search"]::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-clear,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-select[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-select {
@@ -1514,83 +1390,77 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-select:where([multiple], [size]) {
-    min-height: 5.75rem;
-    padding-block: 0.375rem 0.5rem;
-    cursor: default;
-    background-image: none;
-  }
+.jx-html-select:where([multiple], [size]) {
+  min-height: 5.75rem;
+  padding-block: 0.375rem 0.5rem;
+  cursor: default;
+  background-image: none;
+}
 
-  .jx-html-checkbox {
-    appearance: none;
-    -webkit-appearance: none;
-    position: relative;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: var(--jx-icon, 1.25rem);
-    height: var(--jx-icon, 1.25rem);
-    margin: 0;
-    flex: none;
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    cursor: pointer;
-    transition:
-      background-color 150ms ease-out,
-      border-color 150ms ease-out;
-  }
+.jx-html-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: var(--jx-icon, 1.25rem);
+  height: var(--jx-icon, 1.25rem);
+  margin: 0;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  cursor: pointer;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out;
+}
 
-  .jx-html-checkbox::before {
-    content: "";
-    position: absolute;
-    inset: 2px;
-    display: block;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    background: var(--primary-foreground);
-    opacity: 0;
-    transform: rotate(45deg);
-    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 80%, 70% 80%, 70% 100%);
-    transition:
-      clip-path 150ms ease-out,
-      opacity 150ms ease-out,
-      transform 150ms ease-out;
-  }
+.jx-html-checkbox::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  display: block;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  background: var(--primary-foreground);
+  opacity: 0;
+  transform: rotate(45deg);
+  clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 80%, 70% 80%, 70% 100%);
+  transition: clip-path 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out;
+}
 
-  .jx-html-checkbox:checked::before {
-    opacity: 1;
-    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 0%, 70% 0%, 70% 100%);
-  }
+.jx-html-checkbox:checked::before {
+  opacity: 1;
+  clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 0%, 70% 0%, 70% 100%);
+}
 
-  .jx-html-checkbox:indeterminate::before {
-    opacity: 1;
-    transform: rotate(0deg);
-    clip-path: polygon(10% 40%, 10% 60%, 45% 60%, 55% 60%, 90% 60%, 90% 40%);
-  }
+.jx-html-checkbox:indeterminate::before {
+  opacity: 1;
+  transform: rotate(0deg);
+  clip-path: polygon(10% 40%, 10% 60%, 45% 60%, 55% 60%, 90% 60%, 90% 40%);
+}
 
-  .jx-html-checkbox:hover:not(:checked):not(:disabled) {
-    border-color: var(--primary);
-  }
+.jx-html-checkbox:hover:not(:checked):not(:disabled) {
+  border-color: var(--primary);
+}
 
-  .jx-html-checkbox:checked,
-  .jx-html-checkbox:indeterminate {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
+.jx-html-checkbox:checked, .jx-html-checkbox:indeterminate {
+  background: var(--primary);
+  border-color: var(--primary);
+}
 
-  .jx-html-checkbox:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-checkbox:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-checkbox:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-checkbox:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-checkbox[aria-invalid="true"] {
-    border-style: dashed;
-  }
+.jx-html-checkbox[aria-invalid='true'] {
+  border-style: dashed;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-checkbox {
@@ -1601,95 +1471,91 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-radio {
-    appearance: none;
-    -webkit-appearance: none;
-    position: relative;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: var(--jx-icon, 1.25rem);
-    height: var(--jx-icon, 1.25rem);
-    margin: 0;
-    flex: none;
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    background: var(--background);
-    cursor: pointer;
-    transition: border-color 150ms ease-out;
-  }
+.jx-html-radio {
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: var(--jx-icon, 1.25rem);
+  height: var(--jx-icon, 1.25rem);
+  margin: 0;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--background);
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
 
-  .jx-html-radio::before {
-    content: none;
-    position: absolute;
-    inset: 2px;
-    display: block;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    background: var(--primary-foreground);
-    opacity: 0;
-    transform: rotate(45deg);
-    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 80%, 70% 80%, 70% 100%);
-    transition:
-      clip-path 150ms ease-out,
-      opacity 150ms ease-out,
-      transform 150ms ease-out;
-  }
+.jx-html-radio::before {
+  content: none;
+  position: absolute;
+  inset: 2px;
+  display: block;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  background: var(--primary-foreground);
+  opacity: 0;
+  transform: rotate(45deg);
+  clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 80%, 70% 80%, 70% 100%);
+  transition: clip-path 150ms ease-out, opacity 150ms ease-out, transform 150ms ease-out;
+}
 
-  .jx-html-radio:checked::before {
-    opacity: 1;
-    clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 0%, 70% 0%, 70% 100%);
-  }
+.jx-html-radio:checked::before {
+  opacity: 1;
+  clip-path: polygon(20% 100%, 20% 80%, 50% 80%, 50% 0%, 70% 0%, 70% 100%);
+}
 
-  .jx-html-radio:indeterminate::before {
-    opacity: 1;
-    transform: rotate(0deg);
-    clip-path: polygon(10% 40%, 10% 60%, 45% 60%, 55% 60%, 90% 60%, 90% 40%);
-  }
+.jx-html-radio:indeterminate::before {
+  opacity: 1;
+  transform: rotate(0deg);
+  clip-path: polygon(10% 40%, 10% 60%, 45% 60%, 55% 60%, 90% 60%, 90% 40%);
+}
 
-  .jx-html-radio::after {
-    content: "";
-    position: absolute;
-    inset: 2px;
-    display: block;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    border-radius: 50%;
-    background: var(--primary);
-    transform: scale(0);
-    transition: transform 150ms ease-out;
-  }
+.jx-html-radio::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  display: block;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  border-radius: 50%;
+  background: var(--primary);
+  transform: scale(0);
+  transition: transform 150ms ease-out;
+}
 
-  .jx-html-radio:checked::after {
-    transform: scale(1);
-  }
+.jx-html-radio:checked::after {
+  transform: scale(1);
+}
 
-  .jx-html-radio:hover:not(:checked):not(:disabled) {
-    border-color: var(--primary);
-  }
+.jx-html-radio:hover:not(:checked):not(:disabled) {
+  border-color: var(--primary);
+}
 
-  .jx-html-radio:checked,
-  .jx-html-radio:indeterminate {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
+.jx-html-radio:checked, .jx-html-radio:indeterminate {
+  background: var(--primary);
+  border-color: var(--primary);
+}
 
-  .jx-html-radio:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-radio:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-radio:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-radio:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-radio[aria-invalid="true"] {
-    border-style: dashed;
-  }
+.jx-html-radio[aria-invalid='true'] {
+  border-style: dashed;
+}
 
-  .jx-html-radio:checked {
-    background: var(--background);
-  }
+.jx-html-radio:checked {
+  background: var(--background);
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-radio {
@@ -1700,78 +1566,63 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-switch {
-    appearance: none;
-    -webkit-appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    position: relative;
-    width: var(--jx-toggle-width, 2.5rem);
-    height: var(--jx-toggle-track, 1.5rem);
-    margin: 0;
-    flex: none;
-    padding: calc(
-      (var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 -
-        var(--jx-toggle-knob-border, 1px)
-    );
-    border: 0;
-    box-shadow: 0 0 0 1px var(--border) inset;
-    border-radius: calc(infinity * 1px);
-    background: var(--muted);
-    cursor: pointer;
-    transition:
-      background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
+.jx-html-switch {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  position: relative;
+  width: var(--jx-toggle-width, 2.5rem);
+  height: var(--jx-toggle-track, 1.5rem);
+  margin: 0;
+  flex: none;
+  padding: calc((var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 - var(--jx-toggle-knob-border, 1px));
+  border: 0;
+  box-shadow: 0 0 0 1px var(--border) inset;
+  border-radius: calc(infinity * 1px);
+  background: var(--muted);
+  cursor: pointer;
+  transition: background-color 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 
-  .jx-html-switch::before {
-    content: "";
-    position: absolute;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    inset-block: calc(
-      (var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 -
-        var(--jx-toggle-knob-border, 1px)
-    );
-    inset-inline-start: calc(
-      (var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 -
-        var(--jx-toggle-knob-border, 1px)
-    );
-    inline-size: calc(var(--jx-toggle-knob, 1rem) + 2 * var(--jx-toggle-knob-border, 1px));
-    block-size: calc(var(--jx-toggle-knob, 1rem) + 2 * var(--jx-toggle-knob-border, 1px));
-    border-radius: calc(infinity * 1px);
-    border: var(--jx-toggle-knob-border, 1px) solid
-      var(--jx-toggle-knob-border-color, var(--primary));
-    background: var(--background);
-    transform: translateX(0);
-    transition:
-      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      background-color 200ms cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 200ms cubic-bezier(0.22, 1, 0.36, 1);
-  }
+.jx-html-switch::before {
+  content: '';
+  position: absolute;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  inset-block: calc((var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 - var(--jx-toggle-knob-border, 1px));
+  inset-inline-start: calc((var(--jx-toggle-track, 1.5rem) - var(--jx-toggle-knob, 1rem)) / 2 - var(--jx-toggle-knob-border, 1px));
+  inline-size: calc(var(--jx-toggle-knob, 1rem) + 2 * var(--jx-toggle-knob-border, 1px));
+  block-size: calc(var(--jx-toggle-knob, 1rem) + 2 * var(--jx-toggle-knob-border, 1px));
+  border-radius: calc(infinity * 1px);
+  border: var(--jx-toggle-knob-border, 1px) solid var(--jx-toggle-knob-border-color, var(--primary));
+  background: var(--background);
+  transform: translateX(0);
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), background-color 200ms cubic-bezier(0.22, 1, 0.36, 1), border-color 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
 
-  .jx-html-switch:checked::before {
-    transform: translateX(calc(var(--jx-toggle-width, 2.5rem) - var(--jx-toggle-track, 1.5rem)));
-    background: var(--primary-foreground);
-  }
+.jx-html-switch:checked::before {
+  transform: translateX(calc(var(--jx-toggle-width, 2.5rem) - var(--jx-toggle-track, 1.5rem)));
+  background: var(--primary-foreground);
+}
 
-  .jx-html-switch:hover:not(:checked):not(:disabled) {
-    box-shadow: 0 0 0 1px var(--primary) inset;
-  }
+.jx-html-switch:hover:not(:checked):not(:disabled) {
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
 
-  .jx-html-switch:checked {
-    background: var(--primary);
-  }
+.jx-html-switch:checked {
+  background: var(--primary);
+}
 
-  .jx-html-switch:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-switch:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-switch:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-switch {
@@ -1782,391 +1633,355 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-range {
-    --jx-range-thumb: 100cqh;
-    --jx-range-track: calc(100cqh / 2.5);
-    --jx-range-ring: calc(100cqh / 8);
-    --jx-slider-fill-color: var(--primary);
-    --jx-range-length: calc(var(--jx-unit, 0.25rem) * 40);
-    appearance: none;
-    -webkit-appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    display: block;
-    width: 100%;
-    height: var(--jx-icon, 1.5rem);
-    margin: 0;
-    border: 0;
-    border-radius: calc(infinity * 1px);
-    background: transparent;
-    container-type: size;
-    overflow: hidden;
-    cursor: pointer;
-  }
+.jx-html-range {
+  --jx-range-thumb: 100cqh;
+  --jx-range-track: calc(100cqh / 2.5);
+  --jx-range-ring: calc(100cqh / 8);
+  --jx-slider-fill-color: var(--primary);
+  --jx-range-length: calc(var(--jx-unit, 0.25rem) * 40);
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  display: block;
+  width: 100%;
+  height: var(--jx-icon, 1.5rem);
+  margin: 0;
+  border: 0;
+  border-radius: calc(infinity * 1px);
+  background: transparent;
+  container-type: size;
+  overflow: hidden;
+  cursor: pointer;
+}
 
-  .jx-html-range::-webkit-slider-runnable-track {
-    height: var(--jx-range-track);
-    border-radius: calc(infinity * 1px);
-    background: var(--muted);
-  }
+.jx-html-range::-webkit-slider-runnable-track {
+  height: var(--jx-range-track);
+  border-radius: calc(infinity * 1px);
+  background: var(--muted);
+}
 
-  .jx-html-range::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: var(--jx-range-thumb);
-    height: var(--jx-range-thumb);
-    margin-top: calc((var(--jx-range-track) - var(--jx-range-thumb)) / 2);
-    border-radius: 50%;
-    border: var(--jx-range-ring) solid var(--primary);
-    background: var(--background);
-    box-shadow: calc(-100cqw - var(--jx-range-thumb) / 2) 0 0 100cqw var(--jx-slider-fill-color);
-  }
+.jx-html-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: var(--jx-range-thumb);
+  height: var(--jx-range-thumb);
+  margin-top: calc((var(--jx-range-track) - var(--jx-range-thumb)) / 2);
+  border-radius: 50%;
+  border: var(--jx-range-ring) solid var(--primary);
+  background: var(--background);
+  box-shadow: calc(-100cqw - var(--jx-range-thumb) / 2) 0 0 100cqw var(--jx-slider-fill-color);
+}
 
-  .jx-html-range:dir(rtl)::-webkit-slider-thumb {
-    box-shadow: calc(100cqw + var(--jx-range-thumb) / 2) 0 0 100cqw var(--jx-slider-fill-color);
-  }
+.jx-html-range:dir(rtl)::-webkit-slider-thumb {
+  box-shadow: calc(100cqw + var(--jx-range-thumb) / 2) 0 0 100cqw var(--jx-slider-fill-color);
+}
 
-  .jx-html-range[orient="vertical"] {
-    --jx-range-thumb: 100cqw;
-    --jx-range-track: calc(100cqw / 2.5);
-    --jx-range-ring: calc(100cqw / 8);
-    writing-mode: vertical-lr;
-    direction: rtl;
-    width: var(--jx-icon, 1.5rem);
-    height: var(--jx-range-length);
-  }
+.jx-html-range[orient="vertical"] {
+  --jx-range-thumb: 100cqw;
+  --jx-range-track: calc(100cqw / 2.5);
+  --jx-range-ring: calc(100cqw / 8);
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: var(--jx-icon, 1.5rem);
+  height: var(--jx-range-length);
+}
 
-  .jx-html-range[orient="vertical"]::-webkit-slider-runnable-track {
-    width: var(--jx-range-track);
-    height: auto;
-    border-radius: calc(infinity * 1px);
-    background: var(--muted);
-  }
+.jx-html-range[orient="vertical"]::-webkit-slider-runnable-track {
+  width: var(--jx-range-track);
+  height: auto;
+  border-radius: calc(infinity * 1px);
+  background: var(--muted);
+}
 
-  .jx-html-range[orient="vertical"]::-webkit-slider-thumb {
-    margin-top: 0;
-    margin-left: calc((var(--jx-range-track) - var(--jx-range-thumb)) / 2);
-    box-shadow: 0 calc(100cqh + var(--jx-range-thumb) / 2) 0 100cqh var(--jx-slider-fill-color);
-  }
+.jx-html-range[orient="vertical"]::-webkit-slider-thumb {
+  margin-top: 0;
+  margin-left: calc((var(--jx-range-track) - var(--jx-range-thumb)) / 2);
+  box-shadow: 0 calc(100cqh + var(--jx-range-thumb) / 2) 0 100cqh var(--jx-slider-fill-color);
+}
 
-  .jx-html-range[orient="vertical"]:dir(rtl)::-webkit-slider-thumb {
-    box-shadow: 0 calc(100cqh + var(--jx-range-thumb) / 2) 0 100cqh var(--jx-slider-fill-color);
-  }
+.jx-html-range[orient="vertical"]:dir(rtl)::-webkit-slider-thumb {
+  box-shadow: 0 calc(100cqh + var(--jx-range-thumb) / 2) 0 100cqh var(--jx-slider-fill-color);
+}
 
-  .jx-html-range[orient="vertical"]::-moz-range-track {
-    width: var(--jx-range-track);
-    height: auto;
-    border-radius: calc(infinity * 1px);
-    background: var(--muted);
-  }
+.jx-html-range[orient="vertical"]::-moz-range-track {
+  width: var(--jx-range-track);
+  height: auto;
+  border-radius: calc(infinity * 1px);
+  background: var(--muted);
+}
 
-  .jx-html-range[orient="vertical"]::-moz-range-progress {
-    width: var(--jx-range-track);
-    height: auto;
-    border-radius: calc(infinity * 1px);
-    background: var(--jx-slider-fill-color);
-  }
+.jx-html-range[orient="vertical"]::-moz-range-progress {
+  width: var(--jx-range-track);
+  height: auto;
+  border-radius: calc(infinity * 1px);
+  background: var(--jx-slider-fill-color);
+}
 
-  .jx-html-range::-moz-range-track {
-    height: var(--jx-range-track);
-    border-radius: calc(infinity * 1px);
-    background: var(--muted);
-  }
+.jx-html-range::-moz-range-track {
+  height: var(--jx-range-track);
+  border-radius: calc(infinity * 1px);
+  background: var(--muted);
+}
 
-  .jx-html-range::-moz-range-progress {
-    height: var(--jx-range-track);
-    border-radius: calc(infinity * 1px);
-    background: var(--jx-slider-fill-color);
-  }
+.jx-html-range::-moz-range-progress {
+  height: var(--jx-range-track);
+  border-radius: calc(infinity * 1px);
+  background: var(--jx-slider-fill-color);
+}
 
-  .jx-html-range::-moz-range-thumb {
-    box-sizing: border-box;
-    corner-shape: var(--corner-shape, bevel);
-    width: var(--jx-range-thumb);
-    height: var(--jx-range-thumb);
-    border-radius: 50%;
-    border: var(--jx-range-ring) solid var(--primary);
-    background: var(--background);
-  }
+.jx-html-range::-moz-range-thumb {
+  box-sizing: border-box;
+  corner-shape: var(--corner-shape, bevel);
+  width: var(--jx-range-thumb);
+  height: var(--jx-range-thumb);
+  border-radius: 50%;
+  border: var(--jx-range-ring) solid var(--primary);
+  background: var(--background);
+}
 
-  .jx-html-range:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: 2px;
-  }
+.jx-html-range:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: 2px;
+}
 
-  .jx-html-range:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-range:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-color {
-    appearance: none;
-    -webkit-appearance: none;
-    box-sizing: border-box;
-    width: calc(var(--jx-hit, 2.5rem) - 2px);
-    height: auto;
-    align-self: stretch;
-    flex: none;
-    padding: calc(var(--jx-hit, 2.5rem) / 6);
-    border: 1px solid var(--border);
-    border-radius: 50%;
-    corner-shape: round;
-    background: conic-gradient(
-      from 0deg,
-      #ff0000 0deg,
-      #ffff00 60deg,
-      #00ff00 120deg,
-      #00ffff 180deg,
-      #0000ff 240deg,
-      #ff00ff 300deg,
-      #ff0000 360deg
-    );
-    cursor: pointer;
-  }
+.jx-html-color {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: calc(var(--jx-hit, 2.5rem) - 2px);
+  height: auto;
+  align-self: stretch;
+  flex: none;
+  padding: calc(var(--jx-hit, 2.5rem) / 6);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  corner-shape: round;
+  background: conic-gradient(from 0deg, #ff0000 0deg, #ffff00 60deg, #00ff00 120deg, #00ffff 180deg, #0000ff 240deg, #ff00ff 300deg, #ff0000 360deg);
+  cursor: pointer;
+}
 
-  .jx-html-color::-webkit-color-swatch-wrapper {
-    padding: 0;
-  }
+.jx-html-color::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
 
-  .jx-html-color::-webkit-color-swatch {
-    border: 2px solid #fff;
-    border-radius: 50%;
-    corner-shape: round;
-  }
+.jx-html-color::-webkit-color-swatch {
+  border: 2px solid #FFF;
+  border-radius: 50%;
+  corner-shape: round;
+}
 
-  .jx-html-color::-moz-color-swatch {
-    border: 0;
-    border-radius: 0;
-  }
+.jx-html-color::-moz-color-swatch {
+  border: 0;
+  border-radius: 0;
+}
 
-  .jx-html-tgroup {
-    corner-shape: var(--corner-shape, bevel);
-    display: inline-flex;
-    width: fit-content;
-    flex-wrap: wrap;
-    overflow: hidden;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
-    background: var(--card);
-    box-shadow: var(--shadow-2xs);
-  }
+.jx-html-tgroup {
+  corner-shape: var(--corner-shape, bevel);
+  display: inline-flex;
+  width: fit-content;
+  flex-wrap: wrap;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-2xs);
+}
 
-  .jx-html-tgroup > label {
-    display: inline-flex;
-    align-items: center;
-    min-block-size: var(--jx-hit, 2.5rem);
-    padding-block: calc((var(--jx-hit, 2.5rem) - var(--jx-line, 1.25rem)) / 2);
-    padding-inline: var(--jx-inset, 0.75rem);
-    font-family: var(--font-nav);
-    font-size: var(--jx-text, 0.8125rem);
-    line-height: var(--jx-line, 1.25rem);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--muted-foreground);
-    background-color: transparent;
-    border-inline-end: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-    transition:
-      color 150ms ease-out,
-      background-color 150ms ease-out;
-  }
+.jx-html-tgroup> label {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--jx-hit, 2.5rem);
+  padding-block: calc((var(--jx-hit, 2.5rem) - var(--jx-line, 1.25rem)) / 2);
+  padding-inline: var(--jx-inset, 0.75rem);
+  font-family: var(--font-nav);
+  font-size: var(--jx-text, 0.8125rem);
+  line-height: var(--jx-line, 1.25rem);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  background-color: transparent;
+  border-inline-end: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  transition: color 150ms ease-out, background-color 150ms ease-out;
+}
 
-  .jx-html-tgroup > label:last-child {
-    border-inline-end: 0;
-  }
+.jx-html-tgroup> label:last-child {
+  border-inline-end: 0;
+}
 
-  .jx-html-tgroup > label:not(:has(input:disabled)):hover {
-    color: var(--foreground);
-  }
+.jx-html-tgroup> label:not(:has(input:disabled)):hover {
+  color: var(--foreground);
+}
 
-  .jx-html-tgroup > label:has(input:checked) {
-    background-color: var(--primary);
-    color: var(--primary-foreground);
-  }
+.jx-html-tgroup> label:has(input:checked) {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+}
 
-  .jx-html-tgroup > label:has(input:checked):not(:has(input:disabled)):hover {
-    color: var(--primary-foreground);
-  }
+.jx-html-tgroup> label:has(input:checked):not(:has(input:disabled)):hover {
+  color: var(--primary-foreground);
+}
 
-  .jx-html-tgroup > label:has(input:focus-visible) {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-tgroup> label:has(input:focus-visible) {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-tgroup > label:has(input:disabled) {
-    cursor: not-allowed;
-    opacity: 0.45;
-  }
+.jx-html-tgroup> label:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
 
-  .jx-html-tgroup > label > input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
+.jx-html-tgroup> label > input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
   @media (prefers-reduced-motion: reduce) {
-    .jx-html-tgroup > label {
+    .jx-html-tgroup> label {
       transition: none;
     }
   }
 
-  .jx-html-clear {
-    flex: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--jx-hit, 2.5rem);
-    min-height: var(--jx-hit, 2.5rem);
-    padding: 0;
-    border: 0;
-    background: transparent;
-    font-size: var(--jx-text, 0.875rem);
-    line-height: var(--jx-leading, 1.45);
-    cursor: pointer;
-  }
+.jx-html-clear {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--jx-hit, 2.5rem);
+  min-height: var(--jx-hit, 2.5rem);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: var(--jx-text, 0.875rem);
+  line-height: var(--jx-leading, 1.45);
+  cursor: pointer;
+}
 
-  .jx-html-clear.jx-clear-glyph {
-    display: block;
-    width: 10px;
-    height: 10px;
-    background-color: currentColor;
-    -webkit-mask: var(
-        --jx-icon-clear,
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-      )
-      center / contain no-repeat;
-    mask: var(
-        --jx-icon-clear,
-        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-      )
-      center / contain no-repeat;
-  }
+.jx-html-clear.jx-clear-glyph {
+  display: block;
+  width: 10px;
+  height: 10px;
+  background-color: currentColor;
+  -webkit-mask: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")) center / contain no-repeat;
+  mask: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")) center / contain no-repeat;
+}
 
-  .jx-html-clear:hover {
-    color: var(--foreground);
-  }
+.jx-html-clear:hover {
+  color: var(--foreground);
+}
 
-  .jx-html-clear:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-clear:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-control {
-    box-sizing: border-box;
-    display: block;
-    width: 100%;
-    min-height: var(--jx-hit, 2.5rem);
-    padding: var(--jx-gap, 0.5rem) var(--jx-inset, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    color: var(--foreground);
-    box-shadow: var(--shadow-well);
-    caret-color: var(--primary);
-    font-size: var(--jx-text, 0.875rem);
-    color-scheme: light;
-    transition:
-      box-shadow 150ms ease-out,
-      border-color 150ms ease-out;
-  }
+.jx-html-control {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: var(--jx-hit, 2.5rem);
+  padding: var(--jx-gap, 0.5rem) var(--jx-inset, 0.75rem);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow: var(--shadow-well);
+  caret-color: var(--primary);
+  font-size: var(--jx-text, 0.875rem);
+  color-scheme: light;
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+}
 
-  .jx-html-control::placeholder {
-    color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
-    opacity: 1;
-  }
+.jx-html-control::placeholder {
+  color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
+  opacity: 1;
+}
 
-  .jx-html-control:hover {
-    box-shadow: var(--shadow-well-hover);
-  }
+.jx-html-control:hover {
+  box-shadow: var(--shadow-well-hover);
+}
 
-  .jx-html-control:focus-visible {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-    border-color: var(--ring);
-  }
+.jx-html-control:focus-visible {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+  border-color: var(--ring);
+}
 
-  .jx-html-control:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
+.jx-html-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
-  .jx-html-control[aria-invalid="true"] {
-    border-style: dashed;
-    border-color: var(--error);
-    color: var(--error);
-  }
+.jx-html-control[aria-invalid='true'] {
+  border-style: dashed;
+  border-color: var(--error);
+  color: var(--error);
+}
 
-  .jx-html-control[aria-invalid="false"] {
-    border-color: var(--primary);
-  }
+.jx-html-control[aria-invalid='false'] {
+  border-color: var(--primary);
+}
 
-  .jx-html-control::-webkit-calendar-picker-indicator {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-calendar,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-control::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-calendar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control[type="time"]::-webkit-calendar-picker-indicator {
-    background-image: var(
-      --jx-icon-clock,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E")
-    );
-  }
+.jx-html-control[type='time']::-webkit-calendar-picker-indicator {
+  background-image: var(--jx-icon-clock, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E"));
+}
 
-  .jx-html-control[type="email"] {
-    padding-inline-start: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem));
-    background-image: var(
-      --jx-icon-mail,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-control[type='email'] {
+  padding-inline-start: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem));
+  background-image: var(--jx-icon-mail, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control[type="search"] {
-    padding-inline-start: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem));
-    background-image: var(
-      --jx-icon-search,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")
-    );
-    background-position: left var(--jx-inset, 0.75rem) center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-control[type='search'] {
+  padding-inline-start: calc(var(--jx-inset, 0.75rem) + 1.4em + var(--jx-gap, 0.5rem));
+  background-image: var(--jx-icon-search, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"));
+  background-position: left var(--jx-inset, 0.75rem) center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control[type="search"]::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-clear,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-control[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-control {
@@ -2174,49 +1989,46 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-control-shell {
-    box-sizing: border-box;
-    display: flex;
-    width: 100%;
-    min-height: var(--jx-hit, 2.5rem);
-    gap: var(--jx-gap, 0.5rem);
-    font-size: var(--jx-text, 0.875rem);
-    padding-inline: var(--jx-inset, 0.75rem);
-    border: 1px solid var(--border);
-    border-radius: 0;
-    background: var(--background);
-    box-shadow: var(--shadow-well);
-    transition:
-      box-shadow 150ms ease-out,
-      border-color 150ms ease-out;
-  }
+.jx-html-control-shell {
+  box-sizing: border-box;
+  display: flex;
+  width: 100%;
+  min-height: var(--jx-hit, 2.5rem);
+  gap: var(--jx-gap, 0.5rem);
+  font-size: var(--jx-text, 0.875rem);
+  padding-inline: var(--jx-inset, 0.75rem);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--background);
+  box-shadow: var(--shadow-well);
+  transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+}
 
-  .jx-html-control-shell:has(> .jx-html-clear:last-child) {
-    padding-inline-end: 0;
-  }
+.jx-html-control-shell:has(> .jx-html-clear:last-child) {
+  padding-inline-end: 0;
+}
 
-  .jx-html-control-shell:hover {
-    box-shadow: var(--shadow-well-hover);
-  }
+.jx-html-control-shell:hover {
+  box-shadow: var(--shadow-well-hover);
+}
 
-  .jx-html-control-shell:has(:focus) {
-    border-color: var(--ring);
-  }
+.jx-html-control-shell:has(:focus) {
+  border-color: var(--ring);
+}
 
-  .jx-html-control-shell:has(:focus-visible) {
-    outline: 1px solid var(--ring);
-    outline-offset: -1px;
-  }
+.jx-html-control-shell:has(:focus-visible) {
+  outline: 1px solid var(--ring);
+  outline-offset: -1px;
+}
 
-  .jx-html-control-shell:has([aria-invalid="true"]),
-  .jx-html-control-shell.jx-invalid {
-    border-style: dashed;
-  }
+.jx-html-control-shell:has([aria-invalid='true']), .jx-html-control-shell.jx-invalid {
+  border-style: dashed;
+}
 
-  .jx-html-control-shell:has(:disabled) {
-    border-color: var(--muted);
-    cursor: not-allowed;
-  }
+.jx-html-control-shell:has(:disabled) {
+  border-color: var(--muted);
+  cursor: not-allowed;
+}
 
   @media (prefers-reduced-motion: reduce) {
     .jx-html-control-shell {
@@ -2224,87 +2036,72 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
     }
   }
 
-  .jx-html-control-lane {
-    flex: 1 1 auto;
-    min-height: calc(var(--jx-hit, 2.5rem) - 2px);
-    min-width: 0;
-    border: 0;
-    padding: 0;
-    outline: none;
-    background: transparent;
-    color: var(--foreground);
-    caret-color: var(--primary);
-    font: inherit;
-    font-size: var(--jx-text, 0.875rem);
-  }
+.jx-html-control-lane {
+  flex: 1 1 auto;
+  min-height: calc(var(--jx-hit, 2.5rem) - 2px);
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  outline: none;
+  background: transparent;
+  color: var(--foreground);
+  caret-color: var(--primary);
+  font: inherit;
+  font-size: var(--jx-text, 0.875rem);
+}
 
-  .jx-html-control-lane::placeholder {
-    color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
-    opacity: 1;
-  }
+.jx-html-control-lane::placeholder {
+  color: var(--jx-placeholder, color-mix(in oklab, var(--foreground) 40%, var(--background)));
+  opacity: 1;
+}
 
-  .jx-html-control-lane::-webkit-calendar-picker-indicator {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-calendar,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-control-lane::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-calendar, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect width='18' height='18' x='3' y='4' rx='2'/%3E%3Cpath d='M3 10h18'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control-lane[type="time"]::-webkit-calendar-picker-indicator {
-    background-image: var(
-      --jx-icon-clock,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E")
-    );
-  }
+.jx-html-control-lane[type='time']::-webkit-calendar-picker-indicator {
+  background-image: var(--jx-icon-clock, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cpolyline points='12 6 12 12 16 14'/%3E%3C/svg%3E"));
+}
 
-  .jx-html-control-lane[type="email"] {
-    padding-inline-start: calc(1.4em + var(--jx-gap, 0.5rem));
-    background-image: var(
-      --jx-icon-mail,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E")
-    );
-    background-position: left 0 center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-control-lane[type='email'] {
+  padding-inline-start: calc(1.4em + var(--jx-gap, 0.5rem));
+  background-image: var(--jx-icon-mail, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect width='20' height='16' x='2' y='4' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E"));
+  background-position: left 0 center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control-lane[type="search"] {
-    padding-inline-start: calc(1.4em + var(--jx-gap, 0.5rem));
-    background-image: var(
-      --jx-icon-search,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E")
-    );
-    background-position: left 0 center;
-    background-size: 1.4em;
-    background-repeat: no-repeat;
-  }
+.jx-html-control-lane[type='search'] {
+  padding-inline-start: calc(1.4em + var(--jx-gap, 0.5rem));
+  background-image: var(--jx-icon-search, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E"));
+  background-position: left 0 center;
+  background-size: 1.4em;
+  background-repeat: no-repeat;
+}
 
-  .jx-html-control-lane[type="search"]::-webkit-search-cancel-button {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 1.4em;
-    height: 1.4em;
-    margin-inline-start: var(--jx-gap, 0.5rem);
-    cursor: pointer;
-    background-image: var(
-      --jx-icon-clear,
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E")
-    );
-    background-size: contain;
-    background-repeat: no-repeat;
-  }
+.jx-html-control-lane[type='search']::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.4em;
+  height: 1.4em;
+  margin-inline-start: var(--jx-gap, 0.5rem);
+  cursor: pointer;
+  background-image: var(--jx-icon-clear, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E"));
+  background-size: contain;
+  background-repeat: no-repeat;
+}
 }
 /* @jixoai/css-laws:end:jx-html-utility */
 
-:where(:root:not([data-density]), [data-density="default"]) {
+:where(:root:not([data-density]), [data-density='default']) {
   --jx-text: var(--jx-density-text-default);
   --jx-leading: var(--jx-density-leading-default);
   --jx-line: var(--jx-density-line-default);
@@ -2329,7 +2126,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
   --jx-color-lane: max(var(--jx-hit), calc(var(--jx-icon) + var(--jx-inset) * 2 + 2px));
 }
 
-:where([data-density="xs"]) {
+:where([data-density='xs']) {
   --jx-text: var(--jx-density-text-xs);
   --jx-leading: var(--jx-density-leading-xs);
   --jx-line: var(--jx-density-line-xs);
@@ -2354,7 +2151,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
   --jx-color-lane: max(var(--jx-hit), calc(var(--jx-icon) + var(--jx-inset) * 2 + 2px));
 }
 
-:where([data-density="sm"]) {
+:where([data-density='sm']) {
   --jx-text: var(--jx-density-text-sm);
   --jx-leading: var(--jx-density-leading-sm);
   --jx-line: var(--jx-density-line-sm);
@@ -2389,7 +2186,7 @@ html:not(.js) .jx-surface.jx-waapi:popover-open .jx-surface-shadow {
    non-touch operation surfaces (the adoption law: opt-in only,
    never default). Placement keeps the chrome scope pinned AFTER
    every density scope (:where() source order). */
-:where([data-density="2xs"]) {
+:where([data-density='2xs']) {
   --jx-hit-floor: calc(var(--jx-unit) * 6); /* scoped: 24px = WCAG 2.5.8 AA */
   --jx-density-hit-min-2xs: max(var(--jx-density-row-min-2xs), var(--jx-hit-floor));
   --jx-text: var(--jx-density-text-2xs);

@@ -28,14 +28,16 @@
  *
  * Usage — import for its side effect once in the root layout (the
  * registration guard keeps module evaluation safe under SSR/prerender,
- * same law as the form-field bridge):
+ * same law as the form-field bridge). SvelteKit consumers write the
+ * $lib dialect (the @lib spelling is the registry TARGET alias in
+ * components.json, not an import specifier):
  *
- *   import '@lib/scrollbar-measure';
+ *   import '$lib/scrollbar-measure';
  */
-if (typeof document !== "undefined" && !customElements.get("jx-scrollbar-measure")) {
+if (typeof document !== 'undefined' && !customElements.get('jx-scrollbar-measure')) {
   class JxScrollbarMeasure extends HTMLElement {
     connectedCallback(): void {
-      const root = this.attachShadow({ mode: "open" });
+      const root = this.attachShadow({ mode: 'open' });
       // :host is 0x0 and invisible — the probes overflow it without
       // ever painting; visibility: hidden keeps layout measurable.
       root.innerHTML = `
@@ -68,19 +70,17 @@ if (typeof document !== "undefined" && !customElements.get("jx-scrollbar-measure
         return el === null ? 0 : Math.round((el.offsetWidth - el.clientWidth) * 100) / 100;
       };
       const supports =
-        typeof CSS !== "undefined" &&
-        CSS.supports("scrollbar-width: thin") &&
-        CSS.supports("scrollbar-gutter: stable both-edges");
+        typeof CSS !== 'undefined' &&
+        CSS.supports('scrollbar-width: thin') &&
+        CSS.supports('scrollbar-gutter: stable both-edges');
       if (supports) {
         const style = document.documentElement.style;
-        style.setProperty("--jx-scrollbar-thin", `${width(".probe.thin")}px`);
-        style.setProperty("--jx-scrollbar-auto", `${width(".probe.auto")}px`);
+        style.setProperty('--jx-scrollbar-thin', `${width('.probe.thin')}px`);
+        style.setProperty('--jx-scrollbar-auto', `${width('.probe.auto')}px`);
       }
       this.remove();
     }
   }
-  customElements.define("jx-scrollbar-measure", JxScrollbarMeasure);
-  (document.body ?? document.documentElement).append(
-    document.createElement("jx-scrollbar-measure"),
-  );
+  customElements.define('jx-scrollbar-measure', JxScrollbarMeasure);
+  (document.body ?? document.documentElement).append(document.createElement('jx-scrollbar-measure'));
 }

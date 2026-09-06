@@ -33,12 +33,19 @@
   client agree on the name — a Math.random name would diverge across
   the seam and briefly orphan the popover.
 
-  persistence (2026-09-06 locale-negotiation): a switch click is the
-  user's explicit voice — both variants record the chosen code to
-  localStorage "lang" (same key the app.html pre-paint negotiation
-  reads), so an explicit click always beats browser-language detection
-  afterwards. Storage failures are swallowed: the anchor still
-  navigates, only the memory of the choice is lost.
+  PERSISTENCE CONTRACT (2026-09-06, consumer-feedback-fixes P0-2):
+  clicking any locale anchor writes the TARGET locale's code to
+  localStorage under the key `lang` (try/catch, silent — storage can
+  be unavailable in private mode or over quota; the choice then simply
+  doesn't persist). This is the component's half of a two-party
+  contract: the SITE's language-negotiation bootstrap (server-side or
+  pre-paint script) reads the same `lang` key to pick the entry locale
+  — the key name is the frozen seam. Navigation itself stays a PURE
+  anchor navigation (href + hreflang per entry): persistence rides the
+  click and never preventDefaults or takes over routing, so fully
+  prerendered sites keep working. Sites that previously event-delegated
+  hreflang reads into their own storage key should migrate to reading
+  `lang` and delete their delegation.
 -->
 <script lang="ts">
   import { icons } from '$lib/icons';
@@ -70,6 +77,16 @@
   // $props.id() must live in its own top-level initializer (compiler law)
   const autoId = $props.id();
 
+  // the persistence half of the contract (header): target code under
+  // the frozen `lang` key, silent on storage failure
+  const persistLocale = (code: string): void => {
+    try {
+      localStorage.setItem('lang', code);
+    } catch {
+      /* storage unavailable — navigation proceeds regardless */
+    }
+  };
+
   let open = $state(false);
   let menu = $state<HTMLElement | null>(null);
   let activeLabel = $derived(locales.find((l) => l.code === current)?.label ?? current);
@@ -79,16 +96,6 @@
   // marker, so SSR html and the hydrated client derive the identical
   // value; its s1/c1 shape is already ident-safe (no sanitize needed)
   const anchor = `--jx-lang-${autoId}`;
-
-  // The explicit-choice record (see the persistence note above): the
-  // key the app.html negotiation treats as authoritative.
-  const persist = (code: string) => {
-    try {
-      window.localStorage.setItem('lang', code);
-    } catch {
-      // private-mode storage — navigation proceeds, detection resumes
-    }
-  };
 </script>
 
 <div data-jx-lang="" class="flex items-center gap-2">
@@ -110,7 +117,7 @@
           aria-current={locale.code === current ? 'page' : undefined}
           data-jx-lang-item=""
           data-jx-lang-active={locale.code === current ? '' : undefined}
-          onclick={() => persist(locale.code)}
+          onclick={() => persistLocale(locale.code)}
           class={cn(
             'px-2.5 py-1 text-xs font-medium no-underline transition-[color,background-color] duration-150 ease-out',
             locale.code === current
@@ -168,7 +175,7 @@
                   : 'text-[color-mix(in_oklab,var(--terminal-foreground)_72%,transparent)] hover:bg-terminal-hover hover:text-terminal-foreground',
               )}
               onclick={() => {
-                persist(locale.code);
+                persistLocale(locale.code);
                 menu?.hidePopover();
               }}
             >
