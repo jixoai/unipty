@@ -279,7 +279,7 @@ repository `README-zh.md`, never invented.
   (`src/lib/i18n/schema.ts`, `locales/en.ts`, `locales/zh.ts`, resolver +
   `localizedPath` in `content.ts`); the three page bodies moved to
   content-driven shared components (`src/lib/pages/{home,docs,
-  compatibility}-page.svelte`) and the routes only inject the dictionary +
+compatibility}-page.svelte`) and the routes only inject the dictionary +
   locale head. Structural drift between locales is a type error; anchor
   parity is additionally asserted by the check suite.
 - **Data is not prose.** Catalog evidence strings, state names, package
@@ -319,7 +319,7 @@ repository `README-zh.md`, never invented.
   (registry hash recorded, prettier bytes on disk) predates this change
   and is unchanged. `language-switcher`'s own three files are byte-locked.
 - **AI export.** `LLMS_TXT_CONFIG` gains `locale: { segments: ["zh"],
-  default: "en" }` (build.mjs orchestration point, siteUrl unchanged).
+default: "en" }` (build.mjs orchestration point, siteUrl unchanged).
   Outputs per build: `llms.txt` (en index + an "Other languages" entry
   linking the zh edition), `zh/llms.txt` (zh index), `llms-full.txt`
   (default locale only — a mixed-language dump defeats retrieval), and six
@@ -334,7 +334,7 @@ repository `README-zh.md`, never invented.
   alternates, switcher wiring, CJK titles on zh / none on en, en↔zh
   anchor-id parity), counts mirrors by dist-relative path (basename
   matching would alias `index.md` with `zh/index.md`), asserts `zh/
-  llms.txt` exists and is linked, and keeps llms-full en-only (no CJK
+llms.txt` exists and is linked, and keeps llms-full en-only (no CJK
   after the first page separator — the index header may link the zh
   edition). CNAME-gate export list covers both locales.
 

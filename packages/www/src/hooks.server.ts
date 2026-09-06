@@ -9,16 +9,16 @@
 // 2026-09-06-site-i18n-zh — per-locale lang attribute; pattern adopted from
 // the openspecui bilingual site (the pre-registry hand-written reference
 // the language-switcher is composed after).
-import type { Handle } from '@sveltejs/kit';
-import { base } from '$app/paths';
-import { localeOfRoute, routeOfPath } from '$lib/i18n/content';
+import type { Handle } from "@sveltejs/kit";
+import { base } from "$app/paths";
+import { localeOfRoute, routeOfPath } from "$lib/i18n/content";
 
 // The placeholder literal is intentionally split so this comment can name it
 // without ever containing it: replaceAll (not first-match replace) — if the
 // placeholder ever appears again later in a document (e.g. inside a comment),
 // no earlier accidental hit can steal the root element's substitution, and
 // every occurrence resolves consistently.
-const LANG_PLACEHOLDER = '%' + 'lang' + '%';
+const LANG_PLACEHOLDER = "%" + "lang" + "%";
 
 export const handle: Handle = async ({ event, resolve }) => {
   const lang = localeOfRoute(routeOfPath(event.url.pathname, base));

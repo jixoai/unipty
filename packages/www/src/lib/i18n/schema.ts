@@ -183,7 +183,7 @@ export interface CompatibilityContent {
     eyebrow: string;
     title: string;
     /** keyed by the verbatim catalog state names (data, not prose) */
-    legend: Record<'verified' | 'declared-unverified' | 'not-targeted', string>;
+    legend: Record<"verified" | "declared-unverified" | "not-targeted", string>;
   };
   release: {
     eyebrow: string;
@@ -201,14 +201,7 @@ export interface CompatibilityContent {
     fallbackGeneratedAt: string;
   };
   table: {
-    headers: readonly [
-      string,
-      string,
-      string,
-      string,
-      string,
-      string,
-    ];
+    headers: readonly [string, string, string, string, string, string];
     noEvidence: string;
   };
 }

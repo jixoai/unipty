@@ -309,11 +309,11 @@
   }
 }
 
-.jx-nav button[aria-label='Toggle navigation'] {
+.jx-nav button[aria-label="Toggle navigation"] {
   position: relative;
 }
-.jx-nav button[aria-label='Toggle navigation']::after {
-  content: '';
+.jx-nav button[aria-label="Toggle navigation"]::after {
+  content: "";
   inset: -6px;
   position: absolute;
 }

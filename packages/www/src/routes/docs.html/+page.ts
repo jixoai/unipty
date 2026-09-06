@@ -4,7 +4,7 @@
 // boundary (the ui-site pattern). Ids match the section/h3 anchors in
 // docs-page.svelte (locale-invariant). The en route serves the en labels;
 // the /zh/ mirror route serves zh labels with the same ids.
-import { en } from '$lib/i18n/locales/en';
+import { en } from "$lib/i18n/locales/en";
 
 export function load(): { toc: typeof en.docs.toc } {
   return { toc: en.docs.toc };

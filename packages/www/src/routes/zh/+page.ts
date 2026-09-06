@@ -2,4 +2,4 @@
 // "always" —— /zh/（目录 index 形态 dist/zh/index.html）是该 locale 的规范
 // URL，静态服务器（GitHub Pages / http.server）对 /zh/ 直接 200；根布局的
 // "never" 只治理 en 的平铺 .html 路由。prerender 自根布局继承（true）。
-export const trailingSlash = 'always';
+export const trailingSlash = "always";

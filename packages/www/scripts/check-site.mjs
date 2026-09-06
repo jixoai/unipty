@@ -372,7 +372,11 @@ function checkLlmsExport(pages) {
   // exactly one mirror per published page (dist-relative paths — the zh
   // mirrors live under zh/), every mirror provenance-marked
   const mirrorOf = (page) =>
-    path.relative(distDir, page).replace(/\.html$/, ".md").split(path.sep).join("/");
+    path
+      .relative(distDir, page)
+      .replace(/\.html$/, ".md")
+      .split(path.sep)
+      .join("/");
   const expectedMirrors = new Set(pages.map(mirrorOf));
   const actualMirrors = new Set(
     walk(distDir)
@@ -398,10 +402,7 @@ function checkLlmsExport(pages) {
   // byte-identical regeneration (the llms-txt determinism law) — the SAME
   // config the build used (LLMS_TXT_CONFIG is the single source)
   const before = new Map(
-    [...actualMirrors, "llms.txt", "zh/llms.txt", "llms-full.txt"].map((f) => [
-      f,
-      sha256(read(f)),
-    ]),
+    [...actualMirrors, "llms.txt", "zh/llms.txt", "llms-full.txt"].map((f) => [f, sha256(read(f))]),
   );
   generateLlmsTxt(distDir, LLMS_TXT_CONFIG);
   for (const [file, hash] of before) {

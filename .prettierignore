@@ -1,3 +1,19 @@
 # oxfmt respects this by default; the vendored JSR closure keeps its
 # upstream formatting so the pinned vendor manifest hashes stay stable.
 packages/backend-deno-sigma__pty-ffi/vendor/
+
+# jixoai-ui registry artifacts are verbatim locked files — never formatted
+# (disk==lock is the invariant; fmt would silently re-style them).
+packages/www/src/lib/context-plugin.svelte.ts
+packages/www/src/lib/defaults.svelte.ts
+packages/www/src/lib/density.svelte.ts
+packages/www/src/lib/icons.ts
+packages/www/src/lib/jixoai.css
+packages/www/src/lib/paint.svelte.ts
+packages/www/src/lib/scrollbar-measure.ts
+packages/www/src/lib/surface-motion.ts
+packages/www/src/lib/toc-engine.ts
+packages/www/src/lib/toc-outline.ts
+packages/www/src/lib/ui/
+packages/www/src/lib/utils.ts
+packages/www/vite-plugins/llms-txt.mjs

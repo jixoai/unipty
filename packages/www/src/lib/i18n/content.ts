@@ -5,35 +5,35 @@
 //
 // Original request (2026-09-06 Asia/Shanghai): openspec/changes/
 // 2026-09-06-site-i18n-zh.
-import { en } from '$lib/i18n/locales/en';
-import { zh } from '$lib/i18n/locales/zh';
-import type { SiteContent } from '$lib/i18n/schema';
+import { en } from "$lib/i18n/locales/en";
+import { zh } from "$lib/i18n/locales/zh";
+import type { SiteContent } from "$lib/i18n/schema";
 
-export type SiteLocale = 'en' | 'zh';
+export type SiteLocale = "en" | "zh";
 
-export const siteLocales: readonly SiteLocale[] = ['en', 'zh'];
+export const siteLocales: readonly SiteLocale[] = ["en", "zh"];
 
 export function getLocaleContent(locale: SiteLocale): SiteContent {
-  return locale === 'zh' ? zh : en;
+  return locale === "zh" ? zh : en;
 }
 
 /** Normalize a pathname into route space: strip the kit base prefix when
  *  present, always return a leading '/'. */
 export function routeOfPath(pathname: string, base: string): string {
   const stripped =
-    base !== '' && pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
-  return stripped.startsWith('/') ? stripped : `/${stripped}`;
+    base !== "" && pathname.startsWith(base) ? pathname.slice(base.length) : pathname;
+  return stripped.startsWith("/") ? stripped : `/${stripped}`;
 }
 
 /** Whether a route belongs to the zh mirror ('/zh', '/zh/', '/zh/…' — but
  *  not '/zh-foo'). */
 export function isZhRoute(route: string): boolean {
-  return route === '/zh' || route === '/zh/' || route.startsWith('/zh/');
+  return route === "/zh" || route === "/zh/" || route.startsWith("/zh/");
 }
 
 /** route → locale (en is the default: the root and every non-/zh path). */
 export function localeOfRoute(route: string): SiteLocale {
-  return isZhRoute(route) ? 'zh' : 'en';
+  return isZhRoute(route) ? "zh" : "en";
 }
 
 /**
@@ -43,16 +43,16 @@ export function localeOfRoute(route: string): SiteLocale {
  * Unknown routes degrade to the target locale's home. Base is prepended
  * when the site runs under one (unipty serves at the domain root, '').
  */
-export function localizedPath(route: string, locale: SiteLocale, base = ''): string {
+export function localizedPath(route: string, locale: SiteLocale, base = ""): string {
   const isZh = isZhRoute(route);
-  const path = route.replace(/\/+$/, '') || '/';
-  if (locale === 'zh' && !isZh) {
-    const target = path === '/' ? '/zh/' : `/zh${path}`;
+  const path = route.replace(/\/+$/, "") || "/";
+  if (locale === "zh" && !isZh) {
+    const target = path === "/" ? "/zh/" : `/zh${path}`;
     return `${base}${target}`;
   }
-  if (locale === 'en' && isZh) {
-    const stripped = path.slice('/zh'.length);
-    return `${base}${stripped === '' ? '/' : stripped}`;
+  if (locale === "en" && isZh) {
+    const stripped = path.slice("/zh".length);
+    return `${base}${stripped === "" ? "/" : stripped}`;
   }
-  return `${base}${path === '/' && isZh ? '/zh/' : path}`;
+  return `${base}${path === "/" && isZh ? "/zh/" : path}`;
 }

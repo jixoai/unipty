@@ -32,19 +32,19 @@
         // is the x-default target, so SEO is untouched. Flat-artifact
         // note: pages are files like /docs.html, so the prefix simply
         // prepends.
-        const MIRROR = 'zh';
-        const first = location.pathname.split('/')[1];
+        const MIRROR = "zh";
+        const first = location.pathname.split("/")[1];
         if (first === MIRROR) return;
         let pick = false;
         try {
-          const stored = window.localStorage.getItem('lang');
-          if (stored === 'en') return;
+          const stored = window.localStorage.getItem("lang");
+          if (stored === "en") return;
           if (stored === MIRROR) pick = true;
         } catch {}
         if (!pick) {
           const tags = navigator.languages || [];
           for (let i = 0; i < tags.length; i++) {
-            if (String(tags[i]).toLowerCase().split('-')[0] === MIRROR) {
+            if (String(tags[i]).toLowerCase().split("-")[0] === MIRROR) {
               pick = true;
               break;
             }
@@ -52,7 +52,7 @@
         }
         if (pick) {
           const path = location.pathname;
-          location.replace('/' + MIRROR + (path === '/' ? '/' : path) + location.hash);
+          location.replace("/" + MIRROR + (path === "/" ? "/" : path) + location.hash);
         }
       })();
     </script>
