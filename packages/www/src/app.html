@@ -1,5 +1,12 @@
 <!doctype html>
-<html lang="en">
+<!--
+  The root element's lang attribute is a render-time placeholder resolved per
+  route by src/hooks.server.ts (en at the root, zh on the /zh/ mirrors) —
+  prerendered artifacts carry the resolved value. Keep this file free of the
+  placeholder literal outside the attribute below (every occurrence resolves,
+  so a stray one inside a comment would be rewritten too).
+-->
+<html lang="%lang%">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

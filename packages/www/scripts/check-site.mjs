@@ -5,18 +5,26 @@
  * For each input catalog (default: both committed fixtures):
  *   (a) build succeeds from a clean dist;
  *   (b) dist/catalog/catalog.json is byte-identical to the input artifact;
- *   (c) every internal link target (file + anchor) exists;
- *   (d) the compatibility page renders exactly the three catalog states
- *       with per-row evidence strings derived from THIS catalog — no
- *       fourth state, no stale content from another catalog;
+ *   (c) every internal link target (file + anchor) exists — en pages AND
+ *       the /zh/ mirrors (2026-09-06 site-i18n-zh);
+ *   (d) BOTH compatibility pages (en + zh) render exactly the three catalog
+ *       states with per-row evidence strings derived from THIS catalog — no
+ *       fourth state, no stale content from another catalog, verbatim
+ *       evidence strings in the zh mirror too (artifact data, not prose);
  *   (e) no forbidden dynamic backend imports: no script tag or shipped JS
  *       imports/loads any `@unipty/*` or `unipty` module in the browser;
  *   (f) responsive smoke: viewport meta, scroll-wrapped tables, no large
  *       fixed widths;
  *   (g) AI export layer (jixoai-ui 0.3.0, 2026-09-06): llms.txt with
  *       absolute-URL entries, llms-full.txt, one provenance-marked .md
- *       mirror per published page (no mirror for anything else), and a
- *       byte-identical regeneration.
+ *       mirror per published page in BOTH locales (zh mirrors under
+ *       dist/zh/), the zh edition index zh/llms.txt linked from the root
+ *       index, and a byte-identical regeneration;
+ *   (h) locale surface (2026-09-06 site-i18n-zh): per-page <html lang>
+ *       matches the route locale, hreflang en/zh/x-default alternates on
+ *       every page, the language switcher is wired (its links resolve via
+ *       check c), anchor-id sets are identical between en/zh counterpart
+ *       pages, and zh pages carry Chinese prose titles.
  * Plus: malformed catalogs are rejected, and the CNAME file appears only
  * for production builds (WWW_CNAME=1).
  *
@@ -112,7 +120,19 @@ function checkLinks(pages) {
 }
 
 function checkStates(pages, presentation, catalog) {
-  const compat = pages.find((page) => page.endsWith("compatibility.html"));
+  // BOTH locale surfaces of the compatibility page (en + the /zh/ mirror)
+  // render from the same build-time catalog — each must carry the exact
+  // state tally and verbatim evidence strings (data, not prose).
+  const compatPages = pages.filter((page) => page.endsWith("compatibility.html"));
+  if (compatPages.length !== 2) {
+    fail(`expected 2 compatibility pages (en + zh), found ${compatPages.length}`);
+  }
+  for (const compat of compatPages) {
+    checkStatesPage(compat, presentation, catalog);
+  }
+}
+
+function checkStatesPage(compat, presentation, catalog) {
   const html = readFileSync(compat, "utf8");
 
   const actual = [...html.matchAll(/data-state="([^"]+)"/g)].map((m) => m[1]);
@@ -169,7 +189,7 @@ function checkStates(pages, presentation, catalog) {
     }
   }
   console.log(
-    `    states: ${[...expectedTally].map(([s, n]) => `${n} ${s}`).join(", ")}; evidence strings exact`,
+    `    states (${path.relative(distDir, compat)}): ${[...expectedTally].map(([s, n]) => `${n} ${s}`).join(", ")}; evidence strings exact`,
   );
 }
 
@@ -243,12 +263,66 @@ function checkResponsive(pages) {
 
 /* --------------------------------------------------------------------- */
 
+const EN_PAGES = ["index.html", "docs.html", "compatibility.html"];
+const ZH_PAGES = ["zh/index.html", "zh/docs.html", "zh/compatibility.html"];
+const idsOf = (html) => new Set([...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]));
+const titleOf = (html) => /<title>([^<]*)<\/title>/.exec(html)?.[1] ?? "";
+
+/** Locale surface (check h): per-page lang attribute, hreflang alternates,
+ * switcher wiring, en/zh anchor-id parity, and zh prose presence. */
+function checkLocales(pages) {
+  for (const rel of [...EN_PAGES, ...ZH_PAGES]) {
+    const file = path.join(distDir, rel);
+    if (!pages.includes(file)) {
+      fail(`locale surface is missing the page ${rel}`);
+      continue;
+    }
+    const html = readFileSync(file, "utf8");
+    const expectedLang = rel.startsWith("zh/") ? "zh" : "en";
+
+    const lang = /<html lang="([^"]*)"/.exec(html)?.[1];
+    if (lang !== expectedLang) {
+      fail(`${rel}: expected <html lang="${expectedLang}">, found "${lang}"`);
+    }
+    for (const alternate of ["en", "zh", "x-default"]) {
+      if (!new RegExp(`rel="alternate" hreflang="${alternate}"`).test(html)) {
+        fail(`${rel}: missing the hreflang ${alternate} alternate`);
+      }
+    }
+    // the registry language-switcher is wired into the header chrome
+    if (!html.includes("data-jx-lang")) {
+      fail(`${rel}: the language switcher is not rendered`);
+    }
+    // zh pages carry Chinese prose in their <title>, en pages do not
+    const zhTitle = /[\u4e00-\u9fff]/.test(titleOf(html));
+    if (expectedLang === "zh" ? !zhTitle : zhTitle) {
+      fail(`${rel}: the <title> locale does not match the page locale`);
+    }
+  }
+
+  // Anchor-id parity between en/zh counterpart pages — the language
+  // switcher preserves the current anchor across locales, so ids must be
+  // locale-invariant (also covers the docs toc tree).
+  for (let i = 0; i < EN_PAGES.length; i++) {
+    const enIds = idsOf(readFileSync(path.join(distDir, EN_PAGES[i]), "utf8"));
+    const zhIds = idsOf(readFileSync(path.join(distDir, ZH_PAGES[i]), "utf8"));
+    for (const id of enIds) {
+      if (!zhIds.has(id)) fail(`zh/${EN_PAGES[i]}: missing the en anchor id "${id}"`);
+    }
+    for (const id of zhIds) {
+      if (!enIds.has(id)) fail(`${EN_PAGES[i]}: missing the zh anchor id "${id}"`);
+    }
+  }
+  console.log("    locales: lang + hreflang per page, switcher wired, en/zh anchors identical");
+}
+
 const LLMS_SITE_URL = LLMS_TXT_CONFIG.siteUrl;
 const MD_MARKER = "<!-- generated by jixoai llms-txt";
 
 /** AI export layer (check g): declared outputs exist, every published page
- * has exactly one provenance-marked mirror, nothing else gained one, all
- * index links are absolute, and a full regeneration is byte-identical. */
+ * in BOTH locales has exactly one provenance-marked mirror, nothing else
+ * gained one, all index links are absolute, the zh edition index is linked
+ * from the root index, and a full regeneration is byte-identical. */
 function checkLlmsExport(pages) {
   const read = (rel) => readFileSync(path.join(distDir, rel), "utf8");
 
@@ -263,14 +337,36 @@ function checkLlmsExport(pages) {
     }
   }
 
-  read("llms-full.txt"); // exists + under cap (generation fails over the cap)
+  // the zh edition index exists and the root index links it
+  const zhIndex = read("zh/llms.txt");
+  if (!zhIndex.startsWith("# UniPty\n")) fail("zh/llms.txt: missing H1 index head");
+  for (const match of zhIndex.matchAll(/\]\(([^)]+)\)/g)) {
+    if (!match[1].startsWith(`${LLMS_SITE_URL}/zh/`)) {
+      fail(`zh/llms.txt: non-absolute or non-zh entry link ${match[1]}`);
+    }
+  }
+  if (!index.includes(`${LLMS_SITE_URL}/zh/llms.txt`)) {
+    fail("llms.txt: missing the link to the zh edition index");
+  }
 
-  // exactly one mirror per published page, every mirror provenance-marked
-  const mirrorOf = (page) => path.basename(page).replace(/\.html$/, ".md");
+  read("llms-full.txt"); // exists + under cap (generation fails over the cap)
+  // llms-full follows the default locale only: the index header may link
+  // the zh edition (language navigation), but the concatenated PAGE BODIES
+  // after the first separator must stay English (no CJK prose).
+  const fullText = read("llms-full.txt");
+  const firstSep = fullText.indexOf("\n---\n");
+  if (firstSep >= 0 && /[\u4e00-\u9fff]/.test(fullText.slice(firstSep))) {
+    fail("llms-full.txt: zh page bodies leaked into the default-locale dump");
+  }
+
+  // exactly one mirror per published page (dist-relative paths — the zh
+  // mirrors live under zh/), every mirror provenance-marked
+  const mirrorOf = (page) =>
+    path.relative(distDir, page).replace(/\.html$/, ".md").split(path.sep).join("/");
   const expectedMirrors = new Set(pages.map(mirrorOf));
   const actualMirrors = new Set(
     walk(distDir)
-      .map((f) => path.basename(f))
+      .map((f) => path.relative(distDir, f).split(path.sep).join("/"))
       .filter((f) => f.endsWith(".md")),
   );
   for (const page of pages) {
@@ -292,7 +388,10 @@ function checkLlmsExport(pages) {
   // byte-identical regeneration (the llms-txt determinism law) — the SAME
   // config the build used (LLMS_TXT_CONFIG is the single source)
   const before = new Map(
-    [...actualMirrors, "llms.txt", "llms-full.txt"].map((f) => [f, sha256(read(f))]),
+    [...actualMirrors, "llms.txt", "zh/llms.txt", "llms-full.txt"].map((f) => [
+      f,
+      sha256(read(f)),
+    ]),
   );
   generateLlmsTxt(distDir, LLMS_TXT_CONFIG);
   for (const [file, hash] of before) {
@@ -300,7 +399,7 @@ function checkLlmsExport(pages) {
   }
 
   console.log(
-    `    llms export: llms.txt + llms-full.txt + ${actualMirrors.size} mirrors, absolute links, byte-identical re-run`,
+    `    llms export: llms.txt + zh/llms.txt + llms-full.txt + ${actualMirrors.size} mirrors, absolute links, byte-identical re-run`,
   );
 }
 
@@ -317,12 +416,13 @@ function checkFixture(catalogPath) {
     throw error;
   }
   const pages = walk(distDir).filter((f) => f.endsWith(".html"));
-  if (pages.length !== 3) fail(`expected 3 pages, built ${pages.length}`);
+  if (pages.length !== 6) fail(`expected 6 pages (3 en + 3 zh), built ${pages.length}`);
   checkCatalogCopy(catalogPath);
   checkLinks(pages);
   checkStates(pages, result.presentation, result.catalog);
   checkNoBackendImports(pages);
   checkResponsive(pages);
+  checkLocales(pages);
   checkLlmsExport(pages);
 }
 
@@ -357,14 +457,18 @@ function checkCnameGate(lastCatalog) {
   } else if (readFileSync(cnamePath, "utf8") !== "unipty.jixoai.com\n") {
     fail("dist/CNAME content is not exactly unipty.jixoai.com");
   }
-  // the AI export layer must ship in BOTH modes (CNAME is not HTML, so the
-  // exports themselves are mode-independent)
+  // the AI export layer must ship in BOTH modes and BOTH locales (CNAME is
+  // not HTML, so the exports themselves are mode-independent)
   for (const exportFile of [
     "llms.txt",
+    "zh/llms.txt",
     "llms-full.txt",
     "index.md",
     "docs.md",
     "compatibility.md",
+    "zh/index.md",
+    "zh/docs.md",
+    "zh/compatibility.md",
   ]) {
     if (!existsSync(path.join(distDir, exportFile))) {
       fail(`WWW_CNAME build is missing the AI export ${exportFile}`);

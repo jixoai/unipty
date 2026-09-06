@@ -259,6 +259,85 @@ sha256-identical exports).
   single generation point; the fix belongs upstream
   (flat-html route support in `pageUrlFromRel`).
 
+## Site i18n — zh mirror (2026-09-06) — `/` en, `/zh/` zh
+
+OpenSpec change `2026-09-06-site-i18n-zh` (original request: 所有站点需要
+至少提供中英两种语言的支持). The family-verified pattern from the sibling
+sites (dweb et al.) is adopted directly; zh prose is sourced from the
+repository `README-zh.md`, never invented.
+
+- **Locale surface.** `/` stays English (URL stability law: the existing
+  artifact URLs and the catalog seam are untouched); `/zh/` mirrors the
+  three public pages as flat artifacts `zh/index.html`,
+  `zh/docs.html`, `zh/compatibility.html` (served `/zh/`, `/zh/docs.html`,
+  `/zh/compatibility.html`). Route dirs: `src/routes/zh/+page.svelte`
+  (page-level `trailingSlash: 'always'` — the directory-index form is the
+  zh canonical URL, so static servers 200 on `/zh/` directly; the root
+  layout's `never` governs the en flat routes) plus `.html`-suffixed
+  sibling dirs. `svelte.config.js` prerender entries list all six pages.
+- **Content architecture.** Prose lives in schema-typed dictionaries
+  (`src/lib/i18n/schema.ts`, `locales/en.ts`, `locales/zh.ts`, resolver +
+  `localizedPath` in `content.ts`); the three page bodies moved to
+  content-driven shared components (`src/lib/pages/{home,docs,
+  compatibility}-page.svelte`) and the routes only inject the dictionary +
+  locale head. Structural drift between locales is a type error; anchor
+  parity is additionally asserted by the check suite.
+- **Data is not prose.** Catalog evidence strings, state names, package
+  identities, substrates, code samples, and terminal output are
+  locale-invariant and live in the shared components / the build-time
+  generated presentation — the zh pages render them verbatim. Only
+  explanatory prose (hero, sections, legends, table headers, chrome) is
+  translated. The docs code samples keep their English comments in both
+  locales (code is data; README-zh's translated comments are a README
+  affordance, not mirrored here).
+- **`<html lang>`.** `app.html` carries a render-time placeholder resolved
+  by `src/hooks.server.ts` (`transformPageChunk` + replaceAll — prerendering
+  runs through the same handle pipeline). The placeholder literal is
+  assembled by concatenation in the hook and never appears in `app.html`
+  comments (every occurrence resolves; a stray literal in a comment would
+  be rewritten too).
+- **hreflang / canonical.** Every page declares canonical +
+  `hreflang` en/zh/x-default alternates against `SITE_URL`
+  (`https://unipty.jixoai.com`, added to `constants.ts`); zh pages point
+  x-default at the en counterpart. Served URLs (`/docs.html` flat form,
+  `/zh/` index form) are used, matching the hreflang caveat below.
+- **Language switcher.** Registry `language-switcher` (pair variant) rides
+  the header switcher slot next to the theme toggle; switching preserves
+  the current page AND anchor (`localizedPath` + a `hashchange`-synced
+  hash — anchor ids are locale-invariant by construction). Nav
+  labels/hrefs, subtitle, toc title, and footer copy are locale-scoped.
+- **Registry add trap, hit twice.** `npx jixoai-ui add language-switcher`
+  under piped stdin prompts to overwrite each EXISTING dependency file
+  (`jixoai.css`, then `utils.ts`…) and each prompt cancels the whole write
+  phase while the lock still records the item — locked-but-not-installed.
+  Mitigation that finally landed the files: move the item's full dependency
+  closure (`utils`, `jixoai-theme`, `icons`, `defaults` — see the item's
+  `registryDependencies`) aside, re-add, then restore the committed bytes.
+  The CLI's fresh `jixoai.css` write is registry-formatted (single quotes)
+  and was replaced back with the committed prettier-formatted bytes;
+  pre-existing lock-vs-disk hash divergence on those shared items
+  (registry hash recorded, prettier bytes on disk) predates this change
+  and is unchanged. `language-switcher`'s own three files are byte-locked.
+- **AI export.** `LLMS_TXT_CONFIG` gains `locale: { segments: ["zh"],
+  default: "en" }` (build.mjs orchestration point, siteUrl unchanged).
+  Outputs per build: `llms.txt` (en index + an "Other languages" entry
+  linking the zh edition), `zh/llms.txt` (zh index), `llms-full.txt`
+  (default locale only — a mixed-language dump defeats retrieval), and six
+  per-page `.md` mirrors including `zh/*.md`. Cross-build byte-identity
+  verified for all nine export files; `check-site.mjs` re-proves it per
+  fixture. The known flat-`.html`-route caveat (`pageUrlFromRel` strips
+  the extension in llms.txt source URLs) now applies per locale
+  (`/zh/docs` for the served `/zh/docs.html`) — still upstream's to fix.
+- **Check suite.** `check-site.mjs` now expects 6 pages, runs the
+  three-state + evidence-string assertions against BOTH compatibility
+  pages, adds a locale-surface check (per-page lang attribute, hreflang
+  alternates, switcher wiring, CJK titles on zh / none on en, en↔zh
+  anchor-id parity), counts mirrors by dist-relative path (basename
+  matching would alias `index.md` with `zh/index.md`), asserts `zh/
+  llms.txt` exists and is linked, and keeps llms-full en-only (no CJK
+  after the first page separator — the index header may link the zh
+  edition). CNAME-gate export list covers both locales.
+
 ## Build-time data seam
 
 `scripts/build.mjs` writes `src/lib/generated/catalog.json` (the derived
@@ -280,16 +359,17 @@ artifact and never republish packages.
 ## Build and check entry points
 
 - `node scripts/build.mjs` (or `pnpm --filter @unipty/www run build`) —
-  validate catalog, run the static build, byte-identical copy to
-  `dist/catalog/catalog.json` (sha256 logged), publish the stylesheet,
-  write `dist/CNAME` only when `WWW_CNAME=1`, then generate the AI
-  export (`llms.txt` + `llms-full.txt` + per-page `.md` mirrors, see
-  the 0.3.0 sync section).
+  validate catalog, run the static build (six pages: three en + three zh
+  mirrors), byte-identical copy to `dist/catalog/catalog.json` (sha256
+  logged), publish the stylesheet, write `dist/CNAME` only when
+  `WWW_CNAME=1`, then generate the AI export (`llms.txt` + `zh/llms.txt` +
+  `llms-full.txt` + per-page `.md` mirrors in both locales, see the 0.3.0
+  sync and i18n sections).
 - `node scripts/check-site.mjs` (or `pnpm --filter @unipty/www run test`) —
   clean-build from both committed fixtures and run the static checks
-  (links, catalog byte-identity, three-state rendering, no browser backend
-  imports, responsive smoke, CNAME gate, llms-txt export shape +
-  byte-determinism).
+  (links incl. zh mirrors, catalog byte-identity, three-state rendering on
+  both compatibility pages, locale surface, no browser backend imports,
+  responsive smoke, CNAME gate, llms-txt export shape + byte-determinism).
 
 Catalog input selection: CLI arg > `WWW_CATALOG` env > committed
 development fixture `fixtures/catalog.dev.json`.

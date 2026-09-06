@@ -26,6 +26,10 @@
  *     law forbids wiring the vite plugin adapter too — this build injects
  *     artifacts after vite, so vite never owns the final dist). CNAME is not
  *     HTML, so both CNAME modes produce byte-identical exports.
+ *     2026-09-06 site-i18n-zh: the export covers BOTH locales — the zh
+ *     mirror pages (dist/zh/**) get their own zh/llms.txt index and per-page
+ *     .md mirrors; the root llms.txt follows the en (default) locale and
+ *     links the zh edition; llms-full.txt stays single-language (en).
  */
 
 import { spawnSync } from "node:child_process";
@@ -50,7 +54,16 @@ const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "
 const distDir = path.join(packageRoot, "dist");
 const defaultCatalog = path.join(packageRoot, "fixtures", "catalog.dev.json");
 const generatedDir = path.join(packageRoot, "src", "lib", "generated");
-const pages = ["index.html", "docs.html", "compatibility.html"];
+const pages = [
+  "index.html",
+  "docs.html",
+  "compatibility.html",
+  // /zh/ locale mirrors (2026-09-06 site-i18n-zh): the zh index is the
+  // directory-index form dist/zh/index.html (trailingSlash 'always').
+  "zh/index.html",
+  "zh/docs.html",
+  "zh/compatibility.html",
+];
 
 export class BuildError extends Error {}
 
@@ -63,6 +76,11 @@ export const LLMS_TXT_CONFIG = {
   title: "UniPty",
   summary:
     "Runtime-neutral PTY contract for Node, Bun, and Deno: one Core API, developer-selectable Backends (node-pty, Bun.Terminal, @sigma/pty-ffi), and support claims gated by the release evidence catalog.",
+  // 2026-09-06 site-i18n-zh: the export covers both locales — dist/zh/**
+  // pages group under the zh segment (own zh/llms.txt index + per-page .md
+  // mirrors), everything else is the en default that the root llms.txt and
+  // llms-full.txt follow.
+  locale: { segments: ["zh"], default: "en" },
 };
 
 const walkFiles = (dir) =>
@@ -121,12 +139,14 @@ function publishStylesheet() {
     .join("\n");
   mkdirSync(path.join(distDir, "assets"), { recursive: true });
   writeFileSync(path.join(distDir, "assets", "styles.css"), bundle);
+  // Nested artifacts (the /zh/ mirrors) emit sibling-relative asset hrefs
+  // (../_app/…), so the rewrite accepts ./, ../, and root-absolute forms.
   for (const page of pages) {
     const file = path.join(distDir, page);
     const html = readFileSync(file, "utf8");
     writeFileSync(
       file,
-      html.replace(/href="(?:\.\/|\/)_app\/[^"]+\.css"/g, 'href="/assets/styles.css"'),
+      html.replace(/href="(?:\.{1,2}\/|\/)?_app\/[^"]+\.css"/g, 'href="/assets/styles.css"'),
     );
   }
 }

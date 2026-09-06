@@ -37,9 +37,20 @@ generated page data (`src/lib/generated/`, gitignored), a synchronous
 `vite build` into `dist/`, the byte-identical catalog copy, the published
 stylesheet at `dist/assets/styles.css`, and the production-only `dist/CNAME`.
 
-Checks cover: clean build, byte-identical catalog copy, internal links,
-exact three-state labels (no fourth state), no backend/resolver module
-references in output, responsive basics, and the CNAME gate.
+The site is bilingual (2026-09-06): `/` is English (stable URLs), `/zh/`
+mirrors the three public pages with prose from `README-zh.md` — catalog
+evidence strings, code, and terminal output stay byte-identical across
+locales. Every page carries per-locale `<html lang>`, hreflang
+en/zh/x-default alternates, and a header language switcher that preserves
+the current page and anchor. The AI export covers both locales
+(`llms.txt` + `zh/llms.txt` + `llms-full.txt` en-only + per-page `.md`
+mirrors under `zh/`).
+
+Checks cover: clean build, byte-identical catalog copy, internal links
+(incl. the zh mirrors), exact three-state labels on both compatibility
+pages (no fourth state), no backend/resolver module references in output,
+responsive basics, the locale surface (lang, hreflang, switcher, en/zh
+anchor parity), and the CNAME gate.
 
 ## Deployment
 

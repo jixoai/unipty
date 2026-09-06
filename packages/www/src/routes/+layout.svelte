@@ -2,50 +2,104 @@
   Site shell: the jixoai website scaffold (registry app-shell) wrapping every
   page — immersive TerminalHeader in the top layer, TerminalFooter ghost
   wordmark, and the SPA tab-carousel view-transition runner (onNavigate).
-  Pages are flat files (/, /docs.html, /compatibility.html); the client
-  router resolves the same URLs the flat artifact serves.
+  Pages are flat files (/, /docs.html, /compatibility.html) with zh mirrors
+  under /zh/; the client router resolves the same URLs the flat artifacts
+  serve.
 
-  jixoai-ui 0.3.0 adaptation (2026-09-06, original request: 更新官网站点到
-  jixoai-ui 0.3.0): the header's closed items[] data tree died — nav is
-  composed from NavigationMenuLink parts (desktop pill group + mobile
-  drawer snippet); the footer's links[] data prop died — meta rows are
-  TerminalFooterColumn children; the docs ToC renders in the scaffold's
-  SSR-stable `chrome` snippet from page-provided data (page.data.toc, the
-  ui-site pattern) instead of the per-page float portal.
+  jixoai-ui 0.3.0 adaptation (2026-09-06): the header's closed items[] data
+  tree died — nav is composed from NavigationMenuLink parts (desktop pill
+  group + mobile drawer snippet); the footer composes TerminalFooterColumn
+  children; the docs ToC renders in the scaffold's SSR-stable `chrome`
+  snippet from page-provided data (page.data.toc, the ui-site pattern).
+
+  Locale-aware chrome (2026-09-06 site-i18n-zh, original request: 所有站点
+  需要至少提供中英两种语言的支持): `/` = en (URL stability law), `/zh/**` =
+  zh mirror. Nav labels/hrefs, header subtitle, toc title, and footer copy
+  come from the locale dictionary; the registry language-switcher rides the
+  header switcher slot and preserves the current page AND anchor across
+  locales (anchor ids are locale-invariant). <html lang> is resolved per
+  route by src/hooks.server.ts.
 -->
 <script lang="ts">
   import '../app.css'
   import '$lib/scrollbar-measure'
   import { onNavigate } from '$app/navigation'
   import { page } from '$app/state'
+  import { base } from '$app/paths'
   import AppShell from '$lib/ui/website-scaffold/website-scaffold.svelte'
   import TerminalFooter from '$lib/ui/terminal-footer/terminal-footer.svelte'
   import TerminalFooterColumn from '$lib/ui/terminal-footer/terminal-footer-column.svelte'
   import TerminalHeader from '$lib/ui/terminal-header/terminal-header.svelte'
   import ThemeToggle from '$lib/ui/theme-toggle/theme-toggle.svelte'
+  import LanguageSwitcher from '$lib/ui/language-switcher/language-switcher.svelte'
   import NavigationMenu from '$lib/ui/navigation-menu/navigation-menu.svelte'
   import NavigationMenuLink from '$lib/ui/navigation-menu/navigation-menu-link.svelte'
   import Toc from '$lib/ui/toc/toc.svelte'
   import TocList from '$lib/ui/toc/toc-list.svelte'
   import TocItem from '$lib/ui/toc/toc-item.svelte'
   import TocLink from '$lib/ui/toc/toc-link.svelte'
-  import { GITHUB_URL, SITE_DOMAIN, SITE_SUBTITLE } from '$lib/constants'
+  import { GITHUB_URL, SITE_DOMAIN } from '$lib/constants'
+  import { getLocaleContent, localizedPath, localeOfRoute, routeOfPath } from '$lib/i18n/content'
   import release from '$lib/generated/release.json'
   import type { Snippet } from 'svelte'
+  import { onMount } from 'svelte'
 
   let { children }: { children: Snippet } = $props()
 
-  // Prerendered paths lack the .html suffix the browser shows.
-  const normalized = $derived(
-    page.url.pathname.replace(/\.html$/, '').replace(/\/+$/, '') || '/',
-  )
+  // Locale resolution: route space (base stripped) — /zh prefix means the zh
+  // mirror, everything else (including '/') is en.
+  const route = $derived(routeOfPath(page.url.pathname, base))
+  const locale = $derived(localeOfRoute(route))
+  const content = $derived(getLocaleContent(locale))
+
+  // Locale-relative path of the current page ('/docs.html', '/zh/docs.html'
+  // → '/docs.html'; the zh index stays '/zh/' canonical) for current-page
+  // detection against the dictionary's locale-relative nav hrefs.
+  const norm = (value: string) => value.replace(/\.html$/, '').replace(/\/+$/, '') || '/'
+  const localeRoute = $derived(locale === 'zh' ? (norm(route) === '/zh' ? '/' : route.slice('/zh'.length)) : route)
+
+  // Composed nav entries: dictionary labels, locale-scoped hrefs.
+  const entries = $derived([
+    ...content.chrome.nav.map((entry) => ({
+      href: localizedPath(entry.href, locale, base),
+      label: entry.label,
+      current: norm(localeRoute) === norm(entry.href),
+    })),
+    { href: GITHUB_URL, label: 'GitHub ↗', current: false },
+  ])
+
+  // Language switching preserves the current page and anchor: anchor ids are
+  // locale-invariant, so the switch href is the counterpart page plus the
+  // live hash. Prerendered output carries no hash (works without JS too);
+  // after hydration the hashchange listener keeps the hrefs in step.
+  let hash = $state('')
+  onMount(() => {
+    const sync = () => {
+      hash = window.location.hash
+    }
+    sync()
+    window.addEventListener('hashchange', sync)
+    return () => window.removeEventListener('hashchange', sync)
+  })
+  const switcherLocales = $derived([
+    { code: 'en', label: 'EN', href: `${localizedPath(route, 'en', base)}${hash}` },
+    { code: 'zh', label: '中文', href: `${localizedPath(route, 'zh', base)}${hash}` },
+  ])
 
   // SPA view transitions (showcase law, 2026-08-21): every internal
   // navigation runs through document.startViewTransition with the
-  // tab-carousel direction law (page order index comparison, ported from
-  // openspecui). Reduced motion / unsupported browsers navigate plainly.
-  const PAGE_ORDER = ['/', '/docs.html', '/compatibility.html']
-  const pageIndex = (pathname: string) => PAGE_ORDER.indexOf(pathname)
+  // tab-carousel direction law (page order index comparison). Reduced
+  // motion / unsupported browsers navigate plainly.
+  const PAGE_ORDER = [
+    '/',
+    '/docs.html',
+    '/compatibility.html',
+    '/zh/',
+    '/zh/docs.html',
+    '/zh/compatibility.html',
+  ]
+  const pageIndex = (pathname: string) =>
+    PAGE_ORDER.findIndex((candidate) => norm(candidate) === norm(pathname))
 
   // The mobile disclosure drawer's open state (bind:open is the header's
   // consumer reset signal): a navigation collapses it.
@@ -83,21 +137,7 @@
     })
   })
 
-  // Composed nav entries (composition-first header): links-only pages ride
-  // NavigationMenuLink directly — no panels, so there is nothing for the
-  // header's closeAll() router hook to clean.
-  const entries = $derived([
-    { href: '/', label: 'Overview', current: normalized === '/' },
-    { href: '/docs.html', label: 'Docs', current: normalized === '/docs' },
-    {
-      href: '/compatibility.html',
-      label: 'Compatibility',
-      current: normalized === '/compatibility',
-    },
-    { href: GITHUB_URL, label: 'GitHub ↗', current: false },
-  ])
-
-  // Page-provided ToC data (the docs page's load() returns `toc`): the
+  // Page-provided ToC data (the docs routes' load() returns `toc`): the
   // layout maps it onto the composed TocList/TocItem/TocLink tree in its
   // own markup — structure lives here, data stays serializable.
   interface TocNode {
@@ -113,7 +153,8 @@
     <TerminalHeader
       brand="UniPty"
       domain={SITE_DOMAIN}
-      subtitle={SITE_SUBTITLE}
+      subtitle={content.chrome.subtitle}
+      homeHref={localizedPath('/', locale, base)}
       bind:open={drawerOpen}
     >
       {#snippet logo()}
@@ -131,7 +172,15 @@
         </svg>
       {/snippet}
       {#snippet switcher()}
-        <ThemeToggle variant="compact" />
+        <div class="flex flex-wrap items-center gap-2">
+          <ThemeToggle variant="compact" />
+          <LanguageSwitcher
+            variant="pair"
+            locales={switcherLocales}
+            current={locale}
+            ariaLabel={content.chrome.languageLabel}
+          />
+        </div>
       {/snippet}
       {#snippet drawer()}
         <div class="flex flex-col items-stretch gap-1 py-2">
@@ -142,7 +191,7 @@
           {/each}
         </div>
       {/snippet}
-      <NavigationMenu label="site">
+      <NavigationMenu label={content.chrome.drawerLabel}>
         {#each entries as entry (entry.href)}
           <NavigationMenuLink href={entry.href} current={entry.current}>
             {entry.label}
@@ -158,7 +207,7 @@
          by returning `toc` from load(); the engine reads the shell's
          .jx-shell-body scroll container. -->
     {#if pageToc}
-      <Toc title="on this page" scrollRoot=".jx-shell-body">
+      <Toc title={content.chrome.tocTitle} scrollRoot=".jx-shell-body">
         <TocList>
           {#each pageToc as section (section.id)}
             <TocItem>
@@ -184,11 +233,11 @@
       ghost="UNIPTY"
       copyright={`Catalog sha256 ${release.sha256.slice(0, 12)} · Copyright © ${new Date().getFullYear()} UniPty contributors · MIT`}
     >
-      <TerminalFooterColumn title="project">
-        <a href={GITHUB_URL}>GitHub ↗</a>
+      <TerminalFooterColumn title={content.chrome.footer.projectTitle}>
+        <a href={GITHUB_URL}>{content.chrome.footer.githubLabel}</a>
       </TerminalFooterColumn>
-      <TerminalFooterColumn title="evidence">
-        <a href="/catalog/catalog.json">Release catalog (byte-identical copy)</a>
+      <TerminalFooterColumn title={content.chrome.footer.evidenceTitle}>
+        <a href="/catalog/catalog.json">{content.chrome.footer.catalogLabel}</a>
       </TerminalFooterColumn>
     </TerminalFooter>
   {/snippet}
