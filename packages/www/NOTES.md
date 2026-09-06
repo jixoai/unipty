@@ -338,6 +338,57 @@ repository `README-zh.md`, never invented.
   after the first page separator — the index header may link the zh
   edition). CNAME-gate export list covers both locales.
 
+## Locale negotiation (2026-09-06 locale-negotiation)
+
+OpenSpec change `2026-09-06-locale-negotiation` (original request:
+站点没有基于浏览器语言自动选择默认语言——需要补上; the sibling
+jixoai.com change landed the same day). A zh browser landing on `/`
+previously got English unless it clicked the switcher.
+
+- **Pre-paint bootstrap** (`src/app.html`, first inline `<head>`
+  script, before the theme bootstrap): an explicit persisted choice
+  wins — localStorage `lang` (the switcher's key) equal to `zh`
+  redirects ONCE to the same page under `/zh/` (`location.replace`,
+  path + hash preserved — flat artifacts mean the prefix simply
+  prepends, `/docs.html` → `/zh/docs.html`), while a stored `en` is an
+  explicit stay and suppresses detection too (caught live by the
+  matrix's first run: the naive reading let stored-en fall through to
+  detection and bounced a zh browser to `/zh/`). Otherwise
+  `navigator.languages` is walked in order, primary subtag only
+  (`zh-Hant-TW` → zh; `pt-BR` → no match, next entry); a zh hit wins.
+  Loop laws: the script only ever LEAVES the default surface (returns
+  when the first path segment is `zh`), the target always carries the
+  `/zh` prefix, and the mirror never bounces back. No match → stay on
+  en (x-default; hreflang already advertises the mirror, SEO
+  untouched). Storage access is try/caught (private mode degrades to
+  detection). SPA note: the bootstrap runs on full document loads
+  only — client-side navigations (the tab-carousel router) never
+  re-trigger it, so clicking EN mid-session sticks.
+- **Switcher persistence** (`language-switcher.svelte`, both
+  variants): every locale anchor records its code to localStorage
+  `lang` before the anchored navigation, so an explicit click always
+  beats detection afterwards; storage failures are swallowed (the
+  anchor still navigates). This is a site-level divergence from the
+  registry bytes (persistence onclick handlers + comment) — the
+  `jixoai-ui.lock` hash for the file still records the pristine
+  registry bytes, same recorded-divergence posture as the prettier-
+  formatted shared items above; re-adding the item would need the
+  persist handlers re-applied.
+- **Check suite**: `checkLocales` additionally asserts the negotiation
+  bootstrap ships on every page (probes `navigator.languages` in the
+  output html — the inline script is emitted verbatim by the
+  prerender pipeline); header (h) documents it.
+- **Verification**: check suite green across both fixtures and both
+  CNAME modes (incl. the new assertion); headless matrix
+  (playwright-core, machine-cached Chromium for Testing 151, dev
+  server on 13502 + `dist/` static server) with emulated
+  `navigator.languages` + seeded `lang` — zh-CN/zh-Hant-TW → `/zh/`,
+  en-US/pt-BR stay, `fr-FR,zh-CN` list walk → `/zh/`, persisted zh
+  honored, persisted en beats zh detection, mirror-never-bounces,
+  `/docs.html` → `/zh/docs.html`, plus a real-click pair-variant
+  switcher test (click 中文 → `lang=zh`, lands `/zh/`) — 30/30 across
+  both sites after the stored-en fix.
+
 ## Build-time data seam
 
 `scripts/build.mjs` writes `src/lib/generated/catalog.json` (the derived

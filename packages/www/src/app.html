@@ -5,6 +5,8 @@
   prerendered artifacts carry the resolved value. Keep this file free of the
   placeholder literal outside the attribute below (every occurrence resolves,
   so a stray one inside a comment would be rewritten too).
+  Plus the pre-paint locale negotiation bootstrap (2026-09-06
+  locale-negotiation) below — see the script's own comment.
 -->
 <html lang="%lang%">
   <head>
@@ -12,6 +14,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#000000" />
     <link rel="icon" href="%sveltekit.assets%/icon.svg" />
+    <script>
+      (() => {
+        // Pre-paint locale negotiation (2026-09-06 locale-negotiation).
+        // An explicit persisted choice wins (localStorage "lang", the
+        // key the language switcher writes — en included: a stored en
+        // is an explicit stay and suppresses detection too);
+        // otherwise a navigator.languages match against the zh mirror
+        // redirects ONCE to the same page under /zh/ (path + hash
+        // preserved; primary subtag only, so zh-Hans and zh-Hant both
+        // land on zh while pt-BR finds no match and falls through).
+        // Loop laws: this only ever LEAVES the default surface (the
+        // guard below returns on the /zh first path segment), the
+        // target always carries the /zh prefix, and the mirror never
+        // bounces back. No match → stay on the default; hreflang
+        // already advertises the mirror to crawlers, and the default
+        // is the x-default target, so SEO is untouched. Flat-artifact
+        // note: pages are files like /docs.html, so the prefix simply
+        // prepends.
+        const MIRROR = 'zh';
+        const first = location.pathname.split('/')[1];
+        if (first === MIRROR) return;
+        let pick = false;
+        try {
+          const stored = window.localStorage.getItem('lang');
+          if (stored === 'en') return;
+          if (stored === MIRROR) pick = true;
+        } catch {}
+        if (!pick) {
+          const tags = navigator.languages || [];
+          for (let i = 0; i < tags.length; i++) {
+            if (String(tags[i]).toLowerCase().split('-')[0] === MIRROR) {
+              pick = true;
+              break;
+            }
+          }
+        }
+        if (pick) {
+          const path = location.pathname;
+          location.replace('/' + MIRROR + (path === '/' ? '/' : path) + location.hash);
+        }
+      })();
+    </script>
     <script>
       (() => {
         // No-flash theme bootstrap + JS liveness flag (reveal styles key off

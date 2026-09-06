@@ -32,6 +32,13 @@
   id travels through a hydration marker, so SSR html and the hydrated
   client agree on the name — a Math.random name would diverge across
   the seam and briefly orphan the popover.
+
+  persistence (2026-09-06 locale-negotiation): a switch click is the
+  user's explicit voice — both variants record the chosen code to
+  localStorage "lang" (same key the app.html pre-paint negotiation
+  reads), so an explicit click always beats browser-language detection
+  afterwards. Storage failures are swallowed: the anchor still
+  navigates, only the memory of the choice is lost.
 -->
 <script lang="ts">
   import { icons } from '$lib/icons';
@@ -72,6 +79,16 @@
   // marker, so SSR html and the hydrated client derive the identical
   // value; its s1/c1 shape is already ident-safe (no sanitize needed)
   const anchor = `--jx-lang-${autoId}`;
+
+  // The explicit-choice record (see the persistence note above): the
+  // key the app.html negotiation treats as authoritative.
+  const persist = (code: string) => {
+    try {
+      window.localStorage.setItem('lang', code);
+    } catch {
+      // private-mode storage — navigation proceeds, detection resumes
+    }
+  };
 </script>
 
 <div data-jx-lang="" class="flex items-center gap-2">
@@ -93,6 +110,7 @@
           aria-current={locale.code === current ? 'page' : undefined}
           data-jx-lang-item=""
           data-jx-lang-active={locale.code === current ? '' : undefined}
+          onclick={() => persist(locale.code)}
           class={cn(
             'px-2.5 py-1 text-xs font-medium no-underline transition-[color,background-color] duration-150 ease-out',
             locale.code === current
@@ -149,7 +167,10 @@
                   ? 'text-primary'
                   : 'text-[color-mix(in_oklab,var(--terminal-foreground)_72%,transparent)] hover:bg-terminal-hover hover:text-terminal-foreground',
               )}
-              onclick={() => menu?.hidePopover()}
+              onclick={() => {
+                persist(locale.code);
+                menu?.hidePopover();
+              }}
             >
               {locale.label}
             </a>

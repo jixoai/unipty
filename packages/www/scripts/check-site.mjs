@@ -24,7 +24,9 @@
  *       matches the route locale, hreflang en/zh/x-default alternates on
  *       every page, the language switcher is wired (its links resolve via
  *       check c), anchor-id sets are identical between en/zh counterpart
- *       pages, and zh pages carry Chinese prose titles.
+ *       pages, and zh pages carry Chinese prose titles; plus the pre-paint
+ *       locale negotiation bootstrap ships on every page (2026-09-06
+ *       locale-negotiation).
  * Plus: malformed catalogs are rejected, and the CNAME file appears only
  * for production builds (WWW_CNAME=1).
  *
@@ -293,6 +295,12 @@ function checkLocales(pages) {
     if (!html.includes("data-jx-lang")) {
       fail(`${rel}: the language switcher is not rendered`);
     }
+    // the pre-paint locale negotiation bootstrap ships on every page
+    // (2026-09-06 locale-negotiation; its own first-segment guard makes
+    // it a no-op on the /zh/ mirrors — loop law)
+    if (!html.includes("navigator.languages")) {
+      fail(`${rel}: the pre-paint locale negotiation bootstrap is missing`);
+    }
     // zh pages carry Chinese prose in their <title>, en pages do not
     const zhTitle = /[\u4e00-\u9fff]/.test(titleOf(html));
     if (expectedLang === "zh" ? !zhTitle : zhTitle) {
@@ -313,7 +321,9 @@ function checkLocales(pages) {
       if (!enIds.has(id)) fail(`${EN_PAGES[i]}: missing the zh anchor id "${id}"`);
     }
   }
-  console.log("    locales: lang + hreflang per page, switcher wired, en/zh anchors identical");
+  console.log(
+    "    locales: lang + hreflang per page, switcher wired, negotiation bootstrap, en/zh anchors identical",
+  );
 }
 
 const LLMS_SITE_URL = LLMS_TXT_CONFIG.siteUrl;
