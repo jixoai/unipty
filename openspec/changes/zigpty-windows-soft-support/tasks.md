@@ -51,7 +51,7 @@
 
 ## 4. Verification / release (delivery workflow)
 
-- [ ] Local installed-profile re-run for the zigpty route (macOS).
+- [x] Local installed-profile re-run for the zigpty route (macOS) — 25/25.
 - [ ] Codex review round (herdr, async callback pattern); process
       findings and re-verify.
 - [ ] Example end-to-end acceptance by the Owner, docs review.
