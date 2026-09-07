@@ -570,3 +570,141 @@ describe("source cancellation lifecycle (transport release regression)", () => {
     }
   });
 });
+
+describe("output spool edge cases (endpoint level)", () => {
+  it("delivers the whole flood after the child already exited and EOF fired while nobody read", async () => {
+    // Pins the deferred-completion law: the EOF trigger arrives while the
+    // spool is backlogged and the consumer is fully stalled; completion and
+    // delivery then happen purely at the consumer's later pace.
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 256, directory: spillDirectory },
+      });
+      const lines = 800;
+      const script = `i=0; while [ "$i" -lt ${lines} ]; do printf 'edge-line\\n'; i=$((i+1)); done`;
+      const endpoint = backend.spawn(launch(["/bin/sh", "-c", script]));
+      const reader = endpoint.output.getReader();
+      // Stall completely: acquire the reader, then do not read until the
+      // child has exited and the quiescence window has long fired.
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const decoder = new TextDecoder();
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value?.kind === "bytes") text += decoder.decode(value.bytes, { stream: true });
+      }
+      reader.releaseLock();
+      expect(text.split("edge-line").length - 1).toBe(lines);
+      expect(readdirSync(spillDirectory)).toEqual([]);
+      cleanupEndpoint(endpoint);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 25_000);
+
+  it("cancels mid-backlog and deletes the spill file without touching the exit observation", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 64, directory: spillDirectory },
+      });
+      const endpoint = backend.spawn(
+        launch(["/bin/sh", "-c", "while :; do printf 'cancel\\n'; done"]),
+      );
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(readdirSync(spillDirectory).length).toBe(1);
+      const reader = endpoint.output.getReader();
+      await reader.read();
+      await reader.cancel();
+      expect(readdirSync(spillDirectory)).toEqual([]);
+      endpoint.terminate();
+      await expectExit(endpoint, { exitCode: 0, signal: "SIGHUP" });
+      endpoint.close();
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("isolates concurrent endpoints spilling into one shared directory", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 64, directory: spillDirectory },
+      });
+      const a = backend.spawn(launch(["/bin/echo", "iso-a"]));
+      const b = backend.spawn(launch(["/bin/echo", "iso-b"]));
+      const textA = await readOutputText(a, (acc) => acc.includes("iso-a"), 5_000);
+      const textB = await readOutputText(b, (acc) => acc.includes("iso-b"), 5_000);
+      expect(textA).toContain("iso-a");
+      expect(textB).toContain("iso-b");
+      a.close();
+      b.close();
+      expect(readdirSync(spillDirectory)).toEqual([]);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("keeps input and resize live while the output spool is backlogged", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 64, directory: spillDirectory },
+      });
+      // Disable the kernel echo so output is exactly what cat writes back
+      // (otherwise every input byte appears twice: line-discipline echo plus
+      // cat's own write).
+      const endpoint = backend.spawn(launch(["/bin/sh", "-c", "stty -echo; exec /bin/cat"]));
+      // Backlog builds while nobody reads; input still flows and resize is
+      // accepted on the live transport.
+      // Canonical-mode ttys cap line length at the kernel's line discipline
+      // limit, so stay under it (1023 + newline, matching the write-queue
+      // tests) and make up volume with more lines.
+      const payload = "x".repeat(1023);
+      for (let i = 0; i < 24; i += 1) {
+        expect(endpoint.write({ kind: "text", text: `${payload}\n` })).toBe(true);
+      }
+      endpoint.resize(120, 40);
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      expect(readdirSync(spillDirectory).length).toBe(1);
+      const reader = endpoint.output.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      const expectedXs = 24 * payload.length;
+      const timer = new Promise<never>((_, reject) => {
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                `drained only ${[...text].filter((c) => c === "x").length}/${expectedXs} x-bytes`,
+              ),
+            ),
+          10_000,
+        ).unref?.();
+      });
+      await Promise.race([
+        (async () => {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value?.kind === "bytes") text += decoder.decode(value.bytes, { stream: true });
+            if ([...text].filter((c) => c === "x").length >= expectedXs) break;
+          }
+        })(),
+        timer,
+      ]);
+      reader.releaseLock();
+      // The line discipline renders line endings (CR injection on echo), so
+      // the invariant is: every input byte echoed back as x, and nothing but
+      // x / newline / carriage-return ever appears.
+      expect([...text].filter((c) => c === "x").length).toBe(expectedXs);
+      expect([...text].every((c) => c === "x" || c === "\n" || c === "\r")).toBe(true);
+      cleanupEndpoint(endpoint);
+      expect(readdirSync(spillDirectory)).toEqual([]);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 25_000);
+});

@@ -14,6 +14,7 @@ import {
   truncateSync,
   writeSync,
 } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -224,5 +225,89 @@ describe("OutputSpool corruption guards", () => {
     expect(() => spool.readNext()).toThrow(UniPtyError);
     spool.close();
     expect(readdirSync(directory)).toEqual([]);
+  });
+});
+
+describe("OutputSpool edge cases", () => {
+  it("handles memoryBytes: 1 — every append spills immediately", () => {
+    const { spool } = freshSpool(1);
+    for (let i = 0; i < 50; i += 1) {
+      spool.append({ kind: "text", text: `tiny-${i}` });
+    }
+    for (let i = 0; i < 50; i += 1) {
+      expect(spool.readNext()).toEqual({ kind: "text", text: `tiny-${i}` });
+    }
+    expect(spool.isEmpty).toBe(true);
+    spool.close();
+  });
+
+  it("admits empty chunks as zero-length records", () => {
+    const { spool } = freshSpool(4);
+    spool.append({ kind: "text", text: "" });
+    spool.append({ kind: "bytes", bytes: new Uint8Array(0) });
+    spool.append({ kind: "text", text: "after" });
+    const emptyText = spool.readNext();
+    expect(emptyText?.kind).toBe("text");
+    if (emptyText?.kind === "text") expect(emptyText.text).toBe("");
+    const emptyBytes = spool.readNext();
+    expect(emptyBytes?.kind).toBe("bytes");
+    if (emptyBytes?.kind === "bytes") expect(emptyBytes.bytes.byteLength).toBe(0);
+    expect(spool.readNext()).toEqual({ kind: "text", text: "after" });
+    spool.close();
+  });
+
+  it("flushes a single chunk larger than memoryBytes without loss", () => {
+    const { spool } = freshSpool(16);
+    const big = "x".repeat(64 * 1024);
+    spool.append({ kind: "text", text: big });
+    spool.append({ kind: "text", text: "tail" });
+    const first = spool.readNext();
+    expect(first?.kind === "text" && first.text.length).toBe(big.length);
+    expect(spool.readNext()).toEqual({ kind: "text", text: "tail" });
+    spool.close();
+  });
+
+  it("survives multiple drain-then-refill cycles on one spill file", () => {
+    const { spool } = freshSpool(8);
+    for (let cycle = 0; cycle < 8; cycle += 1) {
+      for (let i = 0; i < 6; i += 1) {
+        spool.append({ kind: "text", text: `c${cycle}-r${i}` });
+      }
+      expect(spool.isBacklogged).toBe(true);
+      for (let i = 0; i < 6; i += 1) {
+        expect(spool.readNext()).toEqual({ kind: "text", text: `c${cycle}-r${i}` });
+      }
+      expect(spool.isEmpty).toBe(true);
+    }
+    spool.close();
+  });
+
+  it("fails typed when the spill directory does not exist", () => {
+    const missing = join(tmpdir(), `unipty-spool-missing-${randomUUID()}`);
+    const spool = new OutputSpool({ memoryBytes: 4, directory: missing });
+    let error: unknown;
+    try {
+      spool.append({ kind: "text", text: "will-fail" });
+      spool.append({ kind: "text", text: "force-spill-over-four-bytes" });
+    } catch (e) {
+      error = e;
+    }
+    expect(error).toBeInstanceOf(UniPtyError);
+    expect((error as UniPtyError).code).toBe("unsupported");
+    spool.close();
+  });
+
+  it("keeps 5000-record FIFO order across the spill boundary", () => {
+    const { spool } = freshSpool(256);
+    const count = 5000;
+    for (let i = 0; i < count; i += 1) {
+      spool.append({ kind: "bytes", bytes: Uint8Array.from([i & 0xff, (i >> 8) & 0xff]) });
+    }
+    for (let i = 0; i < count; i += 1) {
+      const next = spool.readNext();
+      if (next?.kind !== "bytes") throw new Error("expected bytes record");
+      expect(Array.from(next.bytes)).toEqual([i & 0xff, (i >> 8) & 0xff]);
+    }
+    spool.close();
   });
 });
