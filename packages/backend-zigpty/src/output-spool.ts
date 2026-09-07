@@ -203,11 +203,35 @@ export class OutputSpool {
       this.directory,
       `unipty-spool-${process.pid}-${spillFileCounter++}-${randomUUID()}.tmp`,
     );
-    // Two fds over one file: "a" always appends for the writer while the
-    // "r" reader keeps its own sequential position — no shared-position
-    // interference between concurrent spill and replay.
-    this.writeFd = openSync(path, "a");
-    this.readFd = openSync(path, "r");
+    // "ax" = append + exclusive create with 0600: no clobbering a colliding
+    // name, no world-readable terminal output in a shared directory, no
+    // symlink games. Two fds over one file: the append writer always lands
+    // at the end while the "r" reader keeps its own sequential position — no
+    // shared-position interference between concurrent spill and replay.
+    let writeFd: number;
+    try {
+      writeFd = openSync(path, "ax", 0o600);
+    } catch (cause) {
+      throw spoolFailure("append", cause);
+    }
+    try {
+      this.readFd = openSync(path, "r");
+    } catch (cause) {
+      // Roll the partial creation back: a failed ensure must leave no fd and
+      // no temp file behind.
+      try {
+        closeSync(writeFd);
+      } catch {
+        // Best-effort rollback.
+      }
+      try {
+        unlinkSync(path);
+      } catch {
+        // Best-effort rollback.
+      }
+      throw spoolFailure("append", cause);
+    }
+    this.writeFd = writeFd;
     this.filePath = path;
   }
 
@@ -243,6 +267,19 @@ export class OutputSpool {
       readFully(this.readFd, header);
       const kind = header.readUInt8(0);
       const length = header.readUInt32LE(1);
+      // The on-disk length is untrusted input: cap it by the bytes this
+      // spool has actually written past the read position, so a corrupted or
+      // tampered header cannot request a multi-GiB allocation.
+      const remaining = this.diskWriteOffset - (this.diskReadOffset + RECORD_HEADER_BYTES);
+      if (length > remaining) {
+        throw new UniPtyError(
+          "unsupported",
+          "the output spool record length exceeds the spilled bytes",
+          {
+            details: { substrate: "zigpty", spoolStage: "replay", length, remaining },
+          },
+        );
+      }
       const payload = Buffer.allocUnsafe(length);
       readFully(this.readFd, payload);
       this.diskReadOffset += RECORD_HEADER_BYTES + length;
@@ -266,6 +303,16 @@ export function normalizeOutputSpool(
   option: true | { readonly memoryBytes?: number; readonly directory?: string } | undefined,
 ): OutputSpoolOptions | undefined {
   if (option === undefined) return undefined;
+  // Runtime type gate (TypeScript callers cannot hit this): anything but
+  // `true` or a plain options object is a stable `invalid-argument` failure
+  // — never a silent default and never a native TypeError.
+  if (option !== true && (typeof option !== "object" || option === null || Array.isArray(option))) {
+    throw new UniPtyError("invalid-argument", "outputSpool must be true or an options object", {
+      details: {
+        optionType: Array.isArray(option) ? "array" : option === null ? "null" : typeof option,
+      },
+    });
+  }
   const memoryBytes =
     option === true
       ? DEFAULT_SPOOL_MEMORY_BYTES

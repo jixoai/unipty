@@ -529,3 +529,44 @@ describe("output spool (disk-backed bounded memory)", () => {
     });
   });
 });
+
+describe("source cancellation lifecycle (transport release regression)", () => {
+  it("completes cleanly after source cancellation: exit settles and no TTY handle lingers", async () => {
+    // Regression (codex review R1): cancel() used to leave `streamDone`
+    // pending; close() gates the deferred substrate teardown behind it, so
+    // the transport release hung forever. On darwin the repossessed stream
+    // self-destroys and closes the fd regardless, so the TTY-handle count
+    // below cannot alone distinguish the bug — the load-bearing effect of
+    // the settled gate is the substrate `close()` itself (Windows native
+    // handles, write queue). This test pins the observable darwin contract:
+    // cancel → terminate → close settles the exit observation and leaves no
+    // TTY resource behind.
+    const ttyHandles = () =>
+      process.getActiveResourcesInfo().filter((name) => name.startsWith("TTY")).length;
+    const baseline = ttyHandles();
+    const backend = await createZigptyBackend();
+    const endpoint = backend.spawn(
+      launch(["/bin/sh", "-c", "echo cancellation-marker; exec /bin/sleep 30"]),
+    );
+    const reader = endpoint.output.getReader();
+    const { value } = await reader.read();
+    // The child printed its greeting; the read resolved.
+    expect(value).toBeDefined();
+    await reader.cancel();
+    endpoint.terminate();
+    endpoint.close();
+    await expectExit(endpoint, { exitCode: 0, signal: "SIGHUP" });
+    // The deferred release runs after exited settles; give the microtask
+    // chain a moment, then require the TTY handle count back at baseline.
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    expect(ttyHandles()).toBeLessThanOrEqual(baseline);
+  }, 20_000);
+
+  it("rejects runtime-malformed outputSpool values with invalid-argument", async () => {
+    for (const bad of [false, 42, "x", null, [{ memoryBytes: 1 }]]) {
+      await expect(createZigptyBackend({ outputSpool: bad as never })).rejects.toMatchObject({
+        code: "invalid-argument",
+      });
+    }
+  });
+});

@@ -33,7 +33,11 @@ provenance, and SHALL pin an exact substrate version.
 - **THEN** retrying the same bytes after drain decodes them exactly as first
   attempted — rejection is whole-value, including decoder state
 
-#### Scenario: Windows soft support with declared buffering semantics
+#### Scenario: Windows fails closed without usable flow control
+
+Superseded 2026-09-07 by this change (adapter-mediated soft support); the
+scenario keeps its historical name for OpenSpec traceability — a MODIFIED
+block may not drop scenarios the current spec still has.
 
 - **WHEN** the substrate's public output flow control is inert on a platform
   (pause/resume are no-ops on Windows in 0.2.1)

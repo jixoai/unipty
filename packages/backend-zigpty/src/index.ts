@@ -302,6 +302,7 @@ class ZigptyEndpoint implements BackendEndpoint {
   /** Resolved exactly when the private output source completed. */
   private readonly streamDone: Promise<void>;
   private streamDoneResolve!: () => void;
+  private streamDoneSettled = false;
   private outputPumpScheduled = false;
   /** Transport EOF arrived while the spool still held undelivered records. */
   private outputEofPending = false;
@@ -351,10 +352,15 @@ class ZigptyEndpoint implements BackendEndpoint {
       },
       // Core never cancels the private source (public views only detach); if
       // something ever does, detach the subscription and drop later chunks.
+      // `streamDone` must still settle: close() gates the deferred transport
+      // release behind it, and finishStream early-returns once the source is
+      // finished — a cancellation that left it pending would hang the
+      // release forever.
       cancel: () => {
         this.streamFinished = true;
         this.dataSubscription?.dispose();
         this.spool?.close();
+        this.settleStreamDone();
       },
     });
     let resolveExit!: (result: BackendExitResult) => void;
@@ -539,12 +545,23 @@ class ZigptyEndpoint implements BackendEndpoint {
     this.streamFinished = true;
     this.dataSubscription.dispose();
     this.spool?.close();
-    this.streamDoneResolve();
+    this.settleStreamDone();
     try {
       this.streamController.error(error);
     } catch {
       // Already closed by cancellation or a prior completion.
     }
+  }
+
+  /**
+   * Idempotent completion of the private source's `streamDone` gate. Every
+   * terminal path (natural completion, explicit close, failure, and source
+   * cancellation) must settle it: the deferred transport release waits on it.
+   */
+  private settleStreamDone(): void {
+    if (this.streamDoneSettled) return;
+    this.streamDoneSettled = true;
+    this.streamDoneResolve();
   }
 
   /** Pause master reads through whichever surface currently owns them. */
@@ -564,6 +581,9 @@ class ZigptyEndpoint implements BackendEndpoint {
       clearTimeout(this.eofTimer);
       this.eofTimer = undefined;
     }
+    // Settle before the finished guard: a cancelled source still owes its
+    // `streamDone` resolution (close() releases the transport behind it).
+    this.settleStreamDone();
     if (this.streamFinished) return;
     this.streamFinished = true;
     this.dataSubscription.dispose();
@@ -571,7 +591,6 @@ class ZigptyEndpoint implements BackendEndpoint {
     // drain); on explicit close/cancellation this drops undelivered records
     // and deletes the spill file.
     this.spool?.close();
-    this.streamDoneResolve();
     try {
       this.streamController.close();
     } catch {

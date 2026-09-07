@@ -5,7 +5,15 @@
 > queueing plus file IO.
 */
 
-import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import {
+  closeSync,
+  mkdtempSync,
+  openSync,
+  readdirSync,
+  rmSync,
+  truncateSync,
+  writeSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -166,5 +174,55 @@ describe("normalizeOutputSpool", () => {
 
   it("rejects empty directory strings", () => {
     expect(() => normalizeOutputSpool({ directory: "" })).toThrow(UniPtyError);
+  });
+});
+
+describe("normalizeOutputSpool runtime type gate", () => {
+  it("rejects non-true non-object values with invalid-argument (no silent defaults)", () => {
+    for (const bad of [false, 42, "x", null, [{ memoryBytes: 1 }]]) {
+      let error: unknown;
+      try {
+        normalizeOutputSpool(bad as never);
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeInstanceOf(UniPtyError);
+      expect((error as UniPtyError).code).toBe("invalid-argument");
+    }
+  });
+
+  it("still accepts true, a plain object, and undefined", () => {
+    expect(normalizeOutputSpool(undefined)).toBeUndefined();
+    expect(normalizeOutputSpool(true)).toBeDefined();
+    expect(normalizeOutputSpool({ memoryBytes: 128 })).toBeDefined();
+  });
+});
+
+describe("OutputSpool corruption guards", () => {
+  it("rejects a record length exceeding the spilled bytes instead of allocating it", () => {
+    const { spool } = freshSpool(8);
+    for (let i = 0; i < 10; i += 1) {
+      spool.append({ kind: "text", text: `corrupt-${i}` });
+    }
+    const path = spool.spillPath;
+    expect(path).toBeDefined();
+    // Corrupt the first record's uint32 length field (offset 1) to the max.
+    const fd = openSync(path as string, "r+");
+    writeSync(fd, Buffer.from([0xff, 0xff, 0xff, 0xff]), 0, 4, 1);
+    closeSync(fd);
+    expect(() => spool.readNext()).toThrow(UniPtyError);
+    spool.close();
+  });
+
+  it("fails typed on a file truncated mid-record", () => {
+    const { spool, directory } = freshSpool(8);
+    for (let i = 0; i < 10; i += 1) {
+      spool.append({ kind: "text", text: `trunc-${i}` });
+    }
+    const path = spool.spillPath as string;
+    truncateSync(path, 3); // mid-header of the first record
+    expect(() => spool.readNext()).toThrow(UniPtyError);
+    spool.close();
+    expect(readdirSync(directory)).toEqual([]);
   });
 });
