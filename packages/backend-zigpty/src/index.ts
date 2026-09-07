@@ -413,6 +413,17 @@ class ZigptyEndpoint implements BackendEndpoint {
     // shape (EIO); the substrate swallows stream errors, so treat the
     // self-destruct that follows as completion rather than a lost failure.
     readable.once("error", () => this.requestStreamCompletion());
+    // Reads may have been paused for backpressure right before the exit
+    // window; attaching a listener to an explicitly paused stream does NOT
+    // resume it, which would strand the kernel-buffered tail (observed on
+    // linux CI: a stalled consumer lost all but the first records). The
+    // child is gone, so the remaining output is finite — resume and absorb
+    // it into the bounded queue or spool.
+    try {
+      readable.resume();
+    } catch {
+      // The substrate may already have destroyed the stream.
+    }
   }
 
   private armSynthesizedEof(): void {
@@ -444,10 +455,12 @@ class ZigptyEndpoint implements BackendEndpoint {
         );
         return;
       }
-      if (this.spool.isBacklogged) {
+      if (this.spool.isBacklogged && this.lateReadable === undefined) {
         // The memory bound is exceeded: propagate pressure into the kernel
         // where the substrate can actually pause (inert on Windows, where
-        // the spool itself is the bound).
+        // the spool itself is the bound). Never past the exit window: the
+        // child is dead, the tail is finite, and pausing there strands
+        // kernel-buffered output behind a stream nobody else will resume.
         this.pauseReads();
       }
       this.scheduleOutputPump();
@@ -467,7 +480,11 @@ class ZigptyEndpoint implements BackendEndpoint {
   private enqueueChunk(chunk: NativeChunk): void {
     try {
       this.streamController.enqueue(chunk);
-      if (this.spool === undefined && (this.streamController.desiredSize ?? 1) <= 0) {
+      if (
+        this.spool === undefined &&
+        this.lateReadable === undefined &&
+        (this.streamController.desiredSize ?? 1) <= 0
+      ) {
         this.pauseReads();
       }
     } catch {

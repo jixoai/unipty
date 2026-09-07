@@ -655,13 +655,17 @@ describe("output spool edge cases (endpoint level)", () => {
       });
       // Disable the kernel echo so output is exactly what cat writes back
       // (otherwise every input byte appears twice: line-discipline echo plus
-      // cat's own write).
+      // cat's own write). Echo disabling races our writes, so sync on a
+      // marker first: it still echoes twice (line discipline plus cat), and
+      // once both copies are back the payload lines no longer echo.
       const endpoint = backend.spawn(launch(["/bin/sh", "-c", "stty -echo; exec /bin/cat"]));
+      endpoint.write({ kind: "text", text: "echo-sync-marker\n" });
+      await readOutputText(endpoint, (acc) => acc.split("echo-sync-marker").length - 1 >= 2, 5_000);
       // Backlog builds while nobody reads; input still flows and resize is
-      // accepted on the live transport.
-      // Canonical-mode ttys cap line length at the kernel's line discipline
-      // limit, so stay under it (1023 + newline, matching the write-queue
-      // tests) and make up volume with more lines.
+      // accepted on the live transport. Canonical-mode ttys cap line length
+      // at the kernel's line-discipline limit, so stay under it (1023 +
+      // newline, matching the write-queue tests) and make up volume with
+      // more lines.
       const payload = "x".repeat(1023);
       for (let i = 0; i < 24; i += 1) {
         expect(endpoint.write({ kind: "text", text: `${payload}\n` })).toBe(true);
