@@ -1,6 +1,6 @@
 {
   "name": "@unipty/backend-zigpty",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Official UniPty Backend adapting the third-party zigpty substrate (Zig-built NAPI prebuilds) for Node runtimes.",
   "license": "MIT",
   "repository": {
