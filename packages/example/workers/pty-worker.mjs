@@ -21,7 +21,11 @@ import { UniPty } from "unipty";
 
 const BACKEND_FACTORIES = {
   "node-pty": () => import("@unipty/backend-node-pty").then((m) => m.createNodePtyBackend()),
-  zigpty: () => import("@unipty/backend-zigpty").then((m) => m.createZigptyBackend()),
+  // The demo pipes browser keystrokes as raw bytes; the zigpty route is
+  // text-native by default, so enable its Backend-owned byte-input decoder
+  // (stateful, split-safe) instead of strict text-only rejection.
+  zigpty: () =>
+    import("@unipty/backend-zigpty").then((m) => m.createZigptyBackend({ writeDecode: true })),
   bun: () => import("@unipty/backend-bun").then((m) => m.createBunBackend()),
   "deno-sigma__pty-ffi": () =>
     import("@unipty/backend-deno-sigma__pty-ffi").then((m) => m.createDenoSigmaPtyFfiBackend()),
