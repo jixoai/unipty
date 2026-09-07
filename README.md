@@ -118,6 +118,29 @@ The Node routes adapt third-party libraries — neither is a native Node runtime
 API, and the docs never claim otherwise. Deno is runtime metadata for the
 last route, not its implementation identity.
 
+### Capability differences (what the engines actually give you)
+
+The public contract is identical on every route — structured argv, geometry
+and resize, write readiness with drain and whole-value saturation rejection,
+non-cascading close/terminate, bootstrap buffering, common error codes. The
+engines underneath are not. This matrix is the honest difference surface to
+consult before choosing a route: ✓ works out of the box, ⚠ needs an option or
+carries a documented limitation, ✗ not provided.
+
+| Capability                              | `node-pty`              | `zigpty`                     | `bun`                        | `deno-sigma__pty-ffi`        | Notes                                                                                                                                                                                              |
+| --------------------------------------- | ----------------------- | ---------------------------- | ---------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Byte writes `pty.write(Uint8Array)`     | ✓                       | ⚠ `writeDecode` option       | ✓                            | ✓                            | zigpty's substrate `write` is string-only; `writeDecode: true` installs a stateful, split-safe decoder (fatal policies reject the whole value)                                                        |
+| Native text output (`encoding:"utf8"`)  | ✓                       | ✓                            | ✗                            | ✗                            | bun and deno are byte-native in both directions; their utf8 views are decoded incrementally by Core (lossless)                                                                                        |
+| Windows target                          | ✓ ConPTY*               | ✗ fail-closed                | ✓ ≥ 1.3.14*                  | ✗                            | *evidence-gated (see the catalog); zigpty refuses readiness on win32 because the substrate's `pause()`/`resume()` are no-ops there                                                                    |
+| Kernel-level output backpressure        | ✓ master-socket pause   | ✓ public `pause`/`resume`    | ✗ none at transport level    | ✗ internal channel + poll    | node-pty pauses the master socket; zigpty pauses via its public API (post-exit through the repossessed stream); bun documents no transport-level flow control; deno's FFI reader drains into an internal buffer |
+| Independent transport-EOF signal        | ✓ socket `close` event  | ⚠ real signal + quiescence   | ⚠ callback + synthesis       | ✓ read-loop `done`           | zigpty repossesses the master stream at exit (real `end`/`close`) with a 50 ms late-chunk-extending fallback; bun's Terminal `exit` callback is primary, exited-synthesis is the fallback             |
+| Transport read errors surfaced          | ✓ `unsupported`         | ✗ indistinguishable from EOF | ✓                            | ✓ `unsupported`              | the zigpty substrate swallows stream errors entirely; the other three error the stream so a read failure is never silently presented as clean EOF                                                     |
+| Signalled-death observation             | signal name             | signal name, `exitCode: 0`   | signal name, `exitCode: null`| `exitCode: 1`, signal `null` | each substrate reports a different shape; adapters pass it through verbatim and never fabricate a value the engine did not report                                                                     |
+| Substrate distribution                  | platform sub-packages   | zero-dep, in-tarball prebuilds (8 tuples) | built into the runtime | vendored dynamic libraries  | deno additionally needs FFI permission (`-A` / `--allow-ffi`); zigpty ships no install scripts at all; node-pty installs only the current platform's binary                                             |
+
+Exec failures are an exit observation (never a spawn exception) on every
+route, and per-adapter details live in each package's README.
+
 ## Packages
 
 | Package                                                                       | npm                                                                      | What it is                                                                                                                |

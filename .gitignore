@@ -8,3 +8,4 @@ coverage/
 .turbo/
 .conformance-install/
 .agents/
+.zcode/
