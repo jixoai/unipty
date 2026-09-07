@@ -20,7 +20,7 @@ Core 加上一个你选定的 Backend——装哪个包，就得到哪个引擎�
 | Bun    | `bun add unipty @unipty/backend-bun`                                      | 运行时原生 `Bun.Terminal`           |
 | Deno   | 经 `npm:@unipty/backend-deno-sigma__pty-ffi` 导入（FFI 路由需 `-A` 运行） | 内嵌 `@sigma/pty-ffi` 动态库        |
 
-不知道选哪个引擎？直接看[选型指南](#选型)——能力差异矩阵会告诉你每个引擎到底给你什么。
+不知道选哪个引擎？下方「选型」一节的能力差异矩阵会告诉你每个引擎到底给你什么。
 
 ## 快速上手
 
@@ -183,7 +183,7 @@ pnpm --filter @unipty/conformance run conformance --backend node-pty --emit-evid
 | 你想……                      | 去处                                                                                             |
 | --------------------------- | ------------------------------------------------------------------------------------------------ |
 | 深入阅读 API                | [文档站](https://unipty.jixoai.com/docs) · [`unipty` README](packages/unipty/README.md)          |
-| 选引擎、看其选项与限制      | 对应路由的 README（从[选型](#选型)进入）                                                         |
+| 选引擎、看其选项与限制      | 对应路由的 README（从「选型」的路由表进入）                                                       |
 | 自动发现 Backend 或打包部署 | [获取层 README](packages/backend/README.md) · [helper README](packages/helper-backend/README.md) |
 | 查每个运行时/平台验证了什么 | [兼容性目录](https://unipty.jixoai.com/compatibility)                                            |
 | 本地跑一个活的终端演示      | [`packages/example`](packages/example)（`pnpm example`）                                         |
