@@ -3,6 +3,31 @@
 > Orthogonal intents (maintained 2026-08-19 Asia/Shanghai; original request:
 > unify Deno, Node, and Bun PTY interfaces through replaceable Backends):
 > planning artifacts, v1 scope, evidence and governance, shell parsing, data plane.
+> 2026-09-07: delivery-workflow law (example + docs gate every release).
+
+## Delivery Workflow (release gate law)
+
+Every Backend/route/public-surface change follows one acceptance order, and a
+GitHub release tag may be cut only after every step passes:
+
+1. **Implementation + contract evidence** — code, adapter tests, and the
+   installed-package conformance suite green (CI matrix included).
+2. **Example** — the example app exposes the change and is verified
+   END-TO-END (a new Backend gets a working tab driven through the real
+   worker wire protocol — input bytes, output, geometry, exit — not a
+   typecheck). "CI green" never substitutes for this.
+3. **Documentation** — specs, root/per-package READMEs, www locales, and
+   architecture docs updated in the SAME change; no route ships with a
+   documentation surface that still enumerates the old set.
+4. **Owner acceptance** — the Owner manually accepts the example and docs
+   (run it, click it, read it). Only then tag the release.
+
+Publishing a release first and patching the example or docs afterward is a
+process defect, not a follow-up: 2026-09-07, v0.2.1 shipped the zigpty route
+while its example tab still failed on byte input (text-native route vs the
+demo's byte writes); the fix landed only after release. Route capability
+differences (e.g. strict text input) must surface in the example the day the
+route lands.
 
 ## Planning Artifacts
 
