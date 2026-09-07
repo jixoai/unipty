@@ -18,6 +18,10 @@ import pkg from "#package.json" with { type: "json" };
  * Backend identity and provenance must never claim a native Node runtime
  * PTY API. Targets declare the runtime level only — `os`/`arch` stay open
  * and evidence gating (not this declaration) limits verified-support claims.
+ * On Windows the route runs with declared buffering semantics (the
+ * substrate's public pause/resume flow control are inert there, 0.2.1);
+ * the Backend-owned `outputSpool` option bounds output memory. Windows
+ * tuples stay declared-unverified until conformance evidence exists.
  */
 const metadata: UniPtyBackendMetadata = {
   schema: 1,
@@ -32,11 +36,9 @@ const metadata: UniPtyBackendMetadata = {
   protocol: {
     core: [1],
   },
-  // `os` is narrowed to the tuples this route can actually honor: the
-  // substrate's Windows build ships a ConPTY prebuild but its public
-  // pause()/resume() flow control are no-ops there (0.2.1), so the Endpoint
-  // fails closed on win32 instead of running without bounded output.
-  targets: [{ runtime: "node", os: ["darwin", "linux"] }],
+  // `os` stays open: availability is soft-supported everywhere a prebuild
+  // loads, while verified-support presentation remains evidence-gated.
+  targets: [{ runtime: "node" }],
   provenance: {
     kind: "third-party",
     substrate: "zigpty (Zig-built NAPI prebuilds bundled in the npm tarball)",

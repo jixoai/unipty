@@ -319,20 +319,20 @@ export const zh: SiteContent = {
           {
             capability: "Windows 目标",
             nodePty: "✓ ConPTY*",
-            zigpty: "✗ 失败关闭",
+            zigpty: "⚠ 可运行，缓冲式†",
             bun: "✓ ≥ 1.3.14*",
             deno: "✗",
             notes:
-              "*证据门控（见目录）；zigpty 在 win32 拒绝就绪——底层 pause()/resume() 在该平台是空操作。",
+              "*证据门控（见目录）；†zigpty 引擎自带 Windows 预编译、路由照常运行，但底层 pause()/resume() 在 win32 是空操作，输出背压传导不到内核——路由的 outputSpool 选项以磁盘溢写为内存封顶。",
           },
           {
             capability: "内核级输出背压",
             nodePty: "✓（socket 暂停）",
-            zigpty: "✓（公开 pause/resume）",
+            zigpty: "✓（公开 pause/resume，unix）",
             bun: "✗（传输层无）",
             deno: "✗（内部通道）",
             notes:
-              "node-pty 暂停主 socket；zigpty 走公开 API；bun 无传输级流控；deno 的 FFI 读端排入内部缓冲。",
+              "node-pty 暂停主 socket；zigpty 走公开 API（Windows 上空操作，改由适配层 outputSpool 兜底）；bun 无传输级流控；deno 的 FFI 读端排入内部缓冲。",
           },
           {
             capability: "独立传输 EOF 信号",

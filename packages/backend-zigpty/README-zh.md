@@ -44,6 +44,8 @@ createZigptyBackend({
   encoding?: "buffer" | "utf8", // 默认 "buffer"
   writeDecode?: true | TextDecoder,
   name?: string, // 传给底层；成为子进程的 $TERM
+  writeQueueBytes?: number, // 有界待写准入队列，默认 1 MiB
+  outputSpool?: true | { memoryBytes?: number; directory?: string },
 })
 ```
 
@@ -58,19 +60,32 @@ createZigptyBackend({
 
 写就绪：每个 Endpoint 持有有界准入队列（默认 1 MiB，四分之三处为软恢复水位；可用 `writeQueueBytes` 调整）。值总是整条交给底层，因此超过软水位后 `write()` 返回 `false`（暂停建议；降回水位后 `drain()` 完成），超过硬上限则以 `backpressure` 整值拒绝——绝不部分接受。准入计账先于任何解码器状态推进：字节值以原始形态准入、在泵送时才解码，被饱和拒绝的值让有状态解码器保持原样，重试同样的字节得到完全相同的解码。`writeDecode` 的致命失败在泵送时终止输入面：该值被丢弃、`drain()` 以 `invalid-argument` 拒绝、后续 `write()` 重复抛出同一失败。`drain()` 是就绪恢复，不是物理冲刷：底层自身的 fd 写队列没有完成信号。
 
+### 输出内存边界（`outputSpool`）
+
+默认关闭；当消费端可能无限期停读时开启——尤其是 Windows，那里底层的输出流控无法传导到内核（见下文 Windows 条目）：
+
+```ts
+const backend = await createZigptyBackend({
+  outputSpool: { memoryBytes: 4 * 1024 * 1024 }, // 或直接 `true` 使用默认值
+});
+```
+
+开启后，输出记录进入一个 FIFO：内存头有界（`memoryBytes`，默认 1 MiB），越界的记录溢写到 `directory` 下（默认系统临时目录）的单一适配层临时文件，并严格按消费端的节奏回放进 source。公共流的字节与不开 spool 时完全一致——文本记录按完整记录往返、chunk 边界保持不变。传输 EOF 请求只会在 spool 完全排空后才完成 source，快退子进程的尾部输出不会被截断；显式 `close()`（以及流取消）仍然同步完成并丢弃未送达的记录。在底层能够暂停的平台上，积压的 spool 还会把压力传导进内核，因此内存界是第一道缓冲，越过它子进程才会因内核压力阻塞。需要知道的取舍：溢写 IO 是同步的；积压期间的磁盘占用按设计不设上限（仅受子进程自身输出量约束）；临时文件在完成/close/取消时删除——进程被强杀时交由系统临时目录清理。溢写失败（ENOSPC、目录消失）以类型化错误终止输出 source，而不是悄悄放开内存上限。
+
 ## 适配层映射（并文档化）的底层行为
 
 基于安装的 `zigpty` 0.2.1 源码与实机探针验证：
 
 - **原生门禁是硬性的。** `zigpty` 在预编译无法加载时会静默回退到基于管道的伪 PTY（没有真实 tty，没有内核 winsize）。本适配层在就绪阶段检查 `hasNative`，以 `unsupported` 失败——绝不进入回退路径，因此"就绪的 Backend"永远意味着真实 PTY 底座。
-- **`close()` = 逻辑传输释放，不发信号，物理拆除延迟。** 底层的 `close()` 会关闭 master fd 并对存活子进程显式发送 `SIGHUP`，直接调用会把 close 级联成终止。本适配层立即暂停 master 读取，只在退出观察落定之后才调用底层 `close()`（此时底层内部的存活探测已无 pid 可发信号）：closed 状态、流完成、I/O 拒绝都是即时的，而 close 绝不向子进程发信号，退出观察一直保持待定直到子进程真正死亡。
-- **`terminate()` = 带底层默认信号的 `kill()`**（`SIGHUP`）。对已死亡子进程的 `ESRCH` 被吞掉，保持幂等。传输保持打开。
+- **`close()` = 逻辑传输释放，不发信号，物理拆除延迟。** 底层的 `close()` 会关闭 master fd 并对存活子进程显式发送 `SIGHUP`，直接调用会把 close 级联成终止。本适配层只在退出观察落定之后才调用底层 `close()`（此时底层内部的存活探测已无 pid 可发信号）：closed 状态、流完成、I/O 拒绝都是即时的，而 close 绝不向子进程发信号，退出观察一直保持待定直到子进程真正死亡。close 后读取继续流动（close 之后的 chunk 走丢弃路径，数据路径自身的暂停保证任何队列有界）：若在此处暂停读取，退出观察会被未排空的输出无限推迟——底层在暂停读取积压输出期间会推迟 `onExit`（darwin 实证，0.2.1）。
+- **`terminate()` = 带底层默认信号的 `kill()`**（`SIGHUP`），随后恢复 master 读取。对已死亡子进程的 `ESRCH` 被吞掉，保持幂等。传输保持打开。这次恢复是承重的：底层在暂停读取积压输出期间推迟退出观察，被 kill 的洪水子进程若不恢复读取将永远无法落定 `exited`。
 - **`exited`** 只包装一次 `onExit`。载荷以数字报告 `signal`（`0` = 无信号）；非零数字映射为其观察到的字符串形式（`"SIGTERM"`）。信号致死时保留底层报告的数字退出码（观察值为 `0`）——适配层原样透传观察结果，绝不虚构底层没有报告的 `null`。
 - **exec 失败是退出观察，不是 spawn 异常。** 底层先 fork 再 exec；可执行文件缺失会立即产生 `{ exitCode: 1, signal: null }` 而不是抛错。只有参数形态的失败才会以类型化的同步 spawn 错误浮出（`invalid-argument` / `unsupported`，原始错误作为 `cause`）。
 - **几何尺寸与 resize** 以真实 tty winsize 更新到达子进程。
-- **输出背压传导到内核。** Core 持有的 source 跟不上时暂停 master 读取、拉动时恢复（使用底层公开的 `pause()`/`resume()`；不触碰任何私有内部字段），消费端停滞不会撑大无界适配队列。
+- **输出背压在底层可暂停的平台上传导到内核。** Core 持有的 source 跟不上时暂停 master 读取、拉动时恢复（使用底层公开的 `pause()`/`resume()`；不触碰任何私有内部字段）。不开 `outputSpool` 时，source 一停拉就暂停；开启后，spool 先吸收上限为内存界的突发，越过该界才触发暂停（内核压力，阻塞子进程而不是撑大任何队列）。
+- **Windows 以声明的缓冲语义运行。** 底层带有 ConPTY 预编译，但其公开的 `pause()`/`resume()` 输出流控制在 Windows 上是空操作（0.2.1），消费端驱动的背压无法传导进内核——与 Deno 路由同类的声明式底层限制。路由不再拒绝就绪，而是照常运行，由 Backend 持有的 `outputSpool` 选项充当内存边界：停读的消费端代价是有界内存加磁盘，而不是无界内存。Windows 上请开启它。Windows 元组的 verified 支持仍由证据门控（有公开契约证据之前保持 declared-unverified）。
 - **传输 EOF 是合成的。** 底层不暴露传输 EOF 事件（只有 `onData`/`onExit`）：子进程退出后，适配层延迟一个 macrotask 再完成输出源——与 Bun 路由对 `Bun.Terminal` 的合成方式一致——尾部 chunk 仍能在完成前入队。该合成方式声明的底层限制：会话首进程死亡后仍持有 slave 端的后代进程的输出会在完成点被截断；传输读错误无法与干净 EOF 区分（底层两者都不暴露）。
-- **Windows 失败关闭。** 底层带有 ConPTY 预编译，但其公开的 `pause()`/`resume()` 输出流控制在 Windows 上是空操作（0.2.1），消费端驱动的背压无法传导——路由在 win32 上拒绝就绪（`unsupported`），而不是带着无界队列运行。元数据 targets 收窄为 `os: ["darwin", "linux"]`；只有在真实的 Windows 契约证据出现后才会解除该门禁。
+- **Windows 以声明的缓冲语义运行**（见上节）：元数据 targets 的 `os` 保持开放；任何元组要呈现为 verified 都需要精确包版本的公开契约证据（见发布目录）。没有证据时元组为 _declared-unverified_——声明只做选择预过滤，从不承诺原生可加载。
 
 ## 部署
 

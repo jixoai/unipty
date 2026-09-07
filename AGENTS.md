@@ -95,9 +95,17 @@ entered), defers the substrate close (which SIGHUPs a live child) until the
 exit observation settles, synthesizes transport EOF from `exited` one
 macrotask later (no substrate EOF event; Bun-route precedent, declared
 route-level limitation), admits byte values raw and decodes them at pump
-time so saturation rejection never advances decoder state, fails closed on
-win32 because the substrate's public `pause()`/`resume()` are no-ops there
-(metadata targets narrowed to darwin/linux), and exposes text-native input
+time so saturation rejection never advances decoder state, resumes master
+reads on terminate and after close (the substrate defers `onExit` while
+paused reads hold undrained output — a killed flooded child would otherwise
+never settle `exited`), runs on Windows with declared buffering semantics
+because the substrate's public `pause()`/`resume()` are no-ops there
+(Deno-route limitation class; metadata `os` stays open and evidence gating
+keeps Windows tuples declared-unverified), bounds output memory behind the
+Backend-owned `outputSpool` option (FIFO with a bounded memory head, disk
+spill tail, consumer-paced replay; transport-EOF completion waits for the
+tail to drain, while explicit close and cancellation drop undelivered
+records and delete the spill file), and exposes text-native input
 only — byte input needs the Backend-owned `writeDecode` option because the
 substrate `write` is string-only. The Deno route is an npm-only package whose pnpm build
 vendors the required `@sigma/pty-ffi/noinit` JavaScript closure and targeted

@@ -320,20 +320,20 @@ export const en: SiteContent = {
           {
             capability: "Windows target",
             nodePty: "✓ ConPTY*",
-            zigpty: "✗ fail-closed",
+            zigpty: "⚠ runs, buffered†",
             bun: "✓ ≥ 1.3.14*",
             deno: "✗",
             notes:
-              "*evidence-gated (see the catalog); the zigpty engine itself ships Windows prebuilds, but this route refuses readiness on win32 because the substrate's pause()/resume() are no-ops there.",
+              "*evidence-gated (see the catalog); †the zigpty engine ships Windows prebuilds and the route runs there, but the substrate's pause()/resume() are no-ops on win32, so output backpressure does not reach the kernel — the route's outputSpool option bounds memory by spilling to disk.",
           },
           {
             capability: "Kernel-level output backpressure",
             nodePty: "✓ socket pause",
-            zigpty: "✓ public pause/resume",
+            zigpty: "✓ public pause/resume (unix)",
             bun: "✗ none at transport",
             deno: "✗ internal channel",
             notes:
-              "node-pty pauses the master socket; zigpty pauses via its public API; bun documents no transport-level flow control; deno's FFI reader drains into an internal buffer.",
+              "node-pty pauses the master socket; zigpty pauses via its public API (inert on Windows, where the adapter's outputSpool is the bound instead); bun documents no transport-level flow control; deno's FFI reader drains into an internal buffer.",
           },
           {
             capability: "Independent transport-EOF signal",

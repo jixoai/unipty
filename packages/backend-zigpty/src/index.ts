@@ -16,6 +16,8 @@ import type { BackendEndpoint, ReadyPtyBackend, StructuredLaunch } from "unipty"
 import type { BackendExitResult, NativeChunk, NativeInput, NativeRepresentation } from "unipty";
 import { constants as osConstants } from "node:os";
 import { Buffer } from "node:buffer";
+import { OutputSpool, normalizeOutputSpool } from "./output-spool.ts";
+import type { OutputSpoolOptions } from "./output-spool.ts";
 
 /**
  * Backend-owned acquisition options. They configure native output/input
@@ -60,6 +62,40 @@ export interface ZigptyBackendOptions {
    * cannot fit is rejected synchronously with `backpressure`.
    */
   readonly writeQueueBytes?: number;
+
+  /**
+   * Disk-backed output spooling for the private output source.
+   *
+   * The substrate's output flow control cannot reach the kernel everywhere:
+   * its public `pause()`/`resume()` are no-ops on Windows (zigpty 0.2.1),
+   * so a consumer that stops pulling would otherwise grow the in-memory
+   * source queue without bound there (the same declared substrate
+   * limitation class as the Deno route). `outputSpool` answers that gap at
+   * adapter level: output records accumulate in a FIFO whose in-memory head
+   * is bounded (`memoryBytes`, default 1 MiB); records beyond it spill to
+   * one adapter-owned temp file under `directory` (default the OS temp
+   * directory) and replay into the source only while the consumer pulls.
+   * The aggregate public stream is byte-identical with and without the
+   * spool — text records round-trip per complete record and chunk
+   * boundaries are preserved.
+   *
+   * Works on every platform (on platforms where the substrate can pause,
+   * a backlogged spool additionally propagates pressure into the kernel,
+   * bounding disk growth too). Recommended wherever a consumer may stall
+   * for unbounded time, and the memory bound on Windows. Off by default.
+   * Spill IO is synchronous; disk usage while backlogged is unbounded by
+   * design, bounded only by the child's own output, and the temp file is
+   * deleted when the source completes, the Endpoint closes, or the source
+   * is cancelled (an abruptly-killed process leaks it to OS tmp reaping).
+   */
+  readonly outputSpool?:
+    | true
+    | {
+        /** In-memory head bound in bytes before records spill (default 1 MiB). */
+        readonly memoryBytes?: number;
+        /** Directory holding the spill file (default: the OS temp directory). */
+        readonly directory?: string;
+      };
 }
 
 /** Ready zigpty-route Backend produced by `createZigptyBackend()`. */
@@ -200,6 +236,19 @@ function nativeInput(writeDecode: boolean): NativeRepresentation {
  * fails the input surface terminally: pending values are dropped, drain
  * waiters reject, and later `write()` calls rethrow the same typed failure.
  *
+ * Output memory law (Owner directive 2026-09-07: adapter-level 磁盘化): the
+ * substrate's output flow control cannot reach the kernel everywhere — its
+ * `pause()`/`resume()` are inert on Windows, and even where they work a
+ * consumer stalling between the pause taking effect keeps bursts queued.
+ * With `outputSpool` enabled, `onData` admits records into a FIFO spool
+ * (bounded memory head, disk tail) and a `desiredSize`-gated pump replays
+ * them into the source strictly at the consumer's pace. Transport-EOF
+ * triggers request completion instead of closing: completion fires only
+ * after the tail drains, so the fast-exit output survives even when the
+ * consumer is behind; explicit `close()` and cancellation still complete
+ * synchronously and drop undelivered records. A backlogged spool also
+ * propagates pressure into the kernel where the substrate can pause.
+ *
  * Lifecycle mapping (verified against the substrate sources and probes):
  * - `close()` never calls the substrate `close()` while the child lives: the
  *   substrate closes the master fd and then explicitly `kill(pid, "SIGHUP")`,
@@ -208,8 +257,13 @@ function nativeInput(writeDecode: boolean): NativeRepresentation {
  *   exit observation settles (the substrate's own liveness probe then skips
  *   the signal for a dead pid).
  * - `terminate()` is the substrate's `kill()` with its default signal
- *   (`SIGHUP`) and never touches the transport. Both operations are
- *   idempotent and synchronous.
+ *   (`SIGHUP`) followed by a master-read resume, and never touches the
+ *   transport. Both operations are idempotent and synchronous. The resume
+ *   is load-bearing: the substrate defers the exit observation while
+ *   undrained output sits behind paused reads (observed on darwin,
+ *   2026-09-07: a killed flooded child with paused reads never settles
+ *   `exited`), so termination always lets the finite backlog drain and the
+ *   observation land.
  * - The substrate's fork-exit callback destroys its master-side ReadStream
  *   synchronously after emitting exit, with no flush — output still
  *   kernel-buffered when the exit callback wins the race against the first
@@ -238,6 +292,7 @@ class ZigptyEndpoint implements BackendEndpoint {
   private readonly pty: SubstratePty;
   private readonly encoding: "buffer" | "utf8";
   private readonly writeDecoder: TextDecoder | undefined;
+  private readonly spool: OutputSpool | undefined;
   private streamController!: ReadableStreamDefaultController<NativeChunk>;
   private readonly dataSubscription: { dispose(): void };
   private streamFinished = false;
@@ -247,6 +302,9 @@ class ZigptyEndpoint implements BackendEndpoint {
   /** Resolved exactly when the private output source completed. */
   private readonly streamDone: Promise<void>;
   private streamDoneResolve!: () => void;
+  private outputPumpScheduled = false;
+  /** Transport EOF arrived while the spool still held undelivered records. */
+  private outputEofPending = false;
 
   private readonly hardBytes: number;
   private readonly softBytes: number;
@@ -266,10 +324,12 @@ class ZigptyEndpoint implements BackendEndpoint {
     encoding: "buffer" | "utf8",
     writeDecoder: TextDecoder | undefined,
     writeQueueBytes: number,
+    spoolOptions: OutputSpoolOptions | undefined,
   ) {
     this.pty = pty;
     this.encoding = encoding;
     this.writeDecoder = writeDecoder;
+    this.spool = spoolOptions === undefined ? undefined : new OutputSpool(spoolOptions);
     this.hardBytes = writeQueueBytes;
     this.softBytes = Math.max(1, Math.floor((writeQueueBytes * 3) / 4));
     this.native = {
@@ -282,15 +342,19 @@ class ZigptyEndpoint implements BackendEndpoint {
       },
       // Consumer-paced backpressure: when Core stops pulling (for example a
       // full bootstrap buffer), pausing master reads propagates the pressure
-      // into the kernel instead of growing an adapter queue.
+      // into the kernel instead of growing an adapter queue — except where
+      // the substrate's pause is inert (Windows), where a spool bounds the
+      // growth instead. Replays backlogged spool records on every pull.
       pull: () => {
         this.resumeReads();
+        this.pumpOutputs();
       },
       // Core never cancels the private source (public views only detach); if
       // something ever does, detach the subscription and drop later chunks.
       cancel: () => {
         this.streamFinished = true;
         this.dataSubscription?.dispose();
+        this.spool?.close();
       },
     });
     let resolveExit!: (result: BackendExitResult) => void;
@@ -337,17 +401,17 @@ class ZigptyEndpoint implements BackendEndpoint {
     this.pty._readable = undefined;
     this.lateReadable = readable;
     readable.on("data", (data) => this.onData(data));
-    readable.once("end", () => this.finishStream());
-    readable.once("close", () => this.finishStream());
+    readable.once("end", () => this.requestStreamCompletion());
+    readable.once("close", () => this.requestStreamCompletion());
     // A master read error after the last slave side closes is the linux EOF
     // shape (EIO); the substrate swallows stream errors, so treat the
     // self-destruct that follows as completion rather than a lost failure.
-    readable.once("error", () => this.finishStream());
+    readable.once("error", () => this.requestStreamCompletion());
   }
 
   private armSynthesizedEof(): void {
     if (this.eofTimer !== undefined) clearTimeout(this.eofTimer);
-    this.eofTimer = setTimeout(() => this.finishStream(), EOF_QUIESCENCE_MS);
+    this.eofTimer = setTimeout(() => this.requestStreamCompletion(), EOF_QUIESCENCE_MS);
   }
 
   private onData(data: string | Buffer): void {
@@ -361,15 +425,125 @@ class ZigptyEndpoint implements BackendEndpoint {
       this.encoding === "utf8"
         ? { kind: "text", text: data as string }
         : { kind: "bytes", bytes: data as Buffer };
+    if (this.spool !== undefined) {
+      try {
+        this.spool.append(chunk);
+      } catch (error) {
+        // A failed spill (ENOSPC, vanished directory) must not silently
+        // unbound memory: fail the source with the typed spool failure.
+        this.failStream(
+          error instanceof UniPtyError
+            ? error
+            : new UniPtyError("unsupported", "the output spool failed"),
+        );
+        return;
+      }
+      if (this.spool.isBacklogged) {
+        // The memory bound is exceeded: propagate pressure into the kernel
+        // where the substrate can actually pause (inert on Windows, where
+        // the spool itself is the bound).
+        this.pauseReads();
+      }
+      this.scheduleOutputPump();
+      return;
+    }
+    this.enqueueChunk(chunk);
+  }
+
+  /**
+   * Enqueue one chunk. Without a spool this pauses native reads as soon as
+   * the source stops pulling (kernel-first backpressure). With a spool the
+   * memory bound is deliberately the FIRST-line buffer — the spool absorbs
+   * bursts up to `memoryBytes` while the child keeps running, and pressure
+   * propagates into the kernel only past that bound (where the substrate
+   * can actually pause; on Windows the spool itself is the bound).
+   */
+  private enqueueChunk(chunk: NativeChunk): void {
     try {
       this.streamController.enqueue(chunk);
-      if ((this.streamController.desiredSize ?? 1) <= 0) {
+      if (this.spool === undefined && (this.streamController.desiredSize ?? 1) <= 0) {
         this.pauseReads();
       }
     } catch {
       // The source was cancelled or closed between the guard and the enqueue.
       this.streamFinished = true;
       this.dataSubscription.dispose();
+    }
+  }
+
+  private scheduleOutputPump(): void {
+    if (this.outputPumpScheduled || this.spool === undefined || this.streamFinished) return;
+    this.outputPumpScheduled = true;
+    queueMicrotask(() => {
+      this.outputPumpScheduled = false;
+      this.pumpOutputs();
+    });
+  }
+
+  /**
+   * Replay spool records into the source only while the consumer pulls
+   * (`desiredSize`), so at most the stream's own water-mark of records sits
+   * in the controller and the spool absorbs bursts and stalls. After a
+   * transport-EOF request, completion fires only once the tail has fully
+   * drained — the data stays readable while the consumer catches up, never
+   * cut by the EOF trigger.
+   */
+  private pumpOutputs(): void {
+    const spool = this.spool;
+    if (spool === undefined || this.streamFinished) return;
+    while (!spool.isEmpty) {
+      // Always honor the consumer's pace — including after a transport-EOF
+      // request, where draining the whole tail into the controller would
+      // reintroduce exactly the unbounded memory the spool exists to bound.
+      if ((this.streamController.desiredSize ?? 0) <= 0) break;
+      let chunk: NativeChunk;
+      try {
+        const next = spool.readNext();
+        if (next === undefined) break;
+        chunk = next;
+      } catch (error) {
+        this.failStream(
+          error instanceof UniPtyError
+            ? error
+            : new UniPtyError("unsupported", "the output spool failed during replay"),
+        );
+        return;
+      }
+      const wasFinished = this.streamFinished;
+      this.enqueueChunk(chunk);
+      if (this.streamFinished && !wasFinished) return;
+    }
+    if (this.outputEofPending && spool.isEmpty) {
+      this.finishStream();
+    }
+  }
+
+  /**
+   * Transport-EOF entry point. Without a spool (or once it has drained) this
+   * completes the source immediately; with backlogged records it defers
+   * completion behind consumer-paced replay so the tail is delivered whole.
+   */
+  private requestStreamCompletion(): void {
+    if (this.streamFinished) return;
+    if (this.spool !== undefined && !this.spool.isEmpty) {
+      this.outputEofPending = true;
+      this.pumpOutputs();
+      return;
+    }
+    this.finishStream();
+  }
+
+  /** Fail the private source terminally (spool IO class), then clean up. */
+  private failStream(error: UniPtyError): void {
+    if (this.streamFinished) return;
+    this.streamFinished = true;
+    this.dataSubscription.dispose();
+    this.spool?.close();
+    this.streamDoneResolve();
+    try {
+      this.streamController.error(error);
+    } catch {
+      // Already closed by cancellation or a prior completion.
     }
   }
 
@@ -393,6 +567,10 @@ class ZigptyEndpoint implements BackendEndpoint {
     if (this.streamFinished) return;
     this.streamFinished = true;
     this.dataSubscription.dispose();
+    // The spool is empty here on the natural path (completion waits for the
+    // drain); on explicit close/cancellation this drops undelivered records
+    // and deletes the spill file.
+    this.spool?.close();
     this.streamDoneResolve();
     try {
       this.streamController.close();
@@ -577,16 +755,13 @@ class ZigptyEndpoint implements BackendEndpoint {
       // A caller-owned fatal decoder surfaces nothing here: flushing after
       // close has nowhere to deliver output.
     }
-    // Stop reading immediately, but keep the master fd open: the substrate
-    // close closes the fd AND explicitly SIGHUPs a live child, so physical
-    // teardown is DEFERRED until the exit observation settles. The spec
-    // allows physical cleanup to finish asynchronously; the exit observation
-    // (or a transport error) releases the fds.
-    try {
-      this.pauseReads();
-    } catch {
-      // The substrate may already have torn its read stream down.
-    }
+    // Reads are deliberately NOT paused here: post-close chunks already
+    // hit the discard path (`onData` returns once the source finished), the
+    // data path's own pause keeps any queue bounded, and pausing would
+    // defer the exit observation behind undrained output when the child
+    // dies next (the substrate's paused-reads exit starvation, observed on
+    // darwin 2026-09-07). Keeping reads flowing lets `exited` — which
+    // survives close — settle as soon as the child actually dies.
     // Physical teardown is DEFERRED until BOTH the exit observation settles
     // AND the output source completed: the substrate close closes the master
     // fd and explicitly SIGHUPs a live child (close must not cascade into
@@ -624,6 +799,16 @@ class ZigptyEndpoint implements BackendEndpoint {
       this.pty.kill();
     } catch {
       // Already-dead children raise ESRCH from process.kill.
+    }
+    // Substrate law (observed on darwin, 2026-09-07): the exit observation
+    // defers while undrained output sits behind paused master reads — a
+    // killed flooded child would otherwise never settle `exited` until some
+    // reader resumed. Resuming lets the now-finite kernel backlog drain
+    // into the bounded queue (or the spool) and the exit observation land.
+    try {
+      this.resumeReads();
+    } catch {
+      // The substrate may already have torn its read stream down.
     }
   }
 }
@@ -682,6 +867,7 @@ function spawnEndpoint(
   writeDecode: true | TextDecoder | undefined,
   name: string | undefined,
   writeQueueBytes: number,
+  spoolOptions: OutputSpoolOptions | undefined,
 ): ZigptyEndpoint {
   if (!Array.isArray(launch.argv) || launch.argv.length === 0) {
     invalidLaunch("launch.argv must be a non-empty array");
@@ -729,7 +915,13 @@ function spawnEndpoint(
       cause,
     });
   }
-  return new ZigptyEndpoint(pty, encoding, endpointWriteDecoder(writeDecode), writeQueueBytes);
+  return new ZigptyEndpoint(
+    pty,
+    encoding,
+    endpointWriteDecoder(writeDecode),
+    writeQueueBytes,
+    spoolOptions,
+  );
 }
 
 /**
@@ -752,18 +944,9 @@ export async function createZigptyBackend(options?: ZigptyBackendOptions): Promi
       details: { writeQueueBytes },
     });
   }
-  if (process.platform === "win32") {
-    // Fail closed on Windows even though a ConPTY prebuild exists: the
-    // substrate's public pause()/resume() are no-ops there (0.2.1), so the
-    // Endpoint's consumer-paced output backpressure cannot propagate and the
-    // private source queue would grow without bound. Verified support stays
-    // evidence-gated; this gate is lifted only together with such evidence.
-    throw new UniPtyError(
-      "unsupported",
-      "the zigpty route fails closed on Windows: the substrate exposes no usable output flow control there (pause/resume are no-ops)",
-      { details: { substrate: "zigpty", platform: process.platform } },
-    );
-  }
+  // Throws `invalid-argument` on malformed shapes; snapshotted once here so
+  // a mutable options object cannot reconfigure later PTYs.
+  const spoolOptions = normalizeOutputSpool(options?.outputSpool);
   const surface = await loadSubstrate();
   if (!surface.hasNative) {
     throw new UniPtyError(
@@ -780,7 +963,7 @@ export async function createZigptyBackend(options?: ZigptyBackendOptions): Promi
   const name = options?.name;
   return {
     spawn: (launch: StructuredLaunch) =>
-      spawnEndpoint(surface, launch, encoding, writeDecode, name, writeQueueBytes),
+      spawnEndpoint(surface, launch, encoding, writeDecode, name, writeQueueBytes, spoolOptions),
     dispose: () => Promise.resolve(),
   };
 }

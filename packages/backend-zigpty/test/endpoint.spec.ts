@@ -6,6 +6,9 @@
 > is not under test here.
  */
 
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createZigptyBackend } from "../src/index.ts";
 import {
@@ -406,5 +409,123 @@ describe("writeDecode decoder isolation and bounded write queue", () => {
     expect(typeof after).toBe("boolean");
     await readOutputText(endpoint, (acc) => acc.includes("after-drain"), 10_000);
     cleanupEndpoint(endpoint);
+  });
+});
+
+describe("output spool (disk-backed bounded memory)", () => {
+  it("delivers a flood in full and in order to a slow reader, then cleans the spill file", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 1024, directory: spillDirectory },
+      });
+      const lines = 2000;
+      const script = `i=0; while [ "$i" -lt ${lines} ]; do printf '0123456789\\n'; i=$((i+1)); done`;
+      const endpoint = backend.spawn(launch(["/bin/sh", "-c", script]));
+      const reader = endpoint.output.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+      const started = Date.now();
+      for (;;) {
+        // A slow consumer: the spool absorbs the burst (memory head bound
+        // 1 KiB against ~22 KiB of output) and replays at this pace.
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value?.kind === "bytes") text += decoder.decode(value.bytes, { stream: true });
+        if (Date.now() - started < 4_000) await new Promise((r) => setTimeout(r, 1));
+      }
+      reader.releaseLock();
+      expect(text.split("0123456789").length - 1).toBe(lines);
+      await expectExit(endpoint, { exitCode: 0, signal: null });
+      // Natural completion deleted the spill file.
+      expect(readdirSync(spillDirectory)).toEqual([]);
+      cleanupEndpoint(endpoint);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 30_000);
+
+  it("keeps the fast-exit tail whole when every record must spill", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 16, directory: spillDirectory },
+      });
+      for (let i = 0; i < 6; i += 1) {
+        const endpoint = backend.spawn(launch(["/bin/echo", `spooled-tail-${i}`]));
+        const text = await readOutputText(
+          endpoint,
+          (acc) => acc.includes(`spooled-tail-${i}`),
+          5_000,
+        );
+        expect(text).toContain(`spooled-tail-${i}`);
+        const reader = endpoint.output.getReader();
+        const { done } = await Promise.race([
+          reader.read(),
+          new Promise<never>((_, reject) => {
+            setTimeout(() => reject(new Error("spooled source did not complete")), 5_000).unref?.();
+          }),
+        ]);
+        reader.releaseLock();
+        expect(done).toBe(true);
+        endpoint.close();
+      }
+      expect(readdirSync(spillDirectory)).toEqual([]);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("spools utf8 text records losslessly", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        encoding: "utf8",
+        outputSpool: { memoryBytes: 8, directory: spillDirectory },
+      });
+      const endpoint = backend.spawn(launch(["/bin/echo", "héllo 世界 🦀"]));
+      const reader = endpoint.output.getReader();
+      let text = "";
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value?.kind === "text") text += value.text;
+      }
+      reader.releaseLock();
+      expect(text).toContain("héllo 世界 🦀");
+      expect(readdirSync(spillDirectory)).toEqual([]);
+      cleanupEndpoint(endpoint);
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("explicit close drops undelivered spool output and deletes the spill file", async () => {
+    const spillDirectory = mkdtempSync(join(tmpdir(), "unipty-endpoint-spool-"));
+    try {
+      const backend = await createZigptyBackend({
+        outputSpool: { memoryBytes: 64, directory: spillDirectory },
+      });
+      const endpoint = backend.spawn(
+        launch(["/bin/sh", "-c", "while :; do printf 'flood\\n'; done"]),
+      );
+      // Let the backlog build without ever reading.
+      await new Promise((r) => setTimeout(r, 300));
+      expect(readdirSync(spillDirectory).length).toBe(1);
+      endpoint.terminate();
+      endpoint.close();
+      expect(readdirSync(spillDirectory)).toEqual([]);
+      // Signalled death keeps the substrate-reported exitCode (0), never a
+      // synthesized null — see the route's exit-observation law.
+      await expectExit(endpoint, { exitCode: 0, signal: "SIGHUP" });
+    } finally {
+      rmSync(spillDirectory, { recursive: true, force: true });
+    }
+  }, 20_000);
+
+  it("rejects malformed outputSpool options at readiness", async () => {
+    await expect(createZigptyBackend({ outputSpool: { memoryBytes: 0 } })).rejects.toMatchObject({
+      code: "invalid-argument",
+    });
   });
 });

@@ -18,9 +18,10 @@ describe("unipty.metadata default export", () => {
     expect(metadata.schema).toBe(1);
     expect(metadata.backend).toEqual({ id: "zigpty", factoryExport: "createZigptyBackend" });
     expect(metadata.protocol.core).toEqual([1]);
-    // os is narrowed: the Windows prebuild exists, but the substrate's
-    // pause/resume flow control are no-ops there, so the route fails closed.
-    expect(metadata.targets).toEqual([{ runtime: "node", os: ["darwin", "linux"] }]);
+    // os stays open: availability is soft-supported everywhere a prebuild
+    // loads (Windows runs with declared buffering semantics; outputSpool
+    // bounds memory), while verified support remains evidence-gated.
+    expect(metadata.targets).toEqual([{ runtime: "node" }]);
   });
 
   it("identifies as third-party zigpty, never a native Node runtime API", () => {

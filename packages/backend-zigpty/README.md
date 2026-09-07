@@ -58,6 +58,8 @@ createZigptyBackend({
   encoding?: "buffer" | "utf8", // default "buffer"
   writeDecode?: true | TextDecoder,
   name?: string, // passed to the substrate; becomes $TERM in the child
+  writeQueueBytes?: number, // bounded pending-write admission queue, default 1 MiB
+  outputSpool?: true | { memoryBytes?: number; directory?: string },
 })
 ```
 
@@ -89,6 +91,36 @@ value is dropped, `drain()` rejects with `invalid-argument`, and later
 `write()` calls rethrow the same failure. `drain()` is readiness recovery, not
 a physical flush: the substrate's own fd write queue has no completion signal.
 
+### Output memory bounding (`outputSpool`)
+
+Off by default; enable it when a consumer may stall for unbounded time — and
+above all on Windows, where the substrate's output flow control cannot reach
+the kernel (see the Windows note below):
+
+```ts
+const backend = await createZigptyBackend({
+  outputSpool: { memoryBytes: 4 * 1024 * 1024 }, // or just `true` for defaults
+});
+```
+
+With the spool on, output records accumulate in a FIFO whose in-memory head is
+bounded (`memoryBytes`, default 1 MiB); records beyond it spill to one
+adapter-owned temp file under `directory` (default the OS temp directory) and
+replay into the source strictly at the consumer's pace. The aggregate public
+stream is byte-identical with and without the spool — text records round-trip
+per complete record and chunk boundaries are preserved. A transport-EOF
+request completes the source only after the spool has fully drained, so a
+fast-exit tail is never cut; explicit `close()` (and stream cancellation)
+still complete synchronously and drop undelivered records. On platforms where
+the substrate can pause, a backlogged spool additionally propagates pressure
+into the kernel, so the memory bound is the first-line buffer and the child
+blocks only past it. Trade-offs to know: spill IO is synchronous, disk usage
+while backlogged is unbounded by design (bounded only by the child's own
+output), and the temp file is deleted on completion/close/cancellation — an
+abruptly-killed process leaks it to OS tmp reaping. A failed spill (ENOSPC,
+vanished directory) fails the output source with a typed error instead of
+silently unbounding memory.
+
 ## Substrate behavior this adapter maps (and documents)
 
 Verified against the installed `zigpty` 0.2.1 sources and live probes:
@@ -101,15 +133,21 @@ Verified against the installed `zigpty` 0.2.1 sources and live probes:
 - **`close()` = logical transport release, no signal, deferred physical
   teardown.** The substrate's `close()` closes the master fd and then
   explicitly sends `SIGHUP` to a live child, so it would cascade close into
-  termination. This adapter pauses master reads immediately and calls the
-  substrate `close()` only after the exit observation settles (the
-  substrate's internal liveness probe then has no pid to signal): the closed
-  state, stream completion, and I/O rejection are immediate, while the child
-  is never signaled by the close and the exit observation stays pending
-  until true child death.
-- **`terminate()` = `kill()` with the substrate default signal** (`SIGHUP`).
-  `ESRCH` for an already-dead child is swallowed, keeping it idempotent.
-  Transport stays open.
+  termination. This adapter calls the substrate `close()` only after the
+  exit observation settles (the substrate's internal liveness probe then has
+  no pid to signal): the closed state, stream completion, and I/O rejection
+  are immediate, while the child is never signaled by the close and the exit
+  observation stays pending until true child death. Reads keep flowing after
+  close (post-close chunks hit the discard path and the data path's own pause
+  keeps any queue bounded): pausing them would defer the exit observation
+  behind undrained output — the substrate defers `onExit` while paused reads
+  hold a backlog (observed on darwin, 0.2.1).
+- **`terminate()` = `kill()` with the substrate default signal** (`SIGHUP`),
+  followed by a master-read resume. `ESRCH` for an already-dead child is
+  swallowed, keeping it idempotent. Transport stays open. The resume is
+  load-bearing: the substrate defers the exit observation while undrained
+  output sits behind paused reads, so a killed flooded child would otherwise
+  never settle `exited` until some reader resumed.
 - **`exited`** wraps `onExit` once. The payload reports `signal` as a number
   (`0` = no signal); nonzero numbers map to their observed string form
   (`"SIGTERM"`). A signalled death keeps the substrate-reported numeric exit
@@ -121,10 +159,22 @@ Verified against the installed `zigpty` 0.2.1 sources and live probes:
   failures surface as typed synchronous spawn errors (`invalid-argument` /
   `unsupported` with the original error as `cause`).
 - **Geometry and resize** reach the child as real tty winsize updates.
-- **Output backpressure propagates to the kernel.** Master reads pause
-  whenever the Core-owned source falls behind and resume on pull (public
-  substrate `pause()`/`resume()`; no private internals are touched), so a
-  stalled consumer cannot grow an unbounded adapter queue.
+- **Output backpressure propagates to the kernel where the substrate can
+  pause.** Master reads pause whenever the Core-owned source falls behind
+  and resume on pull (public substrate `pause()`/`resume()`; no private
+  internals are touched). Without `outputSpool` that pause fires as soon as
+  the source stops pulling; with it, the spool absorbs bursts up to its
+  memory bound first and the pause (kernel pressure, which blocks the child
+  instead of growing any queue) engages only past that bound.
+- **Windows runs with declared buffering semantics.** The substrate ships a
+  ConPTY prebuild, but its public `pause()`/`resume()` output flow control
+  are no-ops there (0.2.1), so consumer-paced backpressure cannot propagate
+  into the kernel — the same declared substrate-limitation class as the Deno
+  route. Instead of refusing readiness, the route now runs and the
+  Backend-owned `outputSpool` option is the memory bound: a stalled consumer
+  costs bounded memory plus disk, never unbounded memory. Enable it on
+  Windows. Verified support for Windows tuples remains evidence-gated
+  (declared-unverified until public-contract evidence exists).
 - **Transport EOF is synthesized.** The substrate exposes no transport-EOF
   event (only `onData`/`onExit`): after the child exits, the adapter
   completes the output source one macrotask later — the same synthesis the
@@ -133,12 +183,12 @@ Verified against the installed `zigpty` 0.2.1 sources and live probes:
   produced after session-leader death by descendants still holding the
   slave side is cut at completion, and a transport read error cannot be
   distinguished from clean EOF (the substrate surfaces neither signal).
-- **Windows fails closed.** The substrate ships a ConPTY prebuild, but its
-  public `pause()`/`resume()` output flow control are no-ops there (0.2.1),
-  so consumer-paced backpressure cannot propagate and the route refuses to
-  become ready on win32 (`unsupported`) instead of running an unbounded
-  queue. Metadata targets are narrowed to `os: ["darwin", "linux"]`; the
-  gate is lifted only together with real Windows conformance evidence.
+- **Windows runs with declared buffering semantics** (see the section above):
+  `os` in metadata targets stays open; presentation of any tuple as verified
+  requires published public-contract evidence for the exact package versions
+  (see the release catalog). Absent evidence, tuples are
+  _declared-unverified_ — the declaration prefilters selection, it never
+  promises native loadability.
 
 ## Deployment
 
