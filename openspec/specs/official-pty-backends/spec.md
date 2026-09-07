@@ -128,8 +128,36 @@ provenance, and SHALL pin an exact substrate version.
 
 #### Scenario: Windows fails closed without usable flow control
 
+Superseded 2026-09-07 by this change (adapter-mediated soft support); the
+scenario keeps its historical name for OpenSpec traceability — a MODIFIED
+block may not drop scenarios the current spec still has.
+
 - **WHEN** the substrate's public output flow control is inert on a platform
   (pause/resume are no-ops on Windows in 0.2.1)
-- **THEN** the factory refuses readiness with `unsupported` on that platform
-  and metadata target declarations exclude it, rather than running an
-  unbounded output queue
+- **THEN** the factory no longer refuses readiness there; the Endpoint keeps
+  draining native output, documentation declares that output backpressure
+  does not reach the kernel on that platform (the Deno-route limitation
+  class), and metadata target declarations leave `os` open while evidence
+  gating keeps Windows tuples declared-unverified until conformance records
+  exist
+
+#### Scenario: Disk spool bounds output memory by adapter option
+
+- **WHEN** a Backend is created with `outputSpool` enabled and a consumer
+  stops pulling while the child keeps producing output
+- **THEN** undelivered records accumulate in a FIFO spool whose in-memory
+  head stays within the configured `memoryBytes` bound (records beyond it
+  spill to one adapter-owned temp file), the pump replays records into the
+  private source only while the consumer pulls, text records round-trip per
+  complete record so the aggregate stream is unchanged, and the spill file
+  is deleted when the source completes, the Endpoint closes, or the source
+  is cancelled
+
+#### Scenario: Spooled output completes only after the tail drains
+
+- **WHEN** a transport-EOF trigger fires while the spool still holds
+  undelivered records
+- **THEN** source completion is deferred behind continued consumer-paced
+  replay, so the fast-exit tail is fully delivered before the source closes;
+  explicit `close()` still completes the source synchronously and drops
+  undelivered spool content
