@@ -66,9 +66,27 @@ export interface ZigptyBackendOptions {
 export interface ZigptyBackend extends ReadyPtyBackend {}
 
 /**
- * Structural type of the substrate surface this adapter uses. Unlike the
- * node-pty adapter, no transport internals are touched: `pause()`/`resume()`
- * are public master-read gates, and teardown maps onto `close()`/`kill()`.
+ * The master-side stream the substrate reads through, narrowed to the
+ * surface the exit-window interception needs. This transport internal is
+ * load-bearing the same way the node-pty adapter's `_socket` is: the
+ * substrate's fork-exit callback destroys `_readable` synchronously after
+ * emitting exit (no flush), which drops fast-exit children's kernel-buffered
+ * output whenever the exit callback wins the race against the first read
+ * delivery (observed deterministically on linux CI, 2026-09-07). The
+ * Endpoint's exit listener runs BEFORE that destroy and repossesses the
+ * stream; see `interceptExitTeardown`.
+ */
+interface SubstrateReadable {
+  on(event: "data", listener: (data: string | Buffer) => void): unknown;
+  once(event: "end" | "close" | "error", listener: () => void): unknown;
+  pause(): void;
+  resume(): void;
+}
+
+/**
+ * Structural type of the substrate surface this adapter uses. `pause()`/
+ * `resume()` are public master-read gates before child exit; `_readable` is
+ * the repossessed transport after the exit window (see `SubstrateReadable`).
  */
 interface SubstratePty {
   readonly pid: number;
@@ -82,6 +100,8 @@ interface SubstratePty {
   resize(columns: number, rows: number): void;
   kill(signal?: string): void;
   close(): void;
+  /** Transport internal; the Endpoint nulls it inside the exit window. */
+  _readable?: SubstrateReadable | undefined;
 }
 
 interface SubstrateSpawnOptions {
@@ -190,13 +210,21 @@ function nativeInput(writeDecode: boolean): NativeRepresentation {
  * - `terminate()` is the substrate's `kill()` with its default signal
  *   (`SIGHUP`) and never touches the transport. Both operations are
  *   idempotent and synchronous.
- * - The substrate exposes no transport-EOF event (only `onData`/`onExit`):
- *   output-source completion is synthesized from `exited` settling, deferred
- *   one macrotask so trailing chunks still enqueue before EOF — the same
- *   synthesis the Bun route performs for `Bun.Terminal`. Declared substrate
- *   limit: output produced after session-leader death by descendants still
- *   holding the slave side is cut at completion, and a transport read error
- *   cannot be distinguished from clean EOF (the substrate surfaces neither).
+ * - The substrate's fork-exit callback destroys its master-side ReadStream
+ *   synchronously after emitting exit, with no flush — output still
+ *   kernel-buffered when the exit callback wins the race against the first
+ *   read delivery is dropped (observed for fast-exit children on linux CI).
+ *   The Endpoint's exit listener runs inside that same `_handleExit` BEFORE
+ *   the destroy and repossesses the stream (`_readable` is detached, the
+ *   Endpoint attaches its own data listener because the substrate just
+ *   cleared its forwarding chain), so late output is delivered and the
+ *   stream's own `end`/`close` becomes the REAL transport-EOF signal. A
+ *   quiescence window (re-armed by every late chunk) only synthesizes EOF
+ *   when neither signal fires. Declared substrate limits that remain:
+ *   output from descendants still holding the slave after session-leader
+ *   death is bounded by that window, and a transport read error is
+ *   indistinguishable from clean EOF (the substrate swallows stream
+ *   errors; the self-destruct that follows is treated as completion).
  * - `exited` wraps `onExit` exactly once and remains awaitable after
  *   `close()`; the substrate emits exit only on true child death (exec
  *   failures surface as an immediate exit observation, not a spawn
@@ -216,6 +244,9 @@ class ZigptyEndpoint implements BackendEndpoint {
   private closed = false;
   private terminated = false;
   private transportReleased = false;
+  /** Resolved exactly when the private output source completed. */
+  private readonly streamDone: Promise<void>;
+  private streamDoneResolve!: () => void;
 
   private readonly hardBytes: number;
   private readonly softBytes: number;
@@ -223,6 +254,8 @@ class ZigptyEndpoint implements BackendEndpoint {
   private pendingBytes = 0;
   private pumpScheduled = false;
   private inputFailure: UniPtyError | undefined;
+  private lateReadable: SubstrateReadable | undefined;
+  private eofTimer: ReturnType<typeof setTimeout> | undefined;
   private drainWaiters: Array<{
     readonly resolve: () => void;
     readonly reject: (error: unknown) => void;
@@ -251,7 +284,7 @@ class ZigptyEndpoint implements BackendEndpoint {
       // full bootstrap buffer), pausing master reads propagates the pressure
       // into the kernel instead of growing an adapter queue.
       pull: () => {
-        this.pty.resume();
+        this.resumeReads();
       },
       // Core never cancels the private source (public views only detach); if
       // something ever does, detach the subscription and drop later chunks.
@@ -264,18 +297,66 @@ class ZigptyEndpoint implements BackendEndpoint {
     this.exited = new Promise<BackendExitResult>((resolve) => {
       resolveExit = resolve;
     });
-    this.dataSubscription = pty.onData((data) => this.onData(data));
-    pty.onExit((event) => resolveExit(toExitResult(event)));
-    void this.exited.then(() => {
-      // Synthesized transport EOF (see class docs). One macrotask of grace
-      // lets data callbacks that were queued with the exit callback in the
-      // same event-loop turn still enqueue before completion.
-      setTimeout(() => this.finishStream(), 0);
+    this.streamDone = new Promise<void>((resolve) => {
+      this.streamDoneResolve = resolve;
     });
+    this.dataSubscription = pty.onData((data) => this.onData(data));
+    pty.onExit((event) => {
+      // Runs synchronously inside the substrate's `_handleExit`, BEFORE the
+      // fork-exit callback destroys the master-side stream: repossess the
+      // readable so fast-exit output still kernel-buffered at this moment is
+      // delivered instead of dropped (the substrate has no flush).
+      this.interceptExitTeardown();
+      resolveExit(toExitResult(event));
+    });
+    void this.exited.then(() => {
+      // Synthesized transport EOF (see class docs) is now the FALLBACK: the
+      // repossessed stream usually reports the real end first (master EOF on
+      // darwin, EIO-driven close on linux). The quiescence window only
+      // bounds the wait when neither signal fires, and late chunks extend
+      // it so trailing output is never cut by a fixed deadline.
+      this.armSynthesizedEof();
+    });
+  }
+
+  /**
+   * Repossess the substrate's master-side stream inside the exit window.
+   * The substrate's fork-exit callback runs `_handleExit()` — which emits
+   * exit listeners synchronously and CLEARS the data listeners — and then
+   * destroys `_readable` with no flush. This listener therefore:
+   * - detaches `_readable` from the substrate so that destroy is a no-op,
+   * - attaches the Endpoint's own data listener (the substrate's forwarding
+   *   chain was just cleared), and
+   * - subscribes to the stream's own end/close/error, which are the real
+   *   transport-EOF signals the substrate never re-exposes.
+   */
+  private interceptExitTeardown(): void {
+    if (this.lateReadable !== undefined) return;
+    const readable = this.pty._readable;
+    if (readable === undefined) return;
+    this.pty._readable = undefined;
+    this.lateReadable = readable;
+    readable.on("data", (data) => this.onData(data));
+    readable.once("end", () => this.finishStream());
+    readable.once("close", () => this.finishStream());
+    // A master read error after the last slave side closes is the linux EOF
+    // shape (EIO); the substrate swallows stream errors, so treat the
+    // self-destruct that follows as completion rather than a lost failure.
+    readable.once("error", () => this.finishStream());
+  }
+
+  private armSynthesizedEof(): void {
+    if (this.eofTimer !== undefined) clearTimeout(this.eofTimer);
+    this.eofTimer = setTimeout(() => this.finishStream(), EOF_QUIESCENCE_MS);
   }
 
   private onData(data: string | Buffer): void {
     if (this.streamFinished) return;
+    if (this.eofTimer !== undefined) {
+      // Post-exit trailing output: extend the synthesized-EOF quiescence
+      // window instead of racing it.
+      this.armSynthesizedEof();
+    }
     const chunk: NativeChunk =
       this.encoding === "utf8"
         ? { kind: "text", text: data as string }
@@ -283,7 +364,7 @@ class ZigptyEndpoint implements BackendEndpoint {
     try {
       this.streamController.enqueue(chunk);
       if ((this.streamController.desiredSize ?? 1) <= 0) {
-        this.pty.pause();
+        this.pauseReads();
       }
     } catch {
       // The source was cancelled or closed between the guard and the enqueue.
@@ -292,10 +373,27 @@ class ZigptyEndpoint implements BackendEndpoint {
     }
   }
 
+  /** Pause master reads through whichever surface currently owns them. */
+  private pauseReads(): void {
+    if (this.lateReadable !== undefined) this.lateReadable.pause();
+    else this.pty.pause();
+  }
+
+  /** Resume master reads through whichever surface currently owns them. */
+  private resumeReads(): void {
+    if (this.lateReadable !== undefined) this.lateReadable.resume();
+    else this.pty.resume();
+  }
+
   private finishStream(): void {
+    if (this.eofTimer !== undefined) {
+      clearTimeout(this.eofTimer);
+      this.eofTimer = undefined;
+    }
     if (this.streamFinished) return;
     this.streamFinished = true;
     this.dataSubscription.dispose();
+    this.streamDoneResolve();
     try {
       this.streamController.close();
     } catch {
@@ -485,14 +583,22 @@ class ZigptyEndpoint implements BackendEndpoint {
     // allows physical cleanup to finish asynchronously; the exit observation
     // (or a transport error) releases the fds.
     try {
-      this.pty.pause();
+      this.pauseReads();
     } catch {
       // The substrate may already have torn its read stream down.
     }
-    void this.exited.then(
-      () => this.releaseTransport(),
-      () => this.releaseTransport(),
-    );
+    // Physical teardown is DEFERRED until BOTH the exit observation settles
+    // AND the output source completed: the substrate close closes the master
+    // fd and explicitly SIGHUPs a live child (close must not cascade into
+    // termination), and closing the fd earlier than source completion would
+    // cut late kernel-buffered output the interception preserved. The spec
+    // allows physical cleanup to finish asynchronously.
+    void this.exited
+      .then(() => this.streamDone)
+      .then(
+        () => this.releaseTransport(),
+        () => this.releaseTransport(),
+      );
   }
 
   private releaseTransport(): void {
@@ -559,6 +665,15 @@ function endpointWriteDecoder(
 }
 
 const DEFAULT_WRITE_QUEUE_BYTES = 1 << 20;
+
+/**
+ * Ceiling of the post-exit quiescence window that synthesizes transport EOF
+ * when the repossessed master stream reports neither `end` nor `close`. Late
+ * chunks re-arm the window, so this never cuts trailing output; it only
+ * bounds how long a silent master can hold the source open (the ordinary
+ * linux/macOS EOF shapes fire the real signal far earlier).
+ */
+const EOF_QUIESCENCE_MS = 50;
 
 function spawnEndpoint(
   surface: SubstrateSurface,

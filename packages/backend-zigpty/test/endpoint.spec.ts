@@ -69,8 +69,8 @@ describe("Endpoint output (bytes mode, default)", () => {
     const endpoint = backend.spawn(launch(["/bin/echo", "eof"]));
     await readOutputText(endpoint, (acc) => acc.includes("eof"));
     await expectExit(endpoint, { exitCode: 0, signal: null });
-    // The substrate has no transport-EOF event; the adapter synthesizes
-    // completion from the exit observation one macrotask later.
+    // The repossessed master stream reports the real end (or the quiescence
+    // window bounds the wait); either way the source completes.
     const reader = endpoint.output.getReader();
     const timer = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error("output source did not complete")), 5_000).unref?.();
@@ -78,6 +78,22 @@ describe("Endpoint output (bytes mode, default)", () => {
     const { done } = await Promise.race([reader.read(), timer]);
     reader.releaseLock();
     expect(done).toBe(true);
+  }, 20_000);
+
+  it("delivers output for rapid fast-exit children (linux exit-window regression)", async () => {
+    // The substrate's fork-exit callback used to destroy its master stream
+    // before kernel-buffered output was read: fast-exit children lost their
+    // whole output when the exit callback won the first-read race (seen
+    // deterministically on ubuntu CI cold starts). The Endpoint repossesses
+    // the stream inside the exit window; pin that with a burst.
+    const backend = await createZigptyBackend();
+    for (let i = 0; i < 8; i += 1) {
+      const endpoint = backend.spawn(launch(["/bin/echo", `burst-${i}`]));
+      const text = await readOutputText(endpoint, (acc) => acc.includes(`burst-${i}`), 5_000);
+      expect(text).toContain(`burst-${i}`);
+      await expectExit(endpoint, { exitCode: 0, signal: null });
+      endpoint.close();
+    }
   }, 20_000);
 });
 
