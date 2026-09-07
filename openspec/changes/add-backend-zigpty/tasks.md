@@ -53,11 +53,11 @@
 - [x] 3.2 Installed-package conformance: `pack-and-install.mjs zigpty` +
       `run-installed-profile.mjs zigpty node` — all scenarios pass, evidence
       record produced (darwin-arm64 native tuple).
-- [ ] 3.3 Codex review rounds (change doc + implementation) addressed.
+- [x] 3.3 Codex review rounds addressed: round 1 (5.5/10, 3 blockers) closed in 021a82d; round 2 (5.0/10, 4 blockers) closed in f083127; round 3 verified the fixes (7.5/10, accepted) with a release-equivalent smoke condition satisfied locally (pack + manifest/deps verification + publish dry-run + collector-shaped aggregation coverage 1x4).
 
 ## 4. Release
 
-- [ ] 4.1 Spec/docs sync: openspec specs, `.scratch/unipty-v1/spec.md`,
+- [x] 4.1 Spec/docs sync: openspec specs, `.scratch/unipty-v1/spec.md`,
       root AGENTS.md, root README/README-zh route lists.
 - [ ] 4.2 Archive change, merge to main, CI conformance matrix green
       (zigpty evidence on ubuntu + macos).
