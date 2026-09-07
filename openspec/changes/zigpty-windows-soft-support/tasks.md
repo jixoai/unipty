@@ -52,8 +52,8 @@
 ## 4. Verification / release (delivery workflow)
 
 - [x] Local installed-profile re-run for the zigpty route (macOS) — 25/25.
-- [ ] Codex review round (herdr, async callback pattern); process
-      findings and re-verify.
+- [x] Codex review rounds: R1 5.8/10 REVISE (3 blockers) → fixed in
+      9bac5d7 → R2 8.8/10 APPROVE, zero blockers.
 - [ ] Example end-to-end acceptance by the Owner, docs review.
 - [ ] Only then: archive change, version bump, release.
 - [ ] Follow-up (out of scope, tracked): conformance scripts win32
