@@ -67,12 +67,29 @@ SHALL not fetch or consume that artifact.
 
 ### Requirement: First-phase release gates
 
-Package publication SHALL require at least one native passing tuple for each of
-the Node, Bun, and Deno official routes. Deno release acceptance SHALL install
-the packed npm artifact in an isolated consumer, reject published runtime
-`jsr:` specifiers, verify the selected packaged library exists, and run the same
-public suite with required FFI permission. Site deployment SHALL remain
-independently retryable after the release artifact is attached.
+Package publication SHALL require at least one native passing tuple for
+each official route — `node-pty`, `bun`, `deno-sigma__pty-ffi`, and
+`zigpty`. The route registry SHALL be keyed by route identity (the
+substrate), not by runtime, so multiple routes may share one runtime. Deno
+release acceptance SHALL install the packed npm artifact in an isolated
+consumer, reject published runtime `jsr:` specifiers, verify the selected
+packaged library exists, and run the same public suite with required FFI
+permission. Site deployment SHALL remain independently retryable after the
+release artifact is attached.
+
+#### Scenario: A second node-runtime route is independently gated
+
+- **WHEN** a release aggregates evidence and one of two node-runtime routes
+  (for example `node-pty` and `zigpty`) lacks a passing native tuple
+- **THEN** package publication stays blocked for that release even though
+  the other node route passed
+
+#### Scenario: Route coverage requires package AND backend identity
+
+- **WHEN** evidence or a metadata snapshot wears an official route's package
+  name but a backend id other than that route's registered identity
+- **THEN** aggregation rejects the record and it never counts toward route
+  coverage — official routes cannot stand in for each other by swapping ids
 
 #### Scenario: Deno workspace success cannot bypass packed-artifact acceptance
 
