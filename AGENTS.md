@@ -55,10 +55,19 @@ The first phase must deliver Node, Bun, and Deno Backend routes together and
 include all three in implementation, documentation, CI contract coverage, and
 release acceptance. Concrete Backend packages use the uniform
 `@unipty/backend-*` namespace: `@unipty/backend-bun`,
-`@unipty/backend-node-pty`, and `@unipty/backend-deno-sigma__pty-ffi`. Their
-route identities remain the actual substrates `bun`, `node-pty`, and
-`@sigma/pty-ffi`; Deno is runtime metadata for the last route, not its sole
-implementation name. The Deno route is an npm-only package whose pnpm build
+`@unipty/backend-node-pty`, `@unipty/backend-deno-sigma__pty-ffi`, and
+(2026-09-07, second phase) `@unipty/backend-zigpty`. Their route identities
+remain the actual substrates `bun`, `node-pty`, `zigpty`, and
+`@sigma/pty-ffi`; the route registry is keyed by substrate identity, never by
+runtime, so multiple official routes may share one runtime. Deno is runtime
+metadata for the FFI route, not its sole implementation name. The zigpty
+route pins third-party `zigpty` exactly, declares `targets: [{ runtime: "node"
+}]`, gates readiness on `hasNative` (its pipe pseudo-PTY fallback is never
+entered), defers the substrate close (which SIGHUPs a live child) until the
+exit observation settles, synthesizes transport EOF from `exited` one
+macrotask later (no substrate EOF event; Bun-route precedent), and exposes
+text-native input only — byte input needs the Backend-owned `writeDecode`
+option because the substrate `write` is string-only. The Deno route is an npm-only package whose pnpm build
 vendors the required `@sigma/pty-ffi/noinit` JavaScript closure and targeted
 dynamic libraries. Published runtime modules contain no unresolved `jsr:`
 specifier; the Backend factory owns exact tuple asset selection and explicit
