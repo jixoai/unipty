@@ -324,7 +324,7 @@ export const en: SiteContent = {
             bun: "✓ ≥ 1.3.14*",
             deno: "✗",
             notes:
-              "*evidence-gated (see the catalog); zigpty refuses readiness on win32 because the substrate's pause()/resume() are no-ops there.",
+              "*evidence-gated (see the catalog); the zigpty engine itself ships Windows prebuilds, but this route refuses readiness on win32 because the substrate's pause()/resume() are no-ops there.",
           },
           {
             capability: "Kernel-level output backpressure",
