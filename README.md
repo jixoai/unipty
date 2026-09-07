@@ -26,8 +26,8 @@ you get:
 | Bun     | `bun add unipty @unipty/backend-bun`                                                   | runtime-native `Bun.Terminal`                     |
 | Deno    | import via `npm:@unipty/backend-deno-sigma__pty-ffi` (run with `-A` for the FFI route) | vendored `@sigma/pty-ffi` dynamic libraries       |
 
-Not sure which engine? Jump to [Choosing a Backend](#choosing-a-backend) —
-the capability matrix tells you exactly what each one gives you.
+Not sure which engine? The capability matrix under Choosing a Backend below
+tells you exactly what each one gives you.
 
 ## Quickstart
 
@@ -229,7 +229,7 @@ Where to go next, by intent:
 | You want to…                                        | Go to                                                                                                 |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | Read the API in depth                               | [docs site](https://unipty.jixoai.com/docs) · [`unipty` README](packages/unipty/README.md)            |
-| Pick an engine and see its options/limits           | that route's README (linked from [Choosing a Backend](#choosing-a-backend))                           |
+| Pick an engine and see its options/limits           | that route's README (linked from the routes table in Choosing a Backend)                              |
 | Resolve Backends automatically or bundle for deploy | [acquisition README](packages/backend/README.md) · [helper README](packages/helper-backend/README.md) |
 | See what is verified per runtime/platform           | [compatibility catalog](https://unipty.jixoai.com/compatibility)                                      |
 | Run a live terminal demo locally                    | [`packages/example`](packages/example) (`pnpm example`)                                               |
