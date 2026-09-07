@@ -28,6 +28,33 @@ provenance, and SHALL pin an exact substrate version.
 
 ## MODIFIED Requirements
 
+### Requirement: First-phase official Backend set
+
+The official route set SHALL include `@unipty/backend-node-pty`,
+`@unipty/backend-zigpty`, `@unipty/backend-bun`, and
+`@unipty/backend-deno-sigma__pty-ffi`. The first release phase delivered the
+Node, Bun, and Deno routes together; the second phase (2026-09-07) added the
+zigpty Node route. Route identity is the substrate, never the runtime, so one
+runtime MAY carry multiple official routes. Each package SHALL expose its
+declared asynchronous `createXxxBackend(options)` factory and the official
+Metadata Protocol. The absence of public conformance evidence for a tuple
+SHALL not defer implementation of any required route.
+
+#### Scenario: Each official package is independently acquirable
+
+- **WHEN** an application imports any one official Backend on its declared
+  runtime and target
+- **THEN** it can acquire a ready Backend through that package's documented
+  factory before constructing UniPty
+
+#### Scenario: A runtime may carry more than one official route
+
+- **WHEN** the official set contains two Node-route packages (`node-pty` and
+  `zigpty`)
+- **THEN** each stays independently acquirable, independently provenanced, and
+  independently gated by release evidence — one route's pass never stands in
+  for the other
+
 ### Requirement: Substrate provenance remains explicit
 
 The Node Backends SHALL adapt third-party `node-pty` and third-party

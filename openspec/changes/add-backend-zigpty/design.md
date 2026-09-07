@@ -3,7 +3,13 @@
 ## Context
 
 Probe evidence (2026-09-07, darwin-arm64, Node 24.20.0, zigpty@0.2.1 from
-npm) established every substrate fact this adapter depends on:
+npm) established every substrate fact below. The probe is reproducible ad
+hoc (`npm i zigpty@0.2.1` in a scratch dir, then assert `hasNative`, the
+pause/resume gating, the close-then-SIGHUP timing, `stty size` before/after
+`resize`, and `onExit` payloads); every load-bearing assertion is encoded
+permanently as real-PTY adapter tests in `packages/backend-zigpty/test/` and
+as public-contract scenarios in the conformance suite, so the adapter never
+depends on re-running the throwaway probe script.
 
 | Fact                                                                                                       | Evidence                                                           |
 | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |

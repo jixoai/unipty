@@ -75,7 +75,7 @@ export const LLMS_TXT_CONFIG = {
   siteUrl: "https://unipty.jixoai.com",
   title: "UniPty",
   summary:
-    "Runtime-neutral PTY contract for Node, Bun, and Deno: one Core API, developer-selectable Backends (node-pty, Bun.Terminal, @sigma/pty-ffi), and support claims gated by the release evidence catalog.",
+    "Runtime-neutral PTY contract for Node, Bun, and Deno: one Core API, developer-selectable Backends (node-pty, zigpty, Bun.Terminal, @sigma/pty-ffi), and support claims gated by the release evidence catalog.",
   // 2026-09-06 site-i18n-zh: the export covers both locales — dist/zh/**
   // pages group under the zh segment (own zh/llms.txt index + per-page .md
   // mirrors), everything else is the en default that the root llms.txt and

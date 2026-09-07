@@ -10,7 +10,7 @@ native substrate.
 ## Install
 
 ```sh
-pnpm add unipty @unipty/backend-node-pty   # or the Bun / Deno route
+pnpm add unipty @unipty/backend-node-pty   # or the zigpty / Bun / Deno route
 ```
 
 Core has **no** Backend dependency: you inject one already-ready Backend.

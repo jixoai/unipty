@@ -7,7 +7,7 @@
 ## 安装
 
 ```sh
-pnpm add unipty @unipty/backend-node-pty   # 或 Bun / Deno 路由
+pnpm add unipty @unipty/backend-node-pty   # 或 zigpty / Bun / Deno 路由
 ```
 
 Core **不依赖任何** Backend：你注入的是一个已经就绪的 Backend。

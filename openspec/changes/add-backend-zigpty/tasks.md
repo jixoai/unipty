@@ -27,7 +27,10 @@
 - [x] 2.1 `packages/conformance/src/catalog.ts`: `OFFICIAL_ROUTE_PACKAGES`
       re-keyed by route id (+ zigpty); coverage gate loop + tests updated.
 - [x] 2.2 Conformance runner maps: `runners/run-profile.ts` ROUTE_PACKAGES,
-      `scripts/pack-and-install.mjs`, `scripts/run-installed-profile.mjs`;
+      `scripts/pack-and-install.mjs`, `scripts/run-installed-profile.mjs`,
+      `scripts/collect-release-evidence.mjs` (the release workflow's metadata
+      collector — without its zigpty entry, aggregation rejects zigpty
+      evidence for lacking a metadata snapshot);
       `packages/conformance/package.json` devDependency.
 - [x] 2.3 `scripts/check-architecture.sh.ts`: required-package list +
       substrateAllowlist (`zigpty`).
@@ -35,7 +38,14 @@
       conformance-matrix zigpty cells (ubuntu, macos; node).
 - [x] 2.5 `.github/workflows/release.yml`: pack list + publish order.
 - [x] 2.6 `packages/example`: RUNTIME_FOR_BACKEND entry + frontend tab.
-- [x] 2.7 `packages/www`: en/zh route cards, docs candidate samples.
+- [x] 2.7 `packages/www`: en/zh route cards, llms summary, docs surfaces.
+- [x] 2.8 Release-equivalent aggregation acceptance: catalog unit tests
+      assert the four-route aggregate succeeds and that missing zigpty
+      evidence blocks the release independently of the sibling node route.
+- [x] 2.9 Documentation sweep: Core README ±zh install lines, example
+      README, 架构设计.md (package tree, release gate, substrate-truth
+      table), 贡献规范.md test matrix — no residual three-route semantics
+      outside timestamped decision history.
 
 ## 3. Verification
 

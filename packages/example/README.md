@@ -36,7 +36,7 @@ UniPty Core → official Backend → real PTY → your shell
 ```
 
 The whole demo rests on UniPty's runtime neutrality: **one worker source**
-drives all three official routes because the public contract (`spawn`,
+drives every official route because the public contract (`spawn`,
 `stream`, `write`, `resize`, `terminate`, `close`, `exited`) is identical —
 only the hosting runtime differs per backend.
 
