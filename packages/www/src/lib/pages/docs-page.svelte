@@ -52,9 +52,15 @@ console.log(pty.closed);`
   const exitCodeSample = String.raw`const result = await pty.exited;
 console.log(result.exitCode, result.signal); // number | null, string | null`
 
-  const capabilityCode = String.raw`import { signalsCapability } from "@unipty/backend-node-pty";
+  const capabilityCode = String.raw`import { defineCapabilityToken } from "unipty";
 
-const signals = pty.capability(signalsCapability.token);
+// Capability tokens are Backend-owned singletons; Core matches object
+// identity only (no string registry, no name fallback). No official
+// Backend ships a token yet — this is the intended shape when one does:
+interface SignalsCapability { kill(signal: string): void }
+const signalsCapability = defineCapabilityToken<SignalsCapability>();
+
+const signals = pty.capability(signalsCapability);
 if (signals) signals.kill("SIGHUP"); // Backend vocabulary; explicit, never silent`
 
   const manualImportCode = String.raw`const { createBunBackend } = await import("@unipty/backend-bun");
@@ -65,12 +71,13 @@ const unipty = new UniPty({ backend });`
 
 const backend = await autoResolveUniPtyBackend({
   candidates: ["@unipty/backend-node-pty", "@unipty/backend-bun"],
-  onWarning: (warning) => console.warn(warning.code, warning.message),
+  from: import.meta.url, // caller-rooted base
+  onWarning: (warning) => console.warn(warning.code, warning.packageName),
 });`
 
   const resolveInspectCode = String.raw`import { resolveUniPtyBackend, inspectUniPtyBackend } from "@unipty/backend";
 
-const report = resolveUniPtyBackend("@unipty/backend-deno-sigma__pty-ffi", {
+const report = await resolveUniPtyBackend("@unipty/backend-deno-sigma__pty-ffi", {
   from: import.meta.url,
 });
 if (report.status === "resolved") {
@@ -95,22 +102,30 @@ const backend = await autoResolveUniPtyBackend({
 
   const metadataCode = String.raw`{
   "schema": 1,
-  "package": { "name": "@unipty/backend-node-pty", "version": "0.1.0" },
+  "package": { "name": "@unipty/backend-node-pty", "version": "0.2.0" },
   "backend": { "id": "node-pty", "factoryExport": "createNodePtyBackend" },
   "protocol": { "core": [1] },
-  "targets": [
-    {
-      "runtime": "node",
-      "os": ["darwin", "linux"],
-      "arch": ["arm64", "x64"],
-      "libc": ["glibc"]
-    }
-  ],
-  "provenance": { "kind": "adapter", "substrate": "node-pty" }
+  "targets": [{ "runtime": "node" }],
+  "provenance": {
+    "kind": "third-party",
+    "substrate": "node-pty (@lydell/node-pty prebuilt distribution)"
+  }
 }`
+
+  // Locale-invariant engine-swap sample (code is data, not prose).
+  const swapCode = String.raw`import { UniPty } from "unipty";
+import { createNodePtyBackend } from "@unipty/backend-node-pty";
+import { createZigptyBackend } from "@unipty/backend-zigpty";
+import { createBunBackend } from "@unipty/backend-bun";
+import { createDenoSigmaPtyFfiBackend } from "@unipty/backend-deno-sigma__pty-ffi";
+
+// Pick the engine by acquiring a different Backend — every line below the
+// constructor is identical on all four routes:
+const unipty = new UniPty({ backend: await createZigptyBackend() });`
 
   // Section id → sample (ids are locale-invariant, so one map serves both).
   const codeById: Record<string, { code: string; lang: string; meta: string }[]> = {
+    'install-swap': [{ code: swapCode, lang: 'ts', meta: 'engine swap' }],
     'core-construct': [{ code: coreReadyCode, lang: 'ts', meta: 'construct' }],
     'core-spawn': [{ code: spawnCode, lang: 'ts', meta: 'spawn' }],
     'core-stream': [{ code: streamCode, lang: 'ts', meta: 'stream' }],
@@ -166,6 +181,51 @@ const backend = await autoResolveUniPtyBackend({
         {/each}
       </CardGrid>
     </div>
+  </div>
+
+  <div data-reveal="">
+    <SectionCard
+      id="install"
+      family="install"
+      headerRegion="install"
+      eyebrow={content.install.eyebrow}
+      title={content.install.title}
+      summary={content.install.summary}
+    >
+      <div class="flex flex-col gap-6">
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                {#each content.install.headers as header (header)}
+                  <th>{header}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each content.install.rows as row (row.command)}
+                <tr>
+                  <td class="dim">{row.runtime}</td>
+                  <td><code>{row.command}</code></td>
+                  <td>{row.engine}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <div data-region="install-swap" id="install-swap" class="flex flex-col gap-3">
+          <p class="text-muted-foreground max-w-[78ch] text-pretty text-[13px] leading-6">
+            {content.install.swapLead}
+          </p>
+          {#each codeById['install-swap'] as sample (sample.meta)}
+            <CodeBlock code={sample.code} lang={sample.lang} meta={sample.meta} />
+          {/each}
+          <p class="text-muted-foreground max-w-[78ch] text-pretty text-[13px] leading-6">
+            {content.install.swapTail}
+          </p>
+        </div>
+      </div>
+    </SectionCard>
   </div>
 
   <div data-reveal="">
@@ -239,7 +299,15 @@ const backend = await autoResolveUniPtyBackend({
           <tbody>
             {#each content.routes.rows as route (route.pkg)}
               <tr>
-                <td><code>{route.pkg}</code></td>
+                <td>
+                  <!-- pkg is verbatim data; the directory name is derived the
+                       same way the workspace lays packages out. -->
+                  <a
+                    href="https://github.com/jixoai/unipty/tree/main/packages/{route.pkg.replace('@unipty/', '')}"
+                    rel="noreferrer"
+                    target="_blank"
+                  ><code>{route.pkg}</code></a>
+                </td>
                 <td class="dim">{route.runtime}</td>
                 <td>{route.substrate}</td>
                 <td>{route.notes}</td>
@@ -247,6 +315,38 @@ const backend = await autoResolveUniPtyBackend({
             {/each}
           </tbody>
         </table>
+      </div>
+      <div class="mt-8 flex flex-col gap-4" data-region="routes-capabilities" id="routes-capabilities">
+        <h3 class="text-[15px] font-bold tracking-tight">{content.routes.capabilities.title}</h3>
+        <p class="text-muted-foreground max-w-[78ch] text-pretty text-[13px] leading-6">
+          {content.routes.capabilities.summary}
+        </p>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                {#each content.routes.capabilities.headers as header (header)}
+                  <th>{header}</th>
+                {/each}
+              </tr>
+            </thead>
+            <tbody>
+              {#each content.routes.capabilities.rows as row (row.capability)}
+                <tr>
+                  <td>{row.capability}</td>
+                  <td class="dim">{row.nodePty}</td>
+                  <td class="dim">{row.zigpty}</td>
+                  <td class="dim">{row.bun}</td>
+                  <td class="dim">{row.deno}</td>
+                  <td>{row.notes}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted-foreground max-w-[78ch] text-pretty text-[13px] leading-6">
+          {content.routes.capabilities.closing}
+        </p>
       </div>
     </SectionCard>
   </div>

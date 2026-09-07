@@ -145,6 +145,38 @@ export const zh: SiteContent = {
         body: "工厂或 .ready() 在 new UniPty(options) 之前完成一次性的运行时加载、连接与能力协商。此后 spawn、write、resize、terminate、close 全部保持同步。",
       },
     ],
+    install: {
+      eyebrow: "安装",
+      title: "Core 加上你选的引擎",
+      summary:
+        "装哪个 Backend 包，就得到哪个引擎。不知道选哪个？路由表下方的能力差异矩阵会告诉你每个引擎实际提供什么。",
+      headers: ["运行时", "安装", "引擎"],
+      rows: [
+        {
+          runtime: "Node",
+          command: "npm install unipty @unipty/backend-node-pty",
+          engine: "第三方 node-pty 预构建",
+        },
+        {
+          runtime: "Node",
+          command: "npm install unipty @unipty/backend-zigpty",
+          engine: "第三方 zigpty（Zig 构建、零依赖）",
+        },
+        {
+          runtime: "Bun",
+          command: "bun add unipty @unipty/backend-bun",
+          engine: "运行时原生 Bun.Terminal",
+        },
+        {
+          runtime: "Deno",
+          command: 'import via "npm:@unipty/backend-deno-sigma__pty-ffi"',
+          engine: "内嵌 @sigma/pty-ffi 动态库",
+        },
+      ],
+      swapLead: "换引擎只是一行改动——换一个 Backend 获取，其余代码完全一致：",
+      swapTail:
+        "引擎专属选项（encoding、writeDecode、队列调优、FFI 权限）与行为限制见各包 README，路由表中已附链接。",
+    },
     core: {
       eyebrow: "Core 用法",
       title: "公共契约",
@@ -184,7 +216,7 @@ export const zh: SiteContent = {
         {
           id: "core-exit",
           title: "退出是独立观察",
-          body: "exited 是 { exitCode, signal } 的可重复 promise。它独立于传输 EOF、流取消与 close：已建立的退出观察在 close 之后依然有效；signal 记录观察到的终止原因，不是通用的 kill(signal) 词汇。",
+          body: "exited 是 { exitCode, signal } 的可重复 promise。它独立于传输 EOF、流取消与 close：已建立的退出观察在 close 之后依然有效；signal 记录观察到的终止原因，不是通用的 kill(signal) 词汇。所有路由上 exec 失败都是退出观察（绝不是 spawn 异常）；信号致死保留各引擎自身的报告形状——见能力差异矩阵。",
         },
         {
           id: "core-capability",
@@ -200,7 +232,7 @@ export const zh: SiteContent = {
     },
     acquisition: {
       eyebrow: "Backend 获取",
-      title: "获取就绪 Backend 的三种方式",
+      title: "获取就绪 Backend",
       summary:
         "手动导入是一等路径且永远不会消失；AutoResolve 是其上的便利层；纯解析与检查保持无副作用。",
       sections: [
@@ -258,9 +290,88 @@ export const zh: SiteContent = {
           runtime: "Deno",
           substrate: "@sigma/pty-ffi (Rust portable-pty)",
           notes:
-            "仅以 npm 发布的包，构建期内嵌 @sigma/pty-ffi/noinit JavaScript 闭包与目标动态库。需要显式 Deno FFI 权限；没有默认下载或缓存。",
+            "仅以 npm 发布的包，构建期内嵌 @sigma/pty-ffi/noinit JavaScript 闭包与目标动态库。Deno 需以 -A 或 --allow-ffi --allow-read --allow-run 运行（terminate() 经 pgrep 发现子进程 pid）；没有默认下载或缓存。",
         },
       ],
+      capabilities: {
+        title: "引擎能力差异（各底座实际给到什么）",
+        summary:
+          "每条路由的公共契约完全一致；底层引擎并不相同。✓ 开箱即用，⚠ 需要选项或带有已声明的限制，✗ 不提供。",
+        headers: ["能力", "node-pty", "zigpty", "bun", "deno-ffi", "备注"],
+        rows: [
+          {
+            capability: "字节写入 pty.write(Uint8Array)",
+            nodePty: "✓",
+            zigpty: "⚠ writeDecode 选项",
+            bun: "✓",
+            deno: "✓",
+            notes:
+              "zigpty 底层 write 仅收字符串；writeDecode: true 安装有状态、分裂安全的解码器（fatal 策略整值拒绝）。",
+          },
+          {
+            capability: "原生文本输出（encoding utf8）",
+            nodePty: "✓",
+            zigpty: "✓",
+            bun: "✗",
+            deno: "✗",
+            notes: "bun 与 deno 双向字节原生；它们的 utf8 视图由 Core 增量解码（无损）。",
+          },
+          {
+            capability: "Windows 目标",
+            nodePty: "✓ ConPTY*",
+            zigpty: "✗ 失败关闭",
+            bun: "✓ ≥ 1.3.14*",
+            deno: "✗",
+            notes:
+              "*证据门控（见目录）；zigpty 在 win32 拒绝就绪——底层 pause()/resume() 在该平台是空操作。",
+          },
+          {
+            capability: "内核级输出背压",
+            nodePty: "✓（socket 暂停）",
+            zigpty: "✓（公开 pause/resume）",
+            bun: "✗（传输层无）",
+            deno: "✗（内部通道）",
+            notes:
+              "node-pty 暂停主 socket；zigpty 走公开 API；bun 无传输级流控；deno 的 FFI 读端排入内部缓冲。",
+          },
+          {
+            capability: "独立传输 EOF 信号",
+            nodePty: "✓（close 事件）",
+            zigpty: "⚠ 真信号 + 兜底",
+            bun: "⚠ 回调 + 兜底",
+            deno: "✓（读循环 done）",
+            notes:
+              "zigpty 在 exit 时接管主读流（真实 end/close），50ms 静默窗由迟到 chunk 续期兜底；bun 以 Terminal exit 回调为主、exited 合成为兜底。",
+          },
+          {
+            capability: "传输读错误可上报",
+            nodePty: "✓ unsupported",
+            zigpty: "✗ 不可区分",
+            bun: "✓",
+            deno: "✓ unsupported",
+            notes:
+              "zigpty 底层完全吞掉流错误；其余三条会把错误打到流上——读失败绝不会被静默当作干净 EOF。",
+          },
+          {
+            capability: "信号致死观察",
+            nodePty: "signal 名",
+            zigpty: "signal 名、exitCode 0",
+            bun: "signal 名、exitCode null",
+            deno: "exitCode 1、signal null",
+            notes: "各引擎报告形状不同；适配器逐字透传，绝不伪造引擎没有报告的值。",
+          },
+          {
+            capability: "底层分发形态",
+            nodePty: "平台子包",
+            zigpty: "零依赖随包（8 元组）",
+            bun: "运行时内置",
+            deno: "内嵌动态库",
+            notes: "deno 还需要 FFI 权限；zigpty 完全没有安装脚本；node-pty 只装当前平台的二进制。",
+          },
+        ],
+        closing:
+          "所有路由上 exec 失败都是退出观察（绝不是 spawn 异常）；各适配器的细节与选项见各包 README。",
+      },
     },
     metadata: {
       eyebrow: "元数据协议",
@@ -268,7 +379,7 @@ export const zh: SiteContent = {
       summary:
         "每个官方 Backend 包都暴露无副作用的 ./unipty.metadata 子路径。最小 schema 携带包身份、Backend 身份、工厂导出名、Core 协议，以及用于无副作用预过滤的目标声明——仅此而已。",
       targets:
-        "目标声明使用规范化的 Node/npm token：os 跟随 process.platform/npm os，arch 跟随 process.arch/npm cpu，libc 是原生证据独立的、仅 Linux 的轴。可选 provenance 描述实现种类与底层实现；元数据不含成熟度、能力或 verified 支持宣称。",
+        "目标声明使用规范化的 Node/npm token：os 跟随 process.platform/npm os，arch 跟随 process.arch/npm cpu，libc 是独立的、仅限 Linux 的原生证据轴。可选 provenance 描述实现种类与底层实现；元数据不含成熟度、能力或 verified 支持宣称。",
     },
     browserLimits: {
       eyebrow: "浏览器限制",
@@ -287,6 +398,11 @@ export const zh: SiteContent = {
         id: "overview",
         label: "总览",
         children: [{ id: "architecture", label: "架构" }],
+      },
+      {
+        id: "install",
+        label: "安装",
+        children: [{ id: "install-swap", label: "换引擎" }],
       },
       {
         id: "core",
@@ -313,7 +429,11 @@ export const zh: SiteContent = {
           { id: "acquisition-manifest", label: "打包 manifest" },
         ],
       },
-      { id: "routes", label: "官方路由" },
+      {
+        id: "routes",
+        label: "官方路由",
+        children: [{ id: "routes-capabilities", label: "引擎能力差异" }],
+      },
       {
         id: "metadata",
         label: "元数据协议",

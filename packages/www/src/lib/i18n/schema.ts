@@ -126,10 +126,36 @@ export interface DocsSection {
   body?: string;
 }
 
+export interface InstallRow {
+  runtime: string;
+  /** verbatim install command — data, not prose */
+  command: string;
+  engine: string;
+}
+
+export interface CapabilityRow {
+  capability: string;
+  nodePty: string;
+  zigpty: string;
+  bun: string;
+  deno: string;
+  notes: string;
+}
+
 export interface DocsContent {
   meta: { title: string; description: string };
   overview: { eyebrow: string; title: string; summary: string };
   architecture: readonly DocsCard[];
+  install: {
+    eyebrow: string;
+    title: string;
+    summary: string;
+    headers: readonly [string, string, string];
+    rows: readonly InstallRow[];
+    /** sentence fragments around the engine-swap sample: [lead]code[tail] */
+    swapLead: string;
+    swapTail: string;
+  };
   core: {
     eyebrow: string;
     title: string;
@@ -148,6 +174,15 @@ export interface DocsContent {
     summary: string;
     headers: readonly [string, string, string, string];
     rows: readonly HomeRoute[];
+    capabilities: {
+      /** sub-heading inside the routes family */
+      title: string;
+      summary: string;
+      headers: readonly [string, string, string, string, string, string];
+      rows: readonly CapabilityRow[];
+      /** closing note (exec-failure observation applies to every route) */
+      closing: string;
+    };
   };
   metadata: {
     eyebrow: string;

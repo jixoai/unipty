@@ -144,6 +144,39 @@ export const en: SiteContent = {
         body: "Factories or .ready() perform one-time runtime loading, connection, and capability negotiation before new UniPty(options). After that, spawn, write, resize, terminate, and close stay synchronous.",
       },
     ],
+    install: {
+      eyebrow: "Install",
+      title: "Core plus the engine you choose",
+      summary:
+        "The Backend package you install is the engine you get. Not sure which one? The capability matrix under the route table tells you exactly what each engine provides.",
+      headers: ["Runtime", "Install", "Engine"],
+      rows: [
+        {
+          runtime: "Node",
+          command: "npm install unipty @unipty/backend-node-pty",
+          engine: "third-party node-pty prebuilds",
+        },
+        {
+          runtime: "Node",
+          command: "npm install unipty @unipty/backend-zigpty",
+          engine: "third-party zigpty (Zig-built, zero-dependency)",
+        },
+        {
+          runtime: "Bun",
+          command: "bun add unipty @unipty/backend-bun",
+          engine: "runtime-native Bun.Terminal",
+        },
+        {
+          runtime: "Deno",
+          command: 'import via "npm:@unipty/backend-deno-sigma__pty-ffi"',
+          engine: "vendored @sigma/pty-ffi dynamic libraries",
+        },
+      ],
+      swapLead:
+        "Swapping engines is a one-line change — acquire a different Backend and everything else stays identical:",
+      swapTail:
+        "Engine-specific options (encoding, writeDecode, queue tuning, FFI permissions) and behavioral limits live in each package's README, linked from the route table below.",
+    },
     core: {
       eyebrow: "Core usage",
       title: "The public contract",
@@ -183,7 +216,7 @@ export const en: SiteContent = {
         {
           id: "core-exit",
           title: "Exit is an independent observation",
-          body: "exited is a repeatable promise for { exitCode, signal }. It is independent of transport EOF, stream cancellation, and close: an already-established exit observation survives close, and signal records the observed termination cause, not a general kill(signal) vocabulary.",
+          body: "exited is a repeatable promise for { exitCode, signal }. It is independent of transport EOF, stream cancellation, and close: an already-established exit observation survives close, and signal records the observed termination cause, not a general kill(signal) vocabulary. Exec failures surface as an exit observation (never a spawn exception) on every route; signalled deaths keep the engine's own shape — see the capability matrix for what each route reports.",
         },
         {
           id: "core-capability",
@@ -199,7 +232,7 @@ export const en: SiteContent = {
     },
     acquisition: {
       eyebrow: "Backend acquisition",
-      title: "Three ways to get a ready Backend",
+      title: "Acquiring a ready Backend",
       summary:
         "Manual import is the first-class path and never goes away; AutoResolve conveniences over it; pure resolution and inspection stay effect-free.",
       sections: [
@@ -243,7 +276,7 @@ export const en: SiteContent = {
           runtime: "Node",
           substrate: "zigpty (Zig-built NAPI prebuilds)",
           notes:
-            "A second Node route over the Zig-implemented substrate. Writes are text-native (bytes need the writeDecode option) and readiness fails closed on tuples without a prebuild instead of silently degrading to a pipe.",
+            "A second Node route over the Zig-implemented substrate. Writes are text-native (bytes need the writeDecode option) and readiness fails closed with the typed unsupported error on tuples without a prebuild, instead of silently degrading to a pipe.",
         },
         {
           pkg: "@unipty/backend-bun",
@@ -257,9 +290,91 @@ export const en: SiteContent = {
           runtime: "Deno",
           substrate: "@sigma/pty-ffi (Rust portable-pty)",
           notes:
-            "An npm-only package whose build vendors the @sigma/pty-ffi/noinit JavaScript closure and targeted dynamic libraries. Requires explicit Deno FFI permission; no default download or cache.",
+            "An npm-only package whose build vendors the @sigma/pty-ffi/noinit JavaScript closure and targeted dynamic libraries. Run Deno with -A or --allow-ffi --allow-read --allow-run (terminate() discovers the child pid via pgrep); no default download or cache.",
         },
       ],
+      capabilities: {
+        title: "Capability differences (what the engines actually give you)",
+        summary:
+          "The public contract is identical on every route; the engines underneath are not. ✓ works out of the box, ⚠ needs an option or carries a documented limitation, ✗ not provided.",
+        headers: ["Capability", "node-pty", "zigpty", "bun", "deno-ffi", "Notes"],
+        rows: [
+          {
+            capability: "Byte writes pty.write(Uint8Array)",
+            nodePty: "✓",
+            zigpty: "⚠ writeDecode option",
+            bun: "✓",
+            deno: "✓",
+            notes:
+              "zigpty's substrate write is string-only; writeDecode: true installs a stateful, split-safe decoder (fatal policies reject the whole value).",
+          },
+          {
+            capability: 'Native text output (encoding "utf8")',
+            nodePty: "✓",
+            zigpty: "✓",
+            bun: "✗",
+            deno: "✗",
+            notes:
+              "bun and deno are byte-native both ways; their utf8 views are decoded incrementally by Core (lossless).",
+          },
+          {
+            capability: "Windows target",
+            nodePty: "✓ ConPTY*",
+            zigpty: "✗ fail-closed",
+            bun: "✓ ≥ 1.3.14*",
+            deno: "✗",
+            notes:
+              "*evidence-gated (see the catalog); zigpty refuses readiness on win32 because the substrate's pause()/resume() are no-ops there.",
+          },
+          {
+            capability: "Kernel-level output backpressure",
+            nodePty: "✓ socket pause",
+            zigpty: "✓ public pause/resume",
+            bun: "✗ none at transport",
+            deno: "✗ internal channel",
+            notes:
+              "node-pty pauses the master socket; zigpty pauses via its public API; bun documents no transport-level flow control; deno's FFI reader drains into an internal buffer.",
+          },
+          {
+            capability: "Independent transport-EOF signal",
+            nodePty: "✓ close event",
+            zigpty: "⚠ real + fallback",
+            bun: "⚠ callback + fallback",
+            deno: "✓ read-loop done",
+            notes:
+              "zigpty repossesses the master stream at exit (real end/close) with a 50 ms late-chunk-extending fallback; bun's Terminal exit callback is primary, exited-synthesis is the fallback.",
+          },
+          {
+            capability: "Transport read errors surfaced",
+            nodePty: "✓ unsupported",
+            zigpty: "✗ indistinguishable",
+            bun: "✓",
+            deno: "✓ unsupported",
+            notes:
+              "the zigpty substrate swallows stream errors entirely; the other three error the stream so a read failure is never silently presented as clean EOF.",
+          },
+          {
+            capability: "Signalled-death observation",
+            nodePty: "signal name",
+            zigpty: "signal name, exitCode 0",
+            bun: "signal name, exitCode null",
+            deno: "exitCode 1, signal null",
+            notes:
+              "each engine reports a different shape; adapters pass it through verbatim and never fabricate a value the engine did not report.",
+          },
+          {
+            capability: "Substrate distribution",
+            nodePty: "platform sub-packages",
+            zigpty: "zero-dep in-tarball (8 tuples)",
+            bun: "built into the runtime",
+            deno: "vendored dynamic libraries",
+            notes:
+              "deno additionally needs FFI permissions; zigpty ships no install scripts at all; node-pty installs only the current platform's binary.",
+          },
+        ],
+        closing:
+          "Exec failures are an exit observation (never a spawn exception) on every route. Per-adapter details and options live in each package's README.",
+      },
     },
     metadata: {
       eyebrow: "Metadata protocol",
@@ -289,6 +404,11 @@ export const en: SiteContent = {
         children: [{ id: "architecture", label: "Architecture" }],
       },
       {
+        id: "install",
+        label: "Install",
+        children: [{ id: "install-swap", label: "Engine swap" }],
+      },
+      {
         id: "core",
         label: "Core usage",
         children: [
@@ -313,7 +433,11 @@ export const en: SiteContent = {
           { id: "acquisition-manifest", label: "Bundled manifest" },
         ],
       },
-      { id: "routes", label: "Official routes" },
+      {
+        id: "routes",
+        label: "Official routes",
+        children: [{ id: "routes-capabilities", label: "Capability differences" }],
+      },
       {
         id: "metadata",
         label: "Metadata protocol",
