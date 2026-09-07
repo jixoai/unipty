@@ -19,9 +19,10 @@ const routes = {
   "node-pty": "@unipty/backend-node-pty",
   bun: "@unipty/backend-bun",
   "deno-sigma__pty-ffi": "@unipty/backend-deno-sigma__pty-ffi",
+  zigpty: "@unipty/backend-zigpty",
 };
 if (!(route in routes)) {
-  console.error(`usage: node pack-and-install.mjs <node-pty|bun|deno-sigma__pty-ffi>`);
+  console.error(`usage: node pack-and-install.mjs <node-pty|bun|deno-sigma__pty-ffi|zigpty>`);
   process.exit(1);
 }
 const backendPackage = routes[route];

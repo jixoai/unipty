@@ -9,7 +9,7 @@
  * installed public package exports.
  *
  * Usage:
- *   node runners/run-profile.ts --backend <mock|node-pty|bun|deno-sigma__pty-ffi>
+ *   node runners/run-profile.ts --backend <mock|node-pty|bun|deno-sigma__pty-ffi|zigpty>
  *       [--out <report.json>]
  *       [--emit-evidence] [--evidence-out <evidence.json>] [--report-ref <url-or-path>]
  *
@@ -41,6 +41,7 @@ const ROUTE_PACKAGES: Readonly<Record<string, string>> = {
   "node-pty": "@unipty/backend-node-pty",
   bun: "@unipty/backend-bun",
   "deno-sigma__pty-ffi": "@unipty/backend-deno-sigma__pty-ffi",
+  zigpty: "@unipty/backend-zigpty",
 };
 
 interface CliOptions {
@@ -75,7 +76,7 @@ function parseArgs(argv: readonly string[]): CliOptions {
   }
   if (backendId === undefined) {
     throw new Error(
-      "usage: run-profile.ts --backend <mock|node-pty|bun|deno-sigma__pty-ffi> [--out <path>] [--emit-evidence] [--evidence-out <path>] [--report-ref <ref>]",
+      "usage: run-profile.ts --backend <mock|node-pty|bun|deno-sigma__pty-ffi|zigpty> [--out <path>] [--emit-evidence] [--evidence-out <path>] [--report-ref <ref>]",
     );
   }
   const packageName = ROUTE_PACKAGES[backendId];

@@ -18,6 +18,7 @@
     "@unipty/backend-bun": "workspace:*",
     "@unipty/backend-deno-sigma__pty-ffi": "workspace:*",
     "@unipty/backend-node-pty": "workspace:*",
+    "@unipty/backend-zigpty": "workspace:*",
     "@unipty/helper-backend": "workspace:*",
     "unipty": "workspace:*"
   }

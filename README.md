@@ -81,14 +81,16 @@ Ready Backend ── one injected, already-ready object per UniPty instance
 Backend Endpoint (Core-private) ── ordered tagged native chunks, write
    │             readiness/drain, resize, non-cascading close/terminate,
    ▼             repeatably-awaitable exit observation
-real PTY on node-pty / Bun.Terminal / @sigma/pty-ffi
+real PTY on node-pty / zigpty / Bun.Terminal / @sigma/pty-ffi
 ```
 
 Design principles worth knowing before reading the code:
 
 - **One contract, three runtimes.** The public API never references a
-  runtime; the first-phase deliverable is all three official routes
-  together — implementation, CI coverage, and release acceptance.
+  runtime; the first-phase deliverable was all three runtime routes
+  together — implementation, CI coverage, and release acceptance — and the
+  route registry is keyed by substrate, so a runtime may grow additional
+  official routes (`zigpty` joined Node in the second phase).
 - **Substrate honesty.** Every adapter documents its substrate's real
   behaviour (kill-and-close primitives, unbounded internal buffers, signal
   opacity) instead of papering over it; support claims are evidence-gated.
@@ -103,15 +105,16 @@ Deep dives: [架构设计.md](架构设计.md) (architecture) ·
 [贡献规范.md](贡献规范.md) (contributing) ·
 [capability specs](openspec/specs) (authoritative requirements).
 
-## Official first-phase routes
+## Official routes
 
-| Package                                                                       | Runtime | Substrate (stated honestly)                                                                        |
-| ----------------------------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node    | third-party `node-pty` via the `@lydell/node-pty` prebuilt distribution                            |
-| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun     | runtime-native `Bun.Terminal` (≥ 1.3.13 POSIX, ≥ 1.3.14 Windows)                                   |
-| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno    | third-party `@sigma/pty-ffi` over Rust `portable-pty`, vendored into a self-contained npm artifact |
+| Package                                                                       | Runtime | Substrate (stated honestly)                                                                                     |
+| ----------------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------- |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node    | third-party `node-pty` via the `@lydell/node-pty` prebuilt distribution                                         |
+| [`@unipty/backend-zigpty`](packages/backend-zigpty)                           | Node    | third-party `zigpty` — Zig-built NAPI prebuilds bundled in the npm tarball (hard native gate, no pipe fallback) |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun     | runtime-native `Bun.Terminal` (≥ 1.3.13 POSIX, ≥ 1.3.14 Windows)                                                |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno    | third-party `@sigma/pty-ffi` over Rust `portable-pty`, vendored into a self-contained npm artifact              |
 
-The Node route adapts a third-party library — it is not a native Node runtime
+The Node routes adapt third-party libraries — neither is a native Node runtime
 API, and the docs never claim otherwise. Deno is runtime metadata for the
 last route, not its implementation identity.
 
@@ -123,6 +126,7 @@ last route, not its implementation identity.
 | [`@unipty/backend`](packages/backend)                                         | [npm](https://www.npmjs.com/package/@unipty/backend)                     | Acquisition convenience: `resolveUniPtyBackend`, `inspectUniPtyBackend`, `autoResolveUniPtyBackend`, manifest constructor |
 | [`@unipty/helper-backend`](packages/helper-backend)                           | [npm](https://www.npmjs.com/package/@unipty/helper-backend)              | Build-time manifest generator (`unipty-helper-backend manifest`)                                                          |
 | [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | [npm](https://www.npmjs.com/package/@unipty/backend-node-pty)            | Official Node route over third-party `node-pty`                                                                           |
+| [`@unipty/backend-zigpty`](packages/backend-zigpty)                           | [npm](https://www.npmjs.com/package/@unipty/backend-zigpty)              | Official Node route over third-party `zigpty` (Zig-built NAPI prebuilds)                                                  |
 | [`@unipty/backend-bun`](packages/backend-bun)                                 | [npm](https://www.npmjs.com/package/@unipty/backend-bun)                 | Official Bun route over runtime-native `Bun.Terminal`                                                                     |
 | [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | [npm](https://www.npmjs.com/package/@unipty/backend-deno-sigma__pty-ffi) | Official Deno route over vendored `@sigma/pty-ffi` (self-contained npm artifact)                                          |
 | [`@unipty/conformance`](packages/conformance)                                 | — (private)                                                              | Installed-package conformance harness, evidence writer, release catalog aggregator                                        |
@@ -200,6 +204,7 @@ pnpm --filter @unipty/conformance run conformance --backend node-pty --emit-evid
 ```sh
 corepack pnpm install
 pnpm build && pnpm typecheck && pnpm test
+pnpm --filter @unipty/backend-zigpty test   # zigpty suite (real PTYs)
 pnpm --filter @unipty/backend-bun test      # Bun suite (needs Bun)
 cd packages/backend-deno-sigma__pty-ffi && deno test -A test/   # Deno suite
 pnpm check:arch                             # package-graph ownership rules

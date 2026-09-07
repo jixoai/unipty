@@ -109,6 +109,7 @@ const routes = {
   node: "backend-node-pty",
   bun: "backend-bun",
   deno: "backend-deno-sigma__pty-ffi",
+  zigpty: "backend-zigpty",
 };
 execFileSync("corepack", ["pnpm", "build"], { cwd: repoRoot, stdio: "inherit" });
 for (const [key, dir] of Object.entries(routes)) {

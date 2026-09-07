@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]): string {
   return twMerge(clsx(inputs));
 }
 
-export type BackendId = "node-pty" | "bun" | "deno-sigma__pty-ffi";
+export type BackendId = "node-pty" | "zigpty" | "bun" | "deno-sigma__pty-ffi";
 
 export const BACKENDS: ReadonlyArray<{
   id: BackendId;
@@ -18,6 +18,12 @@ export const BACKENDS: ReadonlyArray<{
     label: "Node",
     runtime: "node",
     substrate: "node-pty via @lydell/node-pty",
+  },
+  {
+    id: "zigpty",
+    label: "Node (zigpty)",
+    runtime: "node",
+    substrate: "zigpty (Zig-built NAPI prebuilds)",
   },
   {
     id: "bun",

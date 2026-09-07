@@ -21,6 +21,7 @@ import { UniPty } from "unipty";
 
 const BACKEND_FACTORIES = {
   "node-pty": () => import("@unipty/backend-node-pty").then((m) => m.createNodePtyBackend()),
+  zigpty: () => import("@unipty/backend-zigpty").then((m) => m.createZigptyBackend()),
   bun: () => import("@unipty/backend-bun").then((m) => m.createBunBackend()),
   "deno-sigma__pty-ffi": () =>
     import("@unipty/backend-deno-sigma__pty-ffi").then((m) => m.createDenoSigmaPtyFfiBackend()),

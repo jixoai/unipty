@@ -66,6 +66,19 @@ importers:
         specifier: workspace:*
         version: link:../backend
 
+  packages/backend-zigpty:
+    dependencies:
+      unipty:
+        specifier: workspace:*
+        version: link:../unipty
+      zigpty:
+        specifier: 0.2.1
+        version: 0.2.1
+    devDependencies:
+      '@unipty/backend':
+        specifier: workspace:*
+        version: link:../backend
+
   packages/conformance:
     devDependencies:
       '@unipty/backend':
@@ -80,6 +93,9 @@ importers:
       '@unipty/backend-node-pty':
         specifier: workspace:*
         version: link:../backend-node-pty
+      '@unipty/backend-zigpty':
+        specifier: workspace:*
+        version: link:../backend-zigpty
       '@unipty/helper-backend':
         specifier: workspace:*
         version: link:../helper-backend
@@ -141,6 +157,9 @@ importers:
       '@unipty/backend-node-pty':
         specifier: workspace:*
         version: link:../backend-node-pty
+      '@unipty/backend-zigpty':
+        specifier: workspace:*
+        version: link:../backend-zigpty
       '@vitejs/plugin-react':
         specifier: ^6.1.0
         version: 6.1.0(vite@8.2.2(@types/node@24.13.3)(jiti@2.7.0))
@@ -1810,6 +1829,9 @@ packages:
   yuku-parser@0.8.7:
     resolution: {integrity: sha512-vRD9nwt4L3aYpxNqeSC4WqLv58xrXef0Ong1Mc45CTXTIpvLafx7JO05sczmQZwdLEZvywrLOGdNC5+Rp5N1BQ==}
 
+  zigpty@0.2.1:
+    resolution: {integrity: sha512-MR9JqJx2wf5f4wz8zpx050AlqrmWeIW+1h0SO5iEyhG3HFRjY5luC3szS2ux2EGuPjE5OU9ZAuiCBeMWBTrqZw==}
+
   zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
 
@@ -3079,5 +3101,7 @@ snapshots:
       '@yuku-parser/binding-linux-x64-musl': 0.8.7
       '@yuku-parser/binding-win32-arm64': 0.8.7
       '@yuku-parser/binding-win32-x64': 0.8.7
+
+  zigpty@0.2.1: {}
 
   zimmerframe@1.1.4: {}

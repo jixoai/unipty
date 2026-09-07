@@ -12,7 +12,7 @@
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
-import { aggregateCatalog, CatalogError } from "../src/catalog.ts";
+import { aggregateCatalog, CatalogError, OFFICIAL_ROUTE_KEYS } from "../src/catalog.ts";
 
 interface CliOptions {
   readonly evidence: string[];
@@ -70,7 +70,7 @@ function main(): number {
     mkdirSync(dirname(options.out), { recursive: true });
     writeFileSync(options.out, result.json, "utf8");
     process.stderr.write(
-      `[@unipty/conformance] catalog written: ${options.out} (routes: node=${result.coverage.node} bun=${result.coverage.bun} deno=${result.coverage.deno})\n`,
+      `[@unipty/conformance] catalog written: ${options.out} (route coverage: ${OFFICIAL_ROUTE_KEYS.map((route) => `${route}=${result.coverage[route]}`).join(" ")})\n`,
     );
     return 0;
   } catch (error) {

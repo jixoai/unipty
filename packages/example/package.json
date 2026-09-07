@@ -32,6 +32,7 @@
     "@unipty/backend-bun": "workspace:*",
     "@unipty/backend-deno-sigma__pty-ffi": "workspace:*",
     "@unipty/backend-node-pty": "workspace:*",
+    "@unipty/backend-zigpty": "workspace:*",
     "@vitejs/plugin-react": "^6.1.0",
     "tailwindcss": "^4.3.3",
     "unipty": "workspace:*",

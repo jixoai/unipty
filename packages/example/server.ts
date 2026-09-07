@@ -5,8 +5,9 @@
  *
  * Original request (2026-08-20): `pnpm example` boots this server; adding a
  * tab picks a backend and the terminal talks over a WebSocket. The routing
- * table below is the demo's core: node-pty → node worker, bun → bun worker,
- * deno-sigma__pty-ffi → deno worker. Every worker is the same runtime-neutral
+ * table below is the demo's core: node-pty → node worker, zigpty → node
+ * worker, bun → bun worker, deno-sigma__pty-ffi → deno worker. Every worker is
+ * the same runtime-neutral
  * source (workers/pty-worker.mjs); only the hosting runtime differs.
  *
  * WS wire protocol (mirrors the frontend TerminalPane):
@@ -26,6 +27,7 @@ const WORKER = join(ROOT, "workers", "pty-worker.mjs");
 /** Backend → the runtime executable that must host its worker. */
 const RUNTIME_FOR_BACKEND: Record<string, { command: string; args: string[] }> = {
   "node-pty": { command: "node", args: [WORKER] },
+  zigpty: { command: "node", args: [WORKER] },
   bun: { command: "bun", args: [WORKER] },
   "deno-sigma__pty-ffi": { command: "deno", args: ["run", "-A", "--no-check", WORKER] },
 };
@@ -218,5 +220,5 @@ if (!existsSync(DIST)) {
 
 console.log(`[example] UniPty example → http://localhost:${server.port}`);
 console.log(
-  `[example] backend routing: node-pty→node, bun→bun, deno-sigma__pty-ffi→deno (worker: workers/pty-worker.mjs)`,
+  `[example] backend routing: node-pty→node, zigpty→node, bun→bun, deno-sigma__pty-ffi→deno (worker: workers/pty-worker.mjs)`,
 );

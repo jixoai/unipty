@@ -63,21 +63,23 @@ function evidenceRecord(
   };
 }
 
-const THREE_SNAPSHOTS = (): MetadataInput[] => [
-  rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+const FOUR_SNAPSHOTS = (): MetadataInput[] => [
+  rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
   rawMetadata(OFFICIAL_ROUTE_PACKAGES.bun, "bun"),
-  rawMetadata(OFFICIAL_ROUTE_PACKAGES.deno, "deno"),
+  rawMetadata(OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"], "deno"),
+  rawMetadata(OFFICIAL_ROUTE_PACKAGES.zigpty, "node"),
 ];
 
-const THREE_RECORDS = (): VerificationEvidenceLike[] => [
-  evidenceRecord(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+const FOUR_RECORDS = (): VerificationEvidenceLike[] => [
+  evidenceRecord(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
   evidenceRecord(OFFICIAL_ROUTE_PACKAGES.bun, "bun"),
-  evidenceRecord(OFFICIAL_ROUTE_PACKAGES.deno, "deno"),
+  evidenceRecord(OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"], "deno"),
+  evidenceRecord(OFFICIAL_ROUTE_PACKAGES.zigpty, "node"),
 ];
 
 function aggregateOk(
-  evidence: readonly VerificationEvidenceLike[] = THREE_RECORDS(),
-  metadata: readonly MetadataInput[] = THREE_SNAPSHOTS(),
+  evidence: readonly VerificationEvidenceLike[] = FOUR_RECORDS(),
+  metadata: readonly MetadataInput[] = FOUR_SNAPSHOTS(),
 ): ReturnType<typeof aggregateCatalog> {
   return aggregateCatalog({
     evidenceRecords: evidence,
@@ -98,9 +100,14 @@ function expectCatalogError(fn: () => unknown): CatalogError {
 }
 
 describe("aggregateCatalog", () => {
-  it("aggregates a valid three-route release", () => {
+  it("aggregates a valid four-route release (two node-runtime routes)", () => {
     const result = aggregateOk();
-    expect(result.coverage).toEqual({ node: 1, bun: 1, deno: 1 });
+    expect(result.coverage).toEqual({
+      "node-pty": 1,
+      bun: 1,
+      "deno-sigma__pty-ffi": 1,
+      zigpty: 1,
+    });
     expect(result.catalog.release).toEqual({
       tag: "v0.1.0",
       commit: COMMIT,
@@ -111,22 +118,23 @@ describe("aggregateCatalog", () => {
   it("orders deterministically regardless of input order (ordering snapshot)", () => {
     const forward = aggregateOk();
     const reversed = aggregateCatalog({
-      evidenceRecords: [...THREE_RECORDS()].reverse(),
-      metadataSnapshots: [...THREE_SNAPSHOTS()].reverse(),
+      evidenceRecords: [...FOUR_RECORDS()].reverse(),
+      metadataSnapshots: [...FOUR_SNAPSHOTS()].reverse(),
       commit: COMMIT,
       releaseTag: "v0.1.0",
     });
     expect(reversed.json).toBe(forward.json);
     expect(forward.catalog.metadata.map((entry) => entry.packageName)).toEqual([
       OFFICIAL_ROUTE_PACKAGES.bun,
-      OFFICIAL_ROUTE_PACKAGES.deno,
-      OFFICIAL_ROUTE_PACKAGES.node,
+      OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"],
+      OFFICIAL_ROUTE_PACKAGES["node-pty"],
+      OFFICIAL_ROUTE_PACKAGES.zigpty,
     ]);
     expect(new Set(forward.json)).toBeTruthy();
   });
 
   it("serializes with canonical key order regardless of input key order", () => {
-    const shuffled = THREE_RECORDS().map((record) => {
+    const shuffled = FOUR_RECORDS().map((record) => {
       const keys = Object.keys(record).reverse();
       const out: Record<string, unknown> = {};
       for (const key of keys) out[key] = (record as unknown as Record<string, unknown>)[key];
@@ -134,7 +142,7 @@ describe("aggregateCatalog", () => {
     });
     const shuffledResult = aggregateCatalog({
       evidenceRecords: shuffled,
-      metadataSnapshots: THREE_SNAPSHOTS(),
+      metadataSnapshots: FOUR_SNAPSHOTS(),
       commit: COMMIT,
       releaseTag: "v0.1.0",
     });
@@ -143,14 +151,14 @@ describe("aggregateCatalog", () => {
   });
 
   it("rejects duplicate evidence records for the same identity", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records.push(records[0] as VerificationEvidenceLike);
     const error = expectCatalogError(() => aggregateOk(records));
     expect(error.problems.join(" ")).toContain("duplicate evidence record");
   });
 
   it("rejects contradictory records for the same evidence identity", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     const original = records[0] as VerificationEvidenceLike;
     records.push({
       ...original,
@@ -161,15 +169,15 @@ describe("aggregateCatalog", () => {
   });
 
   it("accepts distinct identities on the same package (different tuples)", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     const base = records[0] as VerificationEvidenceLike;
     records.push({ ...base, tuple: { os: "linux", arch: "x64", libc: "glibc" } });
     const result = aggregateOk(records);
-    expect(result.coverage.node).toBe(2);
+    expect(result.coverage["node-pty"]).toBe(2);
   });
 
   it("rejects records tested on the wrong commit", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records[0] = {
       ...(records[0] as VerificationEvidenceLike),
       commit: "ffffffffffffffffffffffffffffffffffffffff",
@@ -179,15 +187,26 @@ describe("aggregateCatalog", () => {
   });
 
   it("rejects a release with a missing official route", () => {
-    const records = THREE_RECORDS().filter(
-      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES.deno,
+    const records = FOUR_RECORDS().filter(
+      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"],
     );
     const error = expectCatalogError(() => aggregateOk(records));
-    expect(error.problems.join(" ")).toContain("missing: deno");
+    expect(error.problems.join(" ")).toContain("missing: deno-sigma__pty-ffi");
+  });
+
+  it("independently gates a second node-runtime route", () => {
+    // zigpty evidence missing while the other node route passed: the gate
+    // keys routes by substrate identity, so sharing a runtime never lets
+    // one route's pass stand in for another's.
+    const records = FOUR_RECORDS().filter(
+      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES.zigpty,
+    );
+    const error = expectCatalogError(() => aggregateOk(records));
+    expect(error.problems.join(" ")).toContain("missing: zigpty");
   });
 
   it("rejects malformed evidence records", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records[0] = {
       ...(records[0] as VerificationEvidenceLike),
       evidenceVersion: 2,
@@ -197,7 +216,7 @@ describe("aggregateCatalog", () => {
   });
 
   it("rejects Linux evidence without libc", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records[0] = {
       ...(records[0] as VerificationEvidenceLike),
       tuple: { os: "linux", arch: "x64" },
@@ -207,7 +226,7 @@ describe("aggregateCatalog", () => {
   });
 
   it("rejects evidence contradicting its metadata snapshot identity", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records[0] = {
       ...(records[0] as VerificationEvidenceLike),
       backend: { ...(records[0] as VerificationEvidenceLike).backend, packageVersion: "9.9.9" },
@@ -217,23 +236,23 @@ describe("aggregateCatalog", () => {
   });
 
   it("rejects evidence for a package without a metadata snapshot", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records.push(evidenceRecord("@unipty/community-backend" as never, "node"));
     const error = expectCatalogError(() => aggregateOk(records));
     expect(error.problems.join(" ")).toContain("has no metadata snapshot");
   });
 
   it("rejects duplicate metadata snapshots for one package", () => {
-    const snapshots = THREE_SNAPSHOTS();
+    const snapshots = FOUR_SNAPSHOTS();
     const first = snapshots[0];
     if (first === undefined) throw new Error("test fixture incomplete");
     snapshots.push(first);
-    const error = expectCatalogError(() => aggregateOk(THREE_RECORDS(), snapshots));
+    const error = expectCatalogError(() => aggregateOk(FOUR_RECORDS(), snapshots));
     expect(error.problems.join(" ")).toContain("duplicate metadata identity");
   });
 
   it("rejects contradictory suite versions across records", () => {
-    const records = THREE_RECORDS();
+    const records = FOUR_RECORDS();
     records[0] = {
       ...(records[0] as VerificationEvidenceLike),
       suite: { id: "@unipty/conformance", version: "0.2.0" },
@@ -246,7 +265,7 @@ describe("aggregateCatalog", () => {
 describe("validateUniPtyBackendMetadataSnapshot", () => {
   it("rejects forbidden support/identity claims", () => {
     const invalid = {
-      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
       official: true,
     } as unknown;
     const validation = validateUniPtyBackendMetadataSnapshot(invalid);
@@ -255,10 +274,13 @@ describe("validateUniPtyBackendMetadataSnapshot", () => {
   });
 
   it("rejects an empty or duplicated protocol.core", () => {
-    const empty = { ...rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"), protocol: { core: [] } };
+    const empty = {
+      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
+      protocol: { core: [] },
+    };
     expect(validateUniPtyBackendMetadataSnapshot(empty).ok).toBe(false);
     const dup = {
-      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
       protocol: { core: [1, 1] },
     };
     expect(validateUniPtyBackendMetadataSnapshot(dup).ok).toBe(false);
@@ -266,12 +288,12 @@ describe("validateUniPtyBackendMetadataSnapshot", () => {
 
   it("rejects unknown target runtimes and extra backend keys", () => {
     const badRuntime = {
-      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
       targets: [{ runtime: "quickjs" }],
     };
     expect(validateUniPtyBackendMetadataSnapshot(badRuntime).ok).toBe(false);
     const extraBackend = {
-      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+      ...rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
       backend: { id: "node-pty", factoryExport: "createNodePtyBackend", maturity: "stable" },
     };
     const validation = validateUniPtyBackendMetadataSnapshot(extraBackend);
@@ -290,12 +312,12 @@ describe("derivePresentationState", () => {
       suite: { id: "@unipty/conformance", version: "0.1.0" },
     },
     metadata: [
-      snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES.node, "node")),
+      snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node")),
       snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES.bun, "bun")),
-      snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES.deno, "deno")),
+      snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"], "deno")),
     ],
     evidence: [
-      evidenceRecord(OFFICIAL_ROUTE_PACKAGES.node, "node"),
+      evidenceRecord(OFFICIAL_ROUTE_PACKAGES["node-pty"], "node"),
       evidenceRecord(OFFICIAL_ROUTE_PACKAGES.bun, "bun", {
         runtime: { name: "bun", version: "1.3.14" },
       }),
@@ -305,6 +327,7 @@ describe("derivePresentationState", () => {
   it("derives verified for an exact evidence tuple", () => {
     expect(
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "darwin",
         arch: "arm64",
@@ -315,6 +338,7 @@ describe("derivePresentationState", () => {
   it("never widens an exact runtime version into a range", () => {
     expect(
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.1" },
         os: "darwin",
         arch: "arm64",
@@ -325,6 +349,7 @@ describe("derivePresentationState", () => {
   it("derives declared-unverified when the target matches but evidence is absent", () => {
     expect(
       derivePresentationState(catalog, {
+        route: "deno-sigma__pty-ffi",
         runtime: { name: "deno", version: "1.0.0" },
         os: "darwin",
         arch: "arm64",
@@ -335,6 +360,7 @@ describe("derivePresentationState", () => {
   it("derives not-targeted when the release metadata excludes the tuple", () => {
     expect(
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "win32",
         arch: "x64",
@@ -351,8 +377,37 @@ describe("derivePresentationState", () => {
             (entry) => entry.packageName !== OFFICIAL_ROUTE_PACKAGES.bun,
           ),
         },
-        { runtime: { name: "bun", version: "1.3.14" }, os: "darwin", arch: "arm64" },
+        { route: "bun", runtime: { name: "bun", version: "1.3.14" }, os: "darwin", arch: "arm64" },
       ),
+    ).toBe("not-targeted");
+  });
+
+  it("derives per route identity when two routes share one runtime", () => {
+    const withZigpty: ReleaseCatalog = {
+      ...catalog,
+      metadata: [
+        ...catalog.metadata,
+        snapshotOf(rawMetadata(OFFICIAL_ROUTE_PACKAGES.zigpty, "node")),
+      ],
+    };
+    // The node-pty route has exact evidence on this tuple, but the query
+    // names the zigpty route: a runtime-shared pass never stands in.
+    expect(
+      derivePresentationState(withZigpty, {
+        route: "zigpty",
+        runtime: { name: "node", version: "1.0.0" },
+        os: "darwin",
+        arch: "arm64",
+      }),
+    ).toBe("declared-unverified");
+    // Absent from the catalog entirely: not-targeted, still independent.
+    expect(
+      derivePresentationState(catalog, {
+        route: "zigpty",
+        runtime: { name: "node", version: "1.0.0" },
+        os: "darwin",
+        arch: "arm64",
+      }),
     ).toBe("not-targeted");
   });
 
@@ -379,6 +434,7 @@ describe("derivePresentationState", () => {
     };
     expect(
       derivePresentationState(linuxCatalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "linux",
         arch: "x64",
@@ -387,6 +443,7 @@ describe("derivePresentationState", () => {
     ).toBe("verified");
     expect(
       derivePresentationState(linuxCatalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "linux",
         arch: "x64",
@@ -398,16 +455,19 @@ describe("derivePresentationState", () => {
   it("has exactly three presentation states (no failure state)", () => {
     const observed: PresentationState[] = [
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "darwin",
         arch: "arm64",
       }),
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.1" },
         os: "darwin",
         arch: "arm64",
       }),
       derivePresentationState(catalog, {
+        route: "node-pty",
         runtime: { name: "node", version: "1.0.0" },
         os: "win32",
         arch: "x64",

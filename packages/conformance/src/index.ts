@@ -70,6 +70,7 @@ export {
   CATALOG_VERSION,
   CatalogError,
   derivePresentationState,
+  OFFICIAL_ROUTE_KEYS,
   OFFICIAL_ROUTE_PACKAGES,
   serializeDeterministicJson,
 } from "./catalog.ts";
@@ -77,6 +78,7 @@ export type {
   AggregateCatalogInput,
   AggregateCatalogResult,
   CatalogMetadataSnapshot,
+  OfficialRouteId,
   PresentationQuery,
   PresentationState,
   ReleaseCatalog,

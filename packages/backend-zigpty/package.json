@@ -1,0 +1,43 @@
+{
+  "name": "@unipty/backend-zigpty",
+  "version": "0.2.0",
+  "description": "Official UniPty Backend adapting the third-party zigpty substrate (Zig-built NAPI prebuilds) for Node runtimes.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jixoai/unipty",
+    "directory": "packages/backend-zigpty"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "README-zh.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "imports": {
+    "#package.json": "./package.json"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./unipty.metadata": {
+      "types": "./dist/unipty.metadata.d.ts",
+      "import": "./dist/unipty.metadata.js"
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "unipty": "workspace:*",
+    "zigpty": "0.2.1"
+  },
+  "devDependencies": {
+    "@unipty/backend": "workspace:*"
+  }
+}

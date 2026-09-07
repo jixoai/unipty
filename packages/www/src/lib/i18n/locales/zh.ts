@@ -41,7 +41,7 @@ export const zh: SiteContent = {
       titleTail: "。",
       badges: ["单一 Core API", "可替换 Backend", "证据门控支持", "MIT"],
       summary:
-        "用于伪终端的单一 Core API。自带原生底层——node-pty、Bun.Terminal 或 @sigma/pty-ffi——经由开发者显式选择、可替换的 Backend 接入。支持声明只来自发布证据目录，绝不来自元数据。",
+        "用于伪终端的单一 Core API。自带原生底层——node-pty、zigpty、Bun.Terminal 或 @sigma/pty-ffi——经由开发者显式选择、可替换的 Backend 接入。支持声明只来自发布证据目录，绝不来自元数据。",
       docsLabel: "阅读文档",
       githubLabel: "GitHub ↗",
       copyLabel: "复制",
@@ -65,7 +65,7 @@ export const zh: SiteContent = {
       {
         id: "replaceable-backends",
         title: "Backend 可替换",
-        body: "原生底层——node-pty、Bun.Terminal、@sigma/pty-ffi——藏在 Backend Endpoint 接缝之后。持久化或远程主机以 Backend 的形式到来，而不是第二套插件生命周期。",
+        body: "原生底层——node-pty、zigpty、Bun.Terminal、@sigma/pty-ffi——藏在 Backend Endpoint 接缝之后。持久化或远程主机以 Backend 的形式到来，而不是第二套插件生命周期。",
       },
       {
         id: "honest-backpressure",
@@ -91,6 +91,13 @@ export const zh: SiteContent = {
           substrate: "node-pty (via @lydell/node-pty prebuilds)",
           notes:
             "第三方原生插件，随包附带预构建二进制。Node 没有原生 PTY API；本路由如实封装生态标准底层——绝不宣称适配的是 Node 运行时原生 API。",
+        },
+        {
+          pkg: "@unipty/backend-zigpty",
+          runtime: "Node",
+          substrate: "zigpty (Zig-built NAPI prebuilds)",
+          notes:
+            "第二条 Node 路由，底层为 Zig 实现：八个元组的预编译直接随 tarball 分发、零安装脚本，并有硬性原生门禁——绝不回退到管道伪 PTY。",
         },
         {
           pkg: "@unipty/backend-bun",
@@ -231,6 +238,13 @@ export const zh: SiteContent = {
           substrate: "node-pty via @lydell/node-pty prebuilds",
           notes:
             "第三方原生插件，随包附带预构建二进制。Node 没有原生 PTY API；本路由如实封装生态标准底层，而不是假装不然。",
+        },
+        {
+          pkg: "@unipty/backend-zigpty",
+          runtime: "Node",
+          substrate: "zigpty (Zig-built NAPI prebuilds)",
+          notes:
+            "第二条 Node 路由，底层为 Zig 实现。写入是文本原生的（字节需要 writeDecode 选项）；无预编译的元组会让就绪以 unsupported 失败，而不是静默降级为管道。",
         },
         {
           pkg: "@unipty/backend-bun",

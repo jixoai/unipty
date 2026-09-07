@@ -40,7 +40,7 @@ export const en: SiteContent = {
       titleTail: " for Node, Bun, and Deno.",
       badges: ["One Core API", "Replaceable Backends", "Evidence-gated support", "MIT"],
       summary:
-        "One Core API for pseudo-terminals. Bring your own native substrate — node-pty, Bun.Terminal, or @sigma/pty-ffi — through developer-selectable, replaceable Backends. Support claims come only from the release evidence catalog, never from metadata.",
+        "One Core API for pseudo-terminals. Bring your own native substrate — node-pty, zigpty, Bun.Terminal, or @sigma/pty-ffi — through developer-selectable, replaceable Backends. Support claims come only from the release evidence catalog, never from metadata.",
       docsLabel: "Read the docs",
       githubLabel: "GitHub ↗",
       copyLabel: "copy",
@@ -64,7 +64,7 @@ export const en: SiteContent = {
       {
         id: "replaceable-backends",
         title: "Backends are replaceable",
-        body: "The native substrate — node-pty, Bun.Terminal, @sigma/pty-ffi — lives behind a Backend Endpoint seam. Persistent or remote hosts arrive as Backends, not a second plugin lifecycle.",
+        body: "The native substrate — node-pty, zigpty, Bun.Terminal, @sigma/pty-ffi — lives behind a Backend Endpoint seam. Persistent or remote hosts arrive as Backends, not a second plugin lifecycle.",
       },
       {
         id: "honest-backpressure",
@@ -90,6 +90,13 @@ export const en: SiteContent = {
           substrate: "node-pty (via @lydell/node-pty prebuilds)",
           notes:
             "A third-party native addon with prebuilt binaries. Node has no native PTY API; this route wraps the ecosystem standard substrate honestly.",
+        },
+        {
+          pkg: "@unipty/backend-zigpty",
+          runtime: "Node",
+          substrate: "zigpty (Zig-built NAPI prebuilds)",
+          notes:
+            "A second Node route over the Zig-implemented substrate: prebuilds for eight tuples bundled in the tarball, zero install scripts, and a hard native gate that never falls back to a pipe pseudo-PTY.",
         },
         {
           pkg: "@unipty/backend-bun",
@@ -230,6 +237,13 @@ export const en: SiteContent = {
           substrate: "node-pty via @lydell/node-pty prebuilds",
           notes:
             "A third-party native addon with prebuilt binaries. Node has no native PTY API; this route wraps the ecosystem’s standard substrate rather than pretending otherwise.",
+        },
+        {
+          pkg: "@unipty/backend-zigpty",
+          runtime: "Node",
+          substrate: "zigpty (Zig-built NAPI prebuilds)",
+          notes:
+            "A second Node route over the Zig-implemented substrate. Writes are text-native (bytes need the writeDecode option) and readiness fails closed on tuples without a prebuild instead of silently degrading to a pipe.",
         },
         {
           pkg: "@unipty/backend-bun",

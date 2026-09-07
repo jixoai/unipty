@@ -17,11 +17,23 @@ import type { UniPtyBackendMetadata } from "@unipty/backend";
 
 export const CATALOG_VERSION = 1;
 
-/** The official first-phase route packages keyed by runtime route. */
-export const OFFICIAL_ROUTE_PACKAGES: Readonly<Record<"node" | "bun" | "deno", string>> = {
-  node: "@unipty/backend-node-pty",
+/** Official route identity: the substrate, never the runtime. */
+export type OfficialRouteId = "node-pty" | "bun" | "deno-sigma__pty-ffi" | "zigpty";
+
+/** Route-unique key order for deterministic iteration. */
+export const OFFICIAL_ROUTE_KEYS: readonly OfficialRouteId[] = [
+  "node-pty",
+  "bun",
+  "deno-sigma__pty-ffi",
+  "zigpty",
+];
+
+/** The official route packages keyed by route identity (not runtime). */
+export const OFFICIAL_ROUTE_PACKAGES: Readonly<Record<OfficialRouteId, string>> = {
+  "node-pty": "@unipty/backend-node-pty",
   bun: "@unipty/backend-bun",
-  deno: "@unipty/backend-deno-sigma__pty-ffi",
+  "deno-sigma__pty-ffi": "@unipty/backend-deno-sigma__pty-ffi",
+  zigpty: "@unipty/backend-zigpty",
 };
 
 /** One validated metadata snapshot in the catalog. */
@@ -91,7 +103,7 @@ export interface AggregateCatalogResult {
   readonly catalog: ReleaseCatalog;
   readonly json: string;
   /** Evidence count per official route after aggregation. */
-  readonly coverage: Readonly<Record<"node" | "bun" | "deno", number>>;
+  readonly coverage: Readonly<Record<OfficialRouteId, number>>;
 }
 
 function loadEntry(entry: string | unknown, kind: string): unknown {
@@ -243,13 +255,18 @@ export function aggregateCatalog(input: AggregateCatalogInput): AggregateCatalog
     }
   }
 
-  const coverage: Record<"node" | "bun" | "deno", number> = { node: 0, bun: 0, deno: 0 };
+  const coverage: Record<OfficialRouteId, number> = {
+    "node-pty": 0,
+    bun: 0,
+    "deno-sigma__pty-ffi": 0,
+    zigpty: 0,
+  };
   for (const evidence of evidenceRecords) {
-    for (const route of ["node", "bun", "deno"] as const) {
+    for (const route of OFFICIAL_ROUTE_KEYS) {
       if (evidence.backend.packageName === OFFICIAL_ROUTE_PACKAGES[route]) coverage[route] += 1;
     }
   }
-  const missingRoutes = (["node", "bun", "deno"] as const).filter((route) => coverage[route] === 0);
+  const missingRoutes = OFFICIAL_ROUTE_KEYS.filter((route) => coverage[route] === 0);
   if (missingRoutes.length > 0) {
     problems.push(
       `first-phase release gate requires at least one native passing tuple per official route; missing: ${missingRoutes.join(", ")}`,
@@ -278,6 +295,8 @@ export function aggregateCatalog(input: AggregateCatalogInput): AggregateCatalog
 
 /** A tuple query for presentation derivation. */
 export interface PresentationQuery {
+  /** Route identity (substrate); multiple routes may share one runtime. */
+  readonly route: OfficialRouteId;
   readonly runtime: { readonly name: ConformanceRuntimeName; readonly version: string };
   readonly os: string;
   readonly arch: string;
@@ -297,7 +316,7 @@ function matchesLibc(list: readonly string[] | undefined, value: string | undefi
 
 /**
  * Derive the presentation state for one exact tuple against a release
- * catalog, using the official route package of the queried runtime:
+ * catalog, using the metadata snapshot of the queried official route:
  * - `not-targeted`: no metadata snapshot for the route, or the release
  *   metadata targets exclude the tuple;
  * - `verified`: exact evidence exists for the released package version, the
@@ -311,7 +330,7 @@ export function derivePresentationState(
   catalog: ReleaseCatalog,
   query: PresentationQuery,
 ): PresentationState {
-  const packageName = OFFICIAL_ROUTE_PACKAGES[query.runtime.name];
+  const packageName = OFFICIAL_ROUTE_PACKAGES[query.route];
   const snapshot = catalog.metadata.find((entry) => entry.packageName === packageName);
   if (snapshot === undefined) return "not-targeted";
   const targeted = snapshot.metadata.targets.some(

@@ -59,25 +59,26 @@ UniPty Core ──── 独占全部可观测行为：视图、转换、bootstr
 Backend Endpoint（Core 私有）── 有序带标签原生分块、写入就绪/drain、
    │             resize、非级联 close/terminate、可重复 await 的退出观察
    ▼
-node-pty / Bun.Terminal / @sigma/pty-ffi 之上的真实 PTY
+node-pty / zigpty / Bun.Terminal / @sigma/pty-ffi 之上的真实 PTY
 ```
 
 读代码前值得了解的设计原则：
 
-- **一套契约，三个运行时。** 公共 API 绝不引用运行时；第一阶段交付就是三条官方路由一起上——实现、CI 覆盖、发布验收同步到位。
+- **一套契约，三个运行时。** 公共 API 绝不引用运行时；第一阶段交付是三条运行时路由一起上——实现、CI 覆盖、发布验收同步到位。路由注册表按底座身份索引，一个运行时可以有多条官方路由（第二阶段 zigpty 加入了 Node 侧）。
 - **底层诚实。** 每个适配器如实记录底层真实行为（kill-and-close 原语、无界内部缓冲、信号不可辨），绝不掩盖；支持声明以证据门控。
 - **没有隐藏策略。** 无隐式 shell、无管道静默回退、无第二插件注册表、无能力/资产协议。扩展点显式：Backend wrapper 与不透明能力 token。
 - **证据高于标签。** 运行时/平台元组只有在对已安装制品的完整公共契约通过时才是 `verified`；发布目录是这一事实的唯一来源。
 
 深入阅读：[架构设计.md](架构设计.md) · [贡献规范.md](贡献规范.md) · [能力规格（权威需求）](openspec/specs)。
 
-## 官方第一阶段路由
+## 官方路由
 
-| 包                                                                            | 运行时 | 底层实现（如实声明）                                                      |
-| ----------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node   | 第三方 `node-pty`（经 `@lydell/node-pty` 预构建发行版）                   |
-| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun    | 运行时原生 `Bun.Terminal`（POSIX ≥ 1.3.13，Windows ≥ 1.3.14）             |
-| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno   | 第三方 `@sigma/pty-ffi`（Rust `portable-pty`），整体内嵌为自包含 npm 制品 |
+| 包                                                                            | 运行时 | 底层实现（如实声明）                                                             |
+| ----------------------------------------------------------------------------- | ------ | -------------------------------------------------------------------------------- |
+| [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | Node   | 第三方 `node-pty`（经 `@lydell/node-pty` 预构建发行版）                          |
+| [`@unipty/backend-zigpty`](packages/backend-zigpty)                           | Node   | 第三方 `zigpty`——Zig 构建 NAPI 预编译随 tarball 分发（硬性原生门禁，无管道回退） |
+| [`@unipty/backend-bun`](packages/backend-bun)                                 | Bun    | 运行时原生 `Bun.Terminal`（POSIX ≥ 1.3.13，Windows ≥ 1.3.14）                    |
+| [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | Deno   | 第三方 `@sigma/pty-ffi`（Rust `portable-pty`），整体内嵌为自包含 npm 制品        |
 
 Node 路由适配的是第三方库——不是 Node 运行时原生 API，文档绝不如此宣称。Deno 只是最后一条路由的运行时元数据，不是其实现身份。
 
@@ -89,6 +90,7 @@ Node 路由适配的是第三方库——不是 Node 运行时原生 API，文�
 | [`@unipty/backend`](packages/backend)                                         | [npm](https://www.npmjs.com/package/@unipty/backend)                     | 获取便利层：`resolveUniPtyBackend`、`inspectUniPtyBackend`、`autoResolveUniPtyBackend`、manifest 构造器 |
 | [`@unipty/helper-backend`](packages/helper-backend)                           | [npm](https://www.npmjs.com/package/@unipty/helper-backend)              | 构建期 manifest 生成器（`unipty-helper-backend manifest`）                                              |
 | [`@unipty/backend-node-pty`](packages/backend-node-pty)                       | [npm](https://www.npmjs.com/package/@unipty/backend-node-pty)            | 官方 Node 路由（第三方 `node-pty`）                                                                     |
+| [`@unipty/backend-zigpty`](packages/backend-zigpty)                           | [npm](https://www.npmjs.com/package/@unipty/backend-zigpty)              | 官方 Node 路由（第三方 `zigpty`，Zig 构建 NAPI 预编译）                                                 |
 | [`@unipty/backend-bun`](packages/backend-bun)                                 | [npm](https://www.npmjs.com/package/@unipty/backend-bun)                 | 官方 Bun 路由（运行时原生 `Bun.Terminal`）                                                              |
 | [`@unipty/backend-deno-sigma__pty-ffi`](packages/backend-deno-sigma__pty-ffi) | [npm](https://www.npmjs.com/package/@unipty/backend-deno-sigma__pty-ffi) | 官方 Deno 路由（vendored `@sigma/pty-ffi`，自包含 npm 制品）                                            |
 | [`@unipty/conformance`](packages/conformance)                                 | —（私有）                                                                | 已安装包一致性装置、证据写出器、发布目录聚合器                                                          |
@@ -154,6 +156,7 @@ pnpm --filter @unipty/conformance run conformance --backend node-pty --emit-evid
 ```sh
 corepack pnpm install
 pnpm build && pnpm typecheck && pnpm test
+pnpm --filter @unipty/backend-zigpty test   # zigpty 套件（真实 PTY）
 pnpm --filter @unipty/backend-bun test      # Bun 套件（需要 Bun）
 cd packages/backend-deno-sigma__pty-ffi && deno test -A test/   # Deno 套件
 pnpm check:arch                             # 包图所有权规则

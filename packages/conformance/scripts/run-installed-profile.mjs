@@ -19,6 +19,7 @@ const routes = {
   "node-pty": "node-pty",
   bun: "bun",
   "deno-sigma__pty-ffi": "deno-sigma__pty-ffi",
+  zigpty: "zigpty",
 };
 if (!(route in routes)) {
   console.error("usage: node run-installed-profile.mjs <route> <node|bun|deno>");

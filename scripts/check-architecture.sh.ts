@@ -94,6 +94,7 @@ for (const required of [
   acquisition,
   helper,
   "@unipty/backend-node-pty",
+  "@unipty/backend-zigpty",
   "@unipty/backend-bun",
   "@unipty/backend-deno-sigma__pty-ffi",
   shellParser,
@@ -130,6 +131,7 @@ for (const dep of depsOf(helper)) {
 // Official Backends depend on Core plus only their own substrate.
 const substrateAllowlist: Record<string, Set<string>> = {
   "@unipty/backend-node-pty": new Set(["@lydell/node-pty"]),
+  "@unipty/backend-zigpty": new Set(["zigpty"]),
   "@unipty/backend-bun": new Set([]),
   "@unipty/backend-deno-sigma__pty-ffi": new Set([]),
 };
