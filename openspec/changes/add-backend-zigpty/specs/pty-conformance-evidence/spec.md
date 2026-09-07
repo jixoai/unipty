@@ -19,6 +19,13 @@ release artifact is attached.
 - **THEN** package publication stays blocked for that release even though
   the other node route passed
 
+#### Scenario: Route coverage requires package AND backend identity
+
+- **WHEN** evidence or a metadata snapshot wears an official route's package
+  name but a backend id other than that route's registered identity
+- **THEN** aggregation rejects the record and it never counts toward route
+  coverage — official routes cannot stand in for each other by swapping ids
+
 #### Scenario: Deno workspace success cannot bypass packed-artifact acceptance
 
 - **WHEN** Deno route validation passes only against workspace source or direct

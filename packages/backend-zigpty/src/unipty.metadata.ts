@@ -32,7 +32,11 @@ const metadata: UniPtyBackendMetadata = {
   protocol: {
     core: [1],
   },
-  targets: [{ runtime: "node" }],
+  // `os` is narrowed to the tuples this route can actually honor: the
+  // substrate's Windows build ships a ConPTY prebuild but its public
+  // pause()/resume() flow control are no-ops there (0.2.1), so the Endpoint
+  // fails closed on win32 instead of running without bounded output.
+  targets: [{ runtime: "node", os: ["darwin", "linux"] }],
   provenance: {
     kind: "third-party",
     substrate: "zigpty (Zig-built NAPI prebuilds bundled in the npm tarball)",

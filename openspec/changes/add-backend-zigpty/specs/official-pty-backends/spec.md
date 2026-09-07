@@ -26,6 +26,21 @@ provenance, and SHALL pin an exact substrate version.
 - **THEN** the write fails with `unsupported`, and only a Backend-owned
   `writeDecode` option accepts byte input by decoding it
 
+#### Scenario: A saturated byte value never advances decoder state
+
+- **WHEN** a byte value is rejected by the bounded admission queue while a
+  split multibyte sequence is pending in the writeDecode decoder
+- **THEN** retrying the same bytes after drain decodes them exactly as first
+  attempted — rejection is whole-value, including decoder state
+
+#### Scenario: Windows fails closed without usable flow control
+
+- **WHEN** the substrate's public output flow control is inert on a platform
+  (pause/resume are no-ops on Windows in 0.2.1)
+- **THEN** the factory refuses readiness with `unsupported` on that platform
+  and metadata target declarations exclude it, rather than running an
+  unbounded output queue
+
 ## MODIFIED Requirements
 
 ### Requirement: First-phase official Backend set

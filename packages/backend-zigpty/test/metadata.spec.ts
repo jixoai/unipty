@@ -18,7 +18,9 @@ describe("unipty.metadata default export", () => {
     expect(metadata.schema).toBe(1);
     expect(metadata.backend).toEqual({ id: "zigpty", factoryExport: "createZigptyBackend" });
     expect(metadata.protocol.core).toEqual([1]);
-    expect(metadata.targets).toEqual([{ runtime: "node" }]);
+    // os is narrowed: the Windows prebuild exists, but the substrate's
+    // pause/resume flow control are no-ops there, so the route fails closed.
+    expect(metadata.targets).toEqual([{ runtime: "node", os: ["darwin", "linux"] }]);
   });
 
   it("identifies as third-party zigpty, never a native Node runtime API", () => {

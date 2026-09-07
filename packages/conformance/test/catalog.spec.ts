@@ -13,7 +13,12 @@ import {
   OFFICIAL_ROUTE_PACKAGES,
   serializeDeterministicJson,
 } from "../src/catalog.ts";
-import type { CatalogMetadataSnapshot, PresentationState, ReleaseCatalog } from "../src/catalog.ts";
+import type {
+  CatalogMetadataSnapshot,
+  OfficialRoute,
+  PresentationState,
+  ReleaseCatalog,
+} from "../src/catalog.ts";
 import type { VerificationEvidence } from "../src/evidence.ts";
 import type { UniPtyBackendMetadata } from "@unipty/backend";
 import { validateUniPtyBackendMetadataSnapshot } from "../src/metadata.ts";
@@ -23,14 +28,14 @@ type MetadataInput = UniPtyBackendMetadata;
 
 const COMMIT = "0123456789abcdef0123456789abcdef01234567";
 
-function rawMetadata(packageName: string, runtime: "node" | "bun" | "deno"): MetadataInput {
+function rawMetadata(route: OfficialRoute, runtime: "node" | "bun" | "deno"): MetadataInput {
   const metadata: UniPtyBackendMetadata = {
     schema: 1,
-    package: { name: packageName, version: "0.1.0" },
-    backend: { id: `${runtime}-backend`, factoryExport: `create${runtime}Backend` },
+    package: { name: route.packageName, version: "0.1.0" },
+    backend: { id: route.backendId, factoryExport: `create_${route.backendId}_factory` },
     protocol: { core: [1] },
     targets: [{ runtime, os: ["darwin", "linux"], arch: ["arm64", "x64"] }],
-    provenance: { kind: "third-party", substrate: runtime },
+    provenance: { kind: "third-party", substrate: route.backendId },
   };
   const validation = validateUniPtyBackendMetadataSnapshot(metadata);
   expect(validation.ok).toBe(true);
@@ -46,13 +51,17 @@ function snapshotOf(metadata: MetadataInput): CatalogMetadataSnapshot {
 }
 
 function evidenceRecord(
-  packageName: string,
+  route: OfficialRoute,
   runtime: "node" | "bun" | "deno",
   overrides: Partial<VerificationEvidenceLike> = {},
 ): VerificationEvidenceLike {
   return {
     evidenceVersion: 1,
-    backend: { packageName, packageVersion: "0.1.0", backendId: `${runtime}-backend` },
+    backend: {
+      packageName: route.packageName,
+      packageVersion: "0.1.0",
+      backendId: route.backendId,
+    },
     core: { packageName: "unipty", packageVersion: "0.1.0", protocolMajor: 1 },
     runtime: { name: runtime, version: "1.0.0" },
     tuple: { os: "darwin", arch: "arm64" },
@@ -125,10 +134,10 @@ describe("aggregateCatalog", () => {
     });
     expect(reversed.json).toBe(forward.json);
     expect(forward.catalog.metadata.map((entry) => entry.packageName)).toEqual([
-      OFFICIAL_ROUTE_PACKAGES.bun,
-      OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"],
-      OFFICIAL_ROUTE_PACKAGES["node-pty"],
-      OFFICIAL_ROUTE_PACKAGES.zigpty,
+      OFFICIAL_ROUTE_PACKAGES.bun.packageName,
+      OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"].packageName,
+      OFFICIAL_ROUTE_PACKAGES["node-pty"].packageName,
+      OFFICIAL_ROUTE_PACKAGES.zigpty.packageName,
     ]);
     expect(new Set(forward.json)).toBeTruthy();
   });
@@ -188,7 +197,8 @@ describe("aggregateCatalog", () => {
 
   it("rejects a release with a missing official route", () => {
     const records = FOUR_RECORDS().filter(
-      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"],
+      (record) =>
+        record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES["deno-sigma__pty-ffi"].packageName,
     );
     const error = expectCatalogError(() => aggregateOk(records));
     expect(error.problems.join(" ")).toContain("missing: deno-sigma__pty-ffi");
@@ -199,10 +209,55 @@ describe("aggregateCatalog", () => {
     // keys routes by substrate identity, so sharing a runtime never lets
     // one route's pass stand in for another's.
     const records = FOUR_RECORDS().filter(
-      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES.zigpty,
+      (record) => record.backend.packageName !== OFFICIAL_ROUTE_PACKAGES.zigpty.packageName,
     );
     const error = expectCatalogError(() => aggregateOk(records));
     expect(error.problems.join(" ")).toContain("missing: zigpty");
+  });
+
+  it("rejects evidence wearing an official package name with a foreign backend id", () => {
+    const records = FOUR_RECORDS();
+    const zigpty = records[3] as VerificationEvidenceLike;
+    records[3] = { ...zigpty, backend: { ...zigpty.backend, backendId: "not-zigpty" } };
+    const error = expectCatalogError(() => aggregateOk(records));
+    expect(error.problems.join(" ")).toContain('claims backend id "not-zigpty"');
+    expect(error.problems.join(" ")).toContain("missing: zigpty");
+  });
+
+  it("rejects two node routes standing in for each other by swapping ids", () => {
+    // node-pty + zigpty snapshots wearing each other's backend id: the
+    // snapshot identity check fails closed, the orphaned evidence then has
+    // no valid snapshot, and the release is rejected as a whole.
+    const snapshots = FOUR_SNAPSHOTS();
+    const nodePty = snapshots[0] as MetadataInput;
+    const zigptySnap = snapshots[3] as MetadataInput;
+    snapshots[0] = {
+      ...nodePty,
+      backend: { id: zigptySnap.backend.id, factoryExport: nodePty.backend.factoryExport },
+    };
+    snapshots[3] = {
+      ...zigptySnap,
+      backend: { id: nodePty.backend.id, factoryExport: zigptySnap.backend.factoryExport },
+    };
+    const records = FOUR_RECORDS();
+    const error = expectCatalogError(() => aggregateOk(records, snapshots));
+    const problems = error.problems.join(" ");
+    expect(problems).toContain('declares backend id "zigpty" but the route identity is "node-pty"');
+    expect(problems).toContain('declares backend id "node-pty" but the route identity is "zigpty"');
+    expect(problems.match(/has no metadata snapshot/g)?.length).toBe(2);
+  });
+
+  it("rejects a metadata snapshot wearing an official package name with a foreign backend id", () => {
+    const snapshots = FOUR_SNAPSHOTS();
+    const zigptySnap = snapshots[3] as MetadataInput;
+    snapshots[3] = {
+      ...zigptySnap,
+      backend: { id: "node-pty", factoryExport: zigptySnap.backend.factoryExport },
+    };
+    const error = expectCatalogError(() => aggregateOk(FOUR_RECORDS(), snapshots));
+    expect(error.problems.join(" ")).toContain(
+      `declares backend id "node-pty" but the route identity is "zigpty"`,
+    );
   });
 
   it("rejects malformed evidence records", () => {
@@ -237,7 +292,9 @@ describe("aggregateCatalog", () => {
 
   it("rejects evidence for a package without a metadata snapshot", () => {
     const records = FOUR_RECORDS();
-    records.push(evidenceRecord("@unipty/community-backend" as never, "node"));
+    records.push(
+      evidenceRecord({ packageName: "@unipty/community-backend", backendId: "community" }, "node"),
+    );
     const error = expectCatalogError(() => aggregateOk(records));
     expect(error.problems.join(" ")).toContain("has no metadata snapshot");
   });
@@ -374,7 +431,7 @@ describe("derivePresentationState", () => {
         {
           ...catalog,
           metadata: catalog.metadata.filter(
-            (entry) => entry.packageName !== OFFICIAL_ROUTE_PACKAGES.bun,
+            (entry) => entry.packageName !== OFFICIAL_ROUTE_PACKAGES.bun.packageName,
           ),
         },
         { route: "bun", runtime: { name: "bun", version: "1.3.14" }, os: "darwin", arch: "arm64" },

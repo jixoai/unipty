@@ -158,15 +158,58 @@ describe("Endpoint input (utf8 modes)", () => {
     cleanupEndpoint(endpoint);
   }, 20_000);
 
-  it("surfaces fatal decoder failures as typed invalid-argument", async () => {
+  it("keeps writeDecode atomic under saturation: a rejected value never advances decoder state", async () => {
+    // The codex round-2 counter-example: a byte value rejected by the
+    // bounded queue must not have flowed through the stateful decoder, or
+    // retrying the same bytes decodes them twice and corrupts the stream.
+    const backend = await createZigptyBackend({
+      encoding: "utf8",
+      writeDecode: true,
+      writeQueueBytes: 8,
+    });
+    const endpoint = backend.spawn(launch(["/bin/cat"]));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // "xx" + 0xC3 (pending first half of "é") — admitted (3 bytes).
+    expect(endpoint.write({ kind: "bytes", bytes: Uint8Array.from([0x78, 0x78, 0xc3]) })).toBe(
+      true,
+    );
+    // Fill to 7/8 bytes so the completing pair cannot fit: whole-value
+    // rejection, decoded state untouched.
+    expect(endpoint.write({ kind: "text", text: "yyyy" })).toBe(false);
+    let rejected: unknown;
+    try {
+      endpoint.write({ kind: "bytes", bytes: Uint8Array.from([0xa9, 0x0a]) });
+    } catch (error) {
+      rejected = error;
+    }
+    expect(errorCode(rejected)).toBe("backpressure");
+    await endpoint.drain();
+    // Retry the SAME bytes: the echo must be the exact original bytes
+    // ("xx" + filler + "é") with no U+FFFD anywhere.
+    expect(endpoint.write({ kind: "bytes", bytes: Uint8Array.from([0xa9, 0x0a]) })).toBe(true);
+    const text = await readOutputText(endpoint, (acc) => acc.includes("xxyyyyé"), 5_000);
+    expect(text).toContain("xxyyyyé");
+    expect(text).not.toContain("\uFFFD");
+    cleanupEndpoint(endpoint);
+  }, 20_000);
+
+  it("fails the input surface terminally when admitted bytes hit a fatal decoder policy", async () => {
     const backend = await createZigptyBackend({
       encoding: "utf8",
       writeDecode: new TextDecoder("utf-8", { fatal: true }),
     });
     const endpoint = backend.spawn(launch(["/bin/cat"]));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // Admission accepts the raw bytes; the fatal decode failure surfaces at
+    // pump time and terminates the input surface.
+    expect(endpoint.write({ kind: "bytes", bytes: Uint8Array.from([0xff, 0xfe, 0x0a]) })).toBe(
+      true,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await expect(endpoint.drain()).rejects.toMatchObject({ code: "invalid-argument" });
     let caught: unknown;
     try {
-      endpoint.write({ kind: "bytes", bytes: Uint8Array.from([0xff, 0xfe, 0x0a]) });
+      endpoint.write({ kind: "text", text: "late" });
     } catch (error) {
       caught = error;
     }

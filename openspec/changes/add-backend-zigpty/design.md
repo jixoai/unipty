@@ -48,6 +48,13 @@ geometry), which the evidence law forbids claiming as support.
   endpoint rejects byte input with `unsupported` and `writeDecode` is the
   sanctioned byte-input convenience: a stateful per-Endpoint `TextDecoder`.
   Declared input: `"text"` strict / `"both"` with `writeDecode`.
+  Atomicity (codex round-2): admission accounting runs on the RAW value
+  before any decoder state advance; byte values are admitted raw and decoded
+  at pump time. A value rejected by saturation therefore never touches
+  decoder state — retrying the same bytes decodes identically (pinned by the
+  "rejected value never advances decoder state" test). A fatal decode at
+  pump time fails the input surface terminally (pending dropped, drain
+  rejects with `invalid-argument`, later writes rethrow).
 - `name`, `writeQueueBytes` (default 1 MiB, soft resume at 3/4): identical
   semantics to the node-pty adapter, including whole-value `backpressure`
   saturation rejection and boolean Write Readiness.
@@ -66,8 +73,12 @@ geometry), which the evidence law forbids claiming as support.
   `os.constants.signals` map (`0` → `null`), `exitCode` passed through as
   reported. Repeatably awaitable; survives `close()`.
 - Output source completion: synthesized from `exited` settling, deferred one
-  macrotask so trailing chunks enqueue before EOF (Bun-route precedent).
-  Backpressure wiring uses the public `pause()`/`resume()`.
+  macrotask so trailing chunks enqueue before EOF (Bun-route precedent —
+  `Bun.Terminal` performs the same exit-driven synthesis when the transport
+  callback does not fire). Declared substrate limits of the synthesis:
+  post-leader-death output from descendants still holding the slave is cut,
+  and a transport read error is indistinguishable from clean EOF. Backpressure
+  wiring uses the public `pause()`/`resume()`.
 
 ### 4. Route registry re-keying
 
@@ -80,9 +91,12 @@ existing three routes and now include zigpty.
 
 ### 5. Scope boundaries
 
-- Targets declare `[{ runtime: "node" }]` only: evidence-gated philosophy;
-  Bun cells and Windows tuples are future evidence work, presented as
-  not-targeted until then.
+- Targets declare `[{ runtime: "node", os: ["darwin", "linux"] }]` and the
+  factory fails closed on win32: the substrate's public `pause()`/`resume()`
+  are no-ops on Windows (0.2.1), so consumer-paced output backpressure cannot
+  propagate there. A Windows prebuild existing is not usable support; the
+  gate lifts only with real Windows conformance evidence. Bun-runtime cells
+  remain future evidence work, presented as not-targeted until then.
 - Substrate pinned exactly `zigpty@0.2.1` (0.x, active development).
 - No capability tokens in v1 of this route (parity with node-pty route;
   `kill(signal)` exists but stays substrate-internal behind `terminate()`).

@@ -80,9 +80,14 @@ Write readiness: each Endpoint owns a bounded admission queue (default 1 MiB,
 soft resume mark at three quarters; tune with `writeQueueBytes`). Values are
 handed to the substrate whole, so `write()` returns `false` past the soft mark
 (pause advice; `drain()` resolves below it) and rejects a whole value with
-`backpressure` at the hard bound — never partial acceptance. `drain()` is
-readiness recovery, not a physical flush: the substrate's own fd write queue
-has no completion signal.
+`backpressure` at the hard bound — never partial acceptance. Admission
+accounting runs before any decoder state advance: byte values are admitted raw
+and decoded at pump time, so a value rejected by saturation leaves the stateful
+decoder exactly where it was and retrying the same bytes decodes identically.
+A fatal `writeDecode` failure at pump time terminates the input surface: the
+value is dropped, `drain()` rejects with `invalid-argument`, and later
+`write()` calls rethrow the same failure. `drain()` is readiness recovery, not
+a physical flush: the substrate's own fd write queue has no completion signal.
 
 ## Substrate behavior this adapter maps (and documents)
 
@@ -124,7 +129,16 @@ Verified against the installed `zigpty` 0.2.1 sources and live probes:
   event (only `onData`/`onExit`): after the child exits, the adapter
   completes the output source one macrotask later — the same synthesis the
   Bun route performs for `Bun.Terminal` — so trailing chunks still enqueue
-  before completion.
+  before completion. Declared substrate limits of that synthesis: output
+  produced after session-leader death by descendants still holding the
+  slave side is cut at completion, and a transport read error cannot be
+  distinguished from clean EOF (the substrate surfaces neither signal).
+- **Windows fails closed.** The substrate ships a ConPTY prebuild, but its
+  public `pause()`/`resume()` output flow control are no-ops there (0.2.1),
+  so consumer-paced backpressure cannot propagate and the route refuses to
+  become ready on win32 (`unsupported`) instead of running an unbounded
+  queue. Metadata targets are narrowed to `os: ["darwin", "linux"]`; the
+  gate is lifted only together with real Windows conformance evidence.
 
 ## Deployment
 

@@ -56,7 +56,7 @@ createZigptyBackend({
 
 底层 `write` 在任何模式下都只接受字符串——与 node-pty 路由不同，字节输入始终需要 Backend 持有的 `writeDecode` 便捷项。`writeDecode: true` 安装非致命 UTF-8 `TextDecoder`；传入你自己的 `TextDecoder` 会把它的 encoding/fatal/BOM 配置复制成 **每个 PTY 独立** 的有状态解码器——解码器状态绝不在 PTY 之间共享。致命解码失败以 `invalid-argument` 整值拒绝，原始 `TypeError` 作为 `cause`。
 
-写就绪：每个 Endpoint 持有有界准入队列（默认 1 MiB，四分之三处为软恢复水位；可用 `writeQueueBytes` 调整）。值总是整条交给底层，因此超过软水位后 `write()` 返回 `false`（暂停建议；降回水位后 `drain()` 完成），超过硬上限则以 `backpressure` 整值拒绝——绝不部分接受。`drain()` 是就绪恢复，不是物理冲刷：底层自身的 fd 写队列没有完成信号。
+写就绪：每个 Endpoint 持有有界准入队列（默认 1 MiB，四分之三处为软恢复水位；可用 `writeQueueBytes` 调整）。值总是整条交给底层，因此超过软水位后 `write()` 返回 `false`（暂停建议；降回水位后 `drain()` 完成），超过硬上限则以 `backpressure` 整值拒绝——绝不部分接受。准入计账先于任何解码器状态推进：字节值以原始形态准入、在泵送时才解码，被饱和拒绝的值让有状态解码器保持原样，重试同样的字节得到完全相同的解码。`writeDecode` 的致命失败在泵送时终止输入面：该值被丢弃、`drain()` 以 `invalid-argument` 拒绝、后续 `write()` 重复抛出同一失败。`drain()` 是就绪恢复，不是物理冲刷：底层自身的 fd 写队列没有完成信号。
 
 ## 适配层映射（并文档化）的底层行为
 
@@ -69,7 +69,8 @@ createZigptyBackend({
 - **exec 失败是退出观察，不是 spawn 异常。** 底层先 fork 再 exec；可执行文件缺失会立即产生 `{ exitCode: 1, signal: null }` 而不是抛错。只有参数形态的失败才会以类型化的同步 spawn 错误浮出（`invalid-argument` / `unsupported`，原始错误作为 `cause`）。
 - **几何尺寸与 resize** 以真实 tty winsize 更新到达子进程。
 - **输出背压传导到内核。** Core 持有的 source 跟不上时暂停 master 读取、拉动时恢复（使用底层公开的 `pause()`/`resume()`；不触碰任何私有内部字段），消费端停滞不会撑大无界适配队列。
-- **传输 EOF 是合成的。** 底层不暴露传输 EOF 事件（只有 `onData`/`onExit`）：子进程退出后，适配层延迟一个 macrotask 再完成输出源——与 Bun 路由对 `Bun.Terminal` 的合成方式一致——尾部 chunk 仍能在完成前入队。
+- **传输 EOF 是合成的。** 底层不暴露传输 EOF 事件（只有 `onData`/`onExit`）：子进程退出后，适配层延迟一个 macrotask 再完成输出源——与 Bun 路由对 `Bun.Terminal` 的合成方式一致——尾部 chunk 仍能在完成前入队。该合成方式声明的底层限制：会话首进程死亡后仍持有 slave 端的后代进程的输出会在完成点被截断；传输读错误无法与干净 EOF 区分（底层两者都不暴露）。
+- **Windows 失败关闭。** 底层带有 ConPTY 预编译，但其公开的 `pause()`/`resume()` 输出流控制在 Windows 上是空操作（0.2.1），消费端驱动的背压无法传导——路由在 win32 上拒绝就绪（`unsupported`），而不是带着无界队列运行。元数据 targets 收窄为 `os: ["darwin", "linux"]`；只有在真实的 Windows 契约证据出现后才会解除该门禁。
 
 ## 部署
 

@@ -28,13 +28,37 @@ export const OFFICIAL_ROUTE_KEYS: readonly OfficialRouteId[] = [
   "zigpty",
 ];
 
-/** The official route packages keyed by route identity (not runtime). */
-export const OFFICIAL_ROUTE_PACKAGES: Readonly<Record<OfficialRouteId, string>> = {
-  "node-pty": "@unipty/backend-node-pty",
-  bun: "@unipty/backend-bun",
-  "deno-sigma__pty-ffi": "@unipty/backend-deno-sigma__pty-ffi",
-  zigpty: "@unipty/backend-zigpty",
+/** One official route: the package AND the backend identity it must carry. */
+export interface OfficialRoute {
+  readonly packageName: string;
+  readonly backendId: string;
+}
+
+/**
+ * The official route registry keyed by route identity (not runtime).
+ * Coverage and identity validation use BOTH fields: evidence or metadata
+ * bearing a registry package name but a foreign backend id never counts as
+ * that route (two node-runtime routes must not be able to stand in for
+ * each other by swapping ids).
+ */
+export const OFFICIAL_ROUTE_PACKAGES: Readonly<Record<OfficialRouteId, OfficialRoute>> = {
+  "node-pty": { packageName: "@unipty/backend-node-pty", backendId: "node-pty" },
+  bun: { packageName: "@unipty/backend-bun", backendId: "bun" },
+  "deno-sigma__pty-ffi": {
+    packageName: "@unipty/backend-deno-sigma__pty-ffi",
+    backendId: "deno-sigma__pty-ffi",
+  },
+  zigpty: { packageName: "@unipty/backend-zigpty", backendId: "zigpty" },
 };
+
+/** Reverse lookup: registry entry (if any) owning a package name. */
+function routeForPackage(packageName: string): OfficialRoute | undefined {
+  for (const route of OFFICIAL_ROUTE_KEYS) {
+    const entry = OFFICIAL_ROUTE_PACKAGES[route];
+    if (entry.packageName === packageName) return entry;
+  }
+  return undefined;
+}
 
 /** One validated metadata snapshot in the catalog. */
 export interface CatalogMetadataSnapshot {
@@ -188,6 +212,15 @@ export function aggregateCatalog(input: AggregateCatalogInput): AggregateCatalog
       packageVersion: validation.metadata.package.version,
       metadata: validation.metadata,
     };
+    // Route-identity gate (package AND backend id): a snapshot wearing an
+    // official package name must carry that route's exact backend identity.
+    const owningRoute = routeForPackage(snapshot.packageName);
+    if (owningRoute !== undefined && snapshot.metadata.backend.id !== owningRoute.backendId) {
+      problems.push(
+        `metadata snapshot for official package "${snapshot.packageName}" declares backend id "${snapshot.metadata.backend.id}" but the route identity is "${owningRoute.backendId}"`,
+      );
+      continue;
+    }
     const existing = snapshotsByPackage.get(snapshot.packageName);
     if (existing !== undefined) {
       problems.push(
@@ -214,6 +247,17 @@ export function aggregateCatalog(input: AggregateCatalogInput): AggregateCatalog
       continue;
     }
     const evidence = validation.evidence;
+    // Route-identity gate (package AND backend id): evidence wearing an
+    // official package name must carry that route's exact backend identity,
+    // or it never counts toward coverage — two node-runtime routes cannot
+    // stand in for each other by swapping ids.
+    const evidenceRoute = routeForPackage(evidence.backend.packageName);
+    if (evidenceRoute !== undefined && evidence.backend.backendId !== evidenceRoute.backendId) {
+      problems.push(
+        `evidence for official package "${evidence.backend.packageName}" claims backend id "${evidence.backend.backendId}" but the route identity is "${evidenceRoute.backendId}"`,
+      );
+      continue;
+    }
     const key = evidenceIdentityKey(evidence);
     const prior = seenIdentities.get(key);
     if (prior !== undefined) {
@@ -263,7 +307,13 @@ export function aggregateCatalog(input: AggregateCatalogInput): AggregateCatalog
   };
   for (const evidence of evidenceRecords) {
     for (const route of OFFICIAL_ROUTE_KEYS) {
-      if (evidence.backend.packageName === OFFICIAL_ROUTE_PACKAGES[route]) coverage[route] += 1;
+      const entry = OFFICIAL_ROUTE_PACKAGES[route];
+      if (
+        evidence.backend.packageName === entry.packageName &&
+        evidence.backend.backendId === entry.backendId
+      ) {
+        coverage[route] += 1;
+      }
     }
   }
   const missingRoutes = OFFICIAL_ROUTE_KEYS.filter((route) => coverage[route] === 0);
@@ -330,7 +380,7 @@ export function derivePresentationState(
   catalog: ReleaseCatalog,
   query: PresentationQuery,
 ): PresentationState {
-  const packageName = OFFICIAL_ROUTE_PACKAGES[query.route];
+  const packageName = OFFICIAL_ROUTE_PACKAGES[query.route].packageName;
   const snapshot = catalog.metadata.find((entry) => entry.packageName === packageName);
   if (snapshot === undefined) return "not-targeted";
   const targeted = snapshot.metadata.targets.some(

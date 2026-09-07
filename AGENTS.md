@@ -59,15 +59,22 @@ release acceptance. Concrete Backend packages use the uniform
 (2026-09-07, second phase) `@unipty/backend-zigpty`. Their route identities
 remain the actual substrates `bun`, `node-pty`, `zigpty`, and
 `@sigma/pty-ffi`; the route registry is keyed by substrate identity, never by
-runtime, so multiple official routes may share one runtime. Deno is runtime
+runtime, so multiple official routes may share one runtime, and each registry
+entry pairs the package name with its exact backend id — evidence or metadata
+wearing an official package name but a foreign backend id never counts toward
+that route's release coverage. Deno is runtime
 metadata for the FFI route, not its sole implementation name. The zigpty
 route pins third-party `zigpty` exactly, declares `targets: [{ runtime: "node"
 }]`, gates readiness on `hasNative` (its pipe pseudo-PTY fallback is never
 entered), defers the substrate close (which SIGHUPs a live child) until the
 exit observation settles, synthesizes transport EOF from `exited` one
-macrotask later (no substrate EOF event; Bun-route precedent), and exposes
-text-native input only — byte input needs the Backend-owned `writeDecode`
-option because the substrate `write` is string-only. The Deno route is an npm-only package whose pnpm build
+macrotask later (no substrate EOF event; Bun-route precedent, declared
+route-level limitation), admits byte values raw and decodes them at pump
+time so saturation rejection never advances decoder state, fails closed on
+win32 because the substrate's public `pause()`/`resume()` are no-ops there
+(metadata targets narrowed to darwin/linux), and exposes text-native input
+only — byte input needs the Backend-owned `writeDecode` option because the
+substrate `write` is string-only. The Deno route is an npm-only package whose pnpm build
 vendors the required `@sigma/pty-ffi/noinit` JavaScript closure and targeted
 dynamic libraries. Published runtime modules contain no unresolved `jsr:`
 specifier; the Backend factory owns exact tuple asset selection and explicit

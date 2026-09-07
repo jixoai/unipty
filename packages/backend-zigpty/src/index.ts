@@ -169,10 +169,16 @@ function nativeInput(writeDecode: boolean): NativeRepresentation {
  *
  * Representation law (declared on `native`, honored by `write`/`output`):
  * - strict (any encoding without `writeDecode`): input `"text"`.
- * - `writeDecode`: input `"both"` — bytes are decoded through one stateful
- *   adapter-owned decoder before the string write.
+ * - `writeDecode`: input `"both"` — byte values are admitted raw and decoded
+ *   through one stateful adapter-owned decoder at pump time, so a value
+ *   rejected by saturation never advances decoder state (whole-value
+ *   admission stays atomic; retrying the same bytes decodes identically).
  * - `encoding "buffer"`: output `"bytes"` — `onData` emits `Buffer`.
  * - `encoding "utf8"`: output `"text"` — `onData` emits strings.
+ *
+ * A fatal writeDecode failure (or a substrate write failure) at pump time
+ * fails the input surface terminally: pending values are dropped, drain
+ * waiters reject, and later `write()` calls rethrow the same typed failure.
  *
  * Lifecycle mapping (verified against the substrate sources and probes):
  * - `close()` never calls the substrate `close()` while the child lives: the
@@ -187,7 +193,10 @@ function nativeInput(writeDecode: boolean): NativeRepresentation {
  * - The substrate exposes no transport-EOF event (only `onData`/`onExit`):
  *   output-source completion is synthesized from `exited` settling, deferred
  *   one macrotask so trailing chunks still enqueue before EOF — the same
- *   synthesis the Bun route performs for `Bun.Terminal`.
+ *   synthesis the Bun route performs for `Bun.Terminal`. Declared substrate
+ *   limit: output produced after session-leader death by descendants still
+ *   holding the slave side is cut at completion, and a transport read error
+ *   cannot be distinguished from clean EOF (the substrate surfaces neither).
  * - `exited` wraps `onExit` exactly once and remains awaitable after
  *   `close()`; the substrate emits exit only on true child death (exec
  *   failures surface as an immediate exit observation, not a spawn
@@ -210,9 +219,10 @@ class ZigptyEndpoint implements BackendEndpoint {
 
   private readonly hardBytes: number;
   private readonly softBytes: number;
-  private pending: string[] = [];
+  private pending: NativeInput[] = [];
   private pendingBytes = 0;
   private pumpScheduled = false;
+  private inputFailure: UniPtyError | undefined;
   private drainWaiters: Array<{
     readonly resolve: () => void;
     readonly reject: (error: unknown) => void;
@@ -299,30 +309,25 @@ class ZigptyEndpoint implements BackendEndpoint {
       // before Endpoint close is invoked.
       throw new UniPtyError("closed", "the endpoint transport is closed");
     }
-    let text: string;
-    if (input.kind === "text") {
-      text = input.text;
-    } else if (this.writeDecoder !== undefined) {
-      try {
-        // Streaming mode keeps partial multibyte sequences pending across
-        // writes; this is what makes the adapter decoder stateful.
-        text = this.writeDecoder.decode(input.bytes, { stream: true });
-      } catch (cause) {
-        throw new UniPtyError(
-          "invalid-argument",
-          "byte input failed the configured writeDecode policy",
-          { details: { mode: "writeDecode" }, cause },
-        );
-      }
-    } else {
-      // The substrate write is string-only in every mode; the strict
-      // upper layer never decodes bytes implicitly.
+    if (this.inputFailure !== undefined) {
+      // A previously admitted value already failed the writeDecode policy at
+      // pump time; the input surface stays failed rather than silently
+      // resuming mid-stream.
+      throw this.inputFailure;
+    }
+    // The substrate write is string-only in every mode; the strict upper
+    // layer never decodes bytes implicitly.
+    if (input.kind === "bytes" && this.writeDecoder === undefined) {
       throw new UniPtyError(
         "unsupported",
         "byte input requires writeDecode on the text-native zigpty endpoint",
       );
     }
-    const valueBytes = Buffer.byteLength(text, "utf8");
+    // Admission accounting runs BEFORE any decoder state advance: a value
+    // rejected by saturation must leave the stateful writeDecode decoder
+    // exactly where it was, or the retry of the same bytes would decode
+    // against already-consumed state (a silent partial acceptance).
+    const valueBytes = admittedBytes(input);
     if (this.pendingBytes + valueBytes > this.hardBytes) {
       // Saturation rejects the whole value: nothing of it was accepted.
       throw new UniPtyError(
@@ -331,7 +336,7 @@ class ZigptyEndpoint implements BackendEndpoint {
         { details: { pendingBytes: this.pendingBytes, hardBytes: this.hardBytes } },
       );
     }
-    this.pending.push(text);
+    this.pending.push(input);
     this.pendingBytes += valueBytes;
     this.schedulePump();
     // Write Readiness: `false` advises pause-and-drain, never a retry.
@@ -350,6 +355,7 @@ class ZigptyEndpoint implements BackendEndpoint {
         new UniPtyError("closed", "PTY input is closed; drain() cannot recover readiness"),
       );
     }
+    if (this.inputFailure !== undefined) return Promise.reject(this.inputFailure);
     if (this.pendingBytes <= this.softBytes) return Promise.resolve();
     return new Promise<void>((resolve, reject) => {
       this.drainWaiters.push({ resolve, reject });
@@ -365,18 +371,63 @@ class ZigptyEndpoint implements BackendEndpoint {
     });
   }
 
+  /** Decode one admitted byte value through the stateful pump-side decoder. */
+  private decodeAdmitted(bytes: Uint8Array): string {
+    if (this.writeDecoder === undefined) {
+      // Unreachable: admission rejects byte values without writeDecode.
+      throw new UniPtyError("unsupported", "byte input requires writeDecode");
+    }
+    try {
+      // Streaming mode keeps partial multibyte sequences pending across
+      // values; this is what makes the adapter decoder stateful. Decoding
+      // happens only for values that passed admission, so a saturated
+      // (rejected) value never advances decoder state.
+      return this.writeDecoder.decode(bytes, { stream: true });
+    } catch (cause) {
+      throw new UniPtyError(
+        "invalid-argument",
+        "byte input failed the configured writeDecode policy",
+        {
+          details: { mode: "writeDecode" },
+          cause,
+        },
+      );
+    }
+  }
+
   private pumpPending(): void {
     while (this.pending.length > 0) {
-      const segment = this.pending[0];
-      if (segment === undefined) break;
+      const admitted = this.pending[0];
+      if (admitted === undefined) break;
+      let text: string;
+      if (admitted.kind === "text") {
+        text = admitted.text;
+      } else {
+        try {
+          text = this.decodeAdmitted(admitted.bytes);
+        } catch (error) {
+          this.failInput(
+            error instanceof UniPtyError
+              ? error
+              : new UniPtyError(
+                  "invalid-argument",
+                  "byte input failed the configured writeDecode policy",
+                ),
+          );
+          return;
+        }
+      }
       try {
-        this.pty.write(segment);
+        this.pty.write(text);
       } catch (cause) {
         this.failInput(new UniPtyError("closed", "substrate write failed", { cause }));
         return;
       }
       this.pending.shift();
-      this.pendingBytes -= Buffer.byteLength(segment, "utf8");
+      // Symmetric with admission: the same raw metric that reserved the
+      // space is what releases it, so a decoded multibyte carry can never
+      // make the accounting drift below the true queue occupancy.
+      this.pendingBytes -= admittedBytes(admitted);
     }
     if (this.pendingBytes <= this.softBytes) this.settleDrain();
   }
@@ -384,6 +435,7 @@ class ZigptyEndpoint implements BackendEndpoint {
   private failInput(error: UniPtyError): void {
     this.pending = [];
     this.pendingBytes = 0;
+    this.inputFailure = error;
     this.settleDrain(error);
   }
 
@@ -474,6 +526,15 @@ function isFinitePositiveInteger(value: unknown): value is number {
   return (
     typeof value === "number" && Number.isInteger(value) && value > 0 && Number.isFinite(value)
   );
+}
+
+/**
+ * Queue-occupancy metric for one admitted value. Admission reservation and
+ * pump release must use the SAME metric: raw UTF-8 size for text, raw byte
+ * length for bytes (the decoded form is produced only at pump time).
+ */
+function admittedBytes(input: NativeInput): number {
+  return input.kind === "text" ? Buffer.byteLength(input.text, "utf8") : input.bytes.byteLength;
 }
 
 /** Typed synchronous launch failure from adapter-side validation. */
@@ -576,6 +637,18 @@ export async function createZigptyBackend(options?: ZigptyBackendOptions): Promi
       details: { writeQueueBytes },
     });
   }
+  if (process.platform === "win32") {
+    // Fail closed on Windows even though a ConPTY prebuild exists: the
+    // substrate's public pause()/resume() are no-ops there (0.2.1), so the
+    // Endpoint's consumer-paced output backpressure cannot propagate and the
+    // private source queue would grow without bound. Verified support stays
+    // evidence-gated; this gate is lifted only together with such evidence.
+    throw new UniPtyError(
+      "unsupported",
+      "the zigpty route fails closed on Windows: the substrate exposes no usable output flow control there (pause/resume are no-ops)",
+      { details: { substrate: "zigpty", platform: process.platform } },
+    );
+  }
   const surface = await loadSubstrate();
   if (!surface.hasNative) {
     throw new UniPtyError(
@@ -584,16 +657,15 @@ export async function createZigptyBackend(options?: ZigptyBackendOptions): Promi
       { details: { substrate: "zigpty" } },
     );
   }
+  // Snapshot the caller's option values once at readiness: a mutable options
+  // object must not change the representation of PTYs spawned later by the
+  // same ready Backend.
+  const encoding = options?.encoding ?? "buffer";
+  const writeDecode = options?.writeDecode;
+  const name = options?.name;
   return {
     spawn: (launch: StructuredLaunch) =>
-      spawnEndpoint(
-        surface,
-        launch,
-        options?.encoding ?? "buffer",
-        options?.writeDecode,
-        options?.name,
-        writeQueueBytes,
-      ),
+      spawnEndpoint(surface, launch, encoding, writeDecode, name, writeQueueBytes),
     dispose: () => Promise.resolve(),
   };
 }

@@ -78,6 +78,7 @@ export type {
   AggregateCatalogInput,
   AggregateCatalogResult,
   CatalogMetadataSnapshot,
+  OfficialRoute,
   OfficialRouteId,
   PresentationQuery,
   PresentationState,
